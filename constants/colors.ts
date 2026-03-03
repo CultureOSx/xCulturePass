@@ -75,7 +75,7 @@ export const CategoryColors = {
   wellness:    "#FF3B30",   // Apple Red
   movies:      "#5AC8FA",   // Apple Teal-Blue
   workshop:    "#FF9500",   // Apple Orange
-  heritage:    "#8B6914",   // Heritage Bronze (improved from #8B4513 for readability)
+  heritage:    "#8B6914",   // Heritage Bronze
   activities:  "#EC4899",   // Hot Pink
   nightlife:   "#6366F1",   // Indigo-Violet
   comedy:      "#F59E0B",   // Amber
@@ -362,6 +362,13 @@ export const gradients = {
     CultureTokens.indigo,
     CultureTokens.saffron,
     CultureTokens.coral,
+  ] as [string, string, string],
+
+  /** CulturePass Signature Gradient (reversed: Coral → Saffron → Indigo) */
+  culturepassBrandReversed: [
+    CultureTokens.coral,
+    CultureTokens.saffron,
+    CultureTokens.indigo,
   ] as [string, string, string],
 
   /** Primary brand gradient — Apple Blue to Indigo */

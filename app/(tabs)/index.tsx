@@ -617,7 +617,7 @@ export default function HomeScreen() {
         <View style={styles.heroSection}>
           <Text style={styles.heroSubtitle}>{timeGreeting}, {firstName}</Text>
           <LinearGradient
-            colors={[...gradients.culturepassBrand].reverse() as [string, string, string]}
+            colors={gradients.culturepassBrandReversed}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={{ borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 }}
