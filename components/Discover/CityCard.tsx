@@ -1,7 +1,7 @@
+import React, { useState } from 'react';
 import { View, Text, Pressable, StyleSheet, Image, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '@/constants/theme';
-import { useState } from 'react';
 import { useColors } from '@/hooks/useColors';
 
 const CITY_IMAGES: Record<string, string> = {
@@ -39,7 +39,7 @@ interface CityCardProps {
   width?: number;
 }
 
-export default function CityCard({ city, onPress, width }: CityCardProps) {
+function CityCard({ city, onPress, width }: CityCardProps) {
   const colors = useColors();
   const cityPrimaryImage = city.imageUrl || CITY_IMAGES[city.name] || FALLBACK_IMAGE;
   const cityFallbackImage = CITY_FALLBACK_IMAGES[city.name];
@@ -110,3 +110,6 @@ const styles = StyleSheet.create({
     // color inline
   },
 });
+
+// ⚡ Bolt Optimization: Added React.memo() to prevent unnecessary re-renders in lists
+export default React.memo(CityCard);

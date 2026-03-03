@@ -1,3 +1,4 @@
+import React from 'react';
 import { View, Text, Pressable, StyleSheet, Image, Platform } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,7 +19,7 @@ interface SpotlightCardProps {
   index?: number;
 }
 
-export default function SpotlightCard({ item, index = 0 }: SpotlightCardProps) {
+function SpotlightCard({ item, index = 0 }: SpotlightCardProps) {
   const colors = useColors();
   return (
     <View>
@@ -99,3 +100,6 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
 });
+
+// ⚡ Bolt Optimization: Added React.memo() to prevent unnecessary re-renders in lists
+export default React.memo(SpotlightCard);

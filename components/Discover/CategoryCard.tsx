@@ -1,3 +1,4 @@
+import React from 'react';
 import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/theme';
@@ -14,7 +15,7 @@ interface CategoryCardProps {
   onPress?: () => void;
 }
 
-export default function CategoryCard({ item, onPress }: CategoryCardProps) {
+function CategoryCard({ item, onPress }: CategoryCardProps) {
   const colors = useColors();
   const accent = item.color || colors.primary;
 
@@ -68,3 +69,6 @@ const styles = StyleSheet.create({
     // color applied inline
   },
 });
+
+// ⚡ Bolt Optimization: Added React.memo() to prevent unnecessary re-renders in lists
+export default React.memo(CategoryCard);

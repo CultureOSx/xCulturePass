@@ -1,3 +1,4 @@
+import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '@/hooks/useColors';
@@ -8,7 +9,7 @@ interface SectionHeaderProps {
   onSeeAll?: () => void;
 }
 
-export default function SectionHeader({ title, subtitle, onSeeAll }: SectionHeaderProps) {
+function SectionHeader({ title, subtitle, onSeeAll }: SectionHeaderProps) {
   const colors = useColors();
   
   return (
@@ -59,3 +60,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins_600SemiBold',
   },
 });
+
+// ⚡ Bolt Optimization: Added React.memo() to prevent unnecessary re-renders in lists
+export default React.memo(SectionHeader);
