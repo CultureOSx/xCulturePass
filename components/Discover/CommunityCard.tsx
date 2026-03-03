@@ -1,3 +1,4 @@
+import React from 'react';
 import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,7 +18,7 @@ interface CommunityCardProps {
   index?: number;
 }
 
-export default function CommunityCard({ community, index = 0 }: CommunityCardProps) {
+function CommunityCard({ community, index = 0 }: CommunityCardProps) {
   const colors = useColors();
   const accent = community.color || colors.primary;
   const members = community.memberCount || 0;
@@ -91,3 +92,6 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
 });
+
+// ⚡ Bolt Optimization: Added React.memo() to prevent unnecessary re-renders in lists
+export default React.memo(CommunityCard);

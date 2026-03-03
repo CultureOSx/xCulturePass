@@ -1,3 +1,4 @@
+import React from 'react';
 import { View, Text, Pressable, StyleSheet, Image, Platform } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -73,7 +74,7 @@ function CardContent({ event, highlight }: Pick<EventCardProps, 'event' | 'highl
   );
 }
 
-export default function EventCard({ event, highlight, index = 0 }: EventCardProps) {
+function EventCard({ event, highlight, index = 0 }: EventCardProps) {
   const colors = useColors();
 
   return (
@@ -226,3 +227,6 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.9)',
   },
 });
+
+// ⚡ Bolt Optimization: Added React.memo() to prevent unnecessary re-renders in lists
+export default React.memo(EventCard);
