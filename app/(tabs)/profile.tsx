@@ -31,7 +31,7 @@ import type { User, Wallet, Membership, EventData } from '@shared/schema';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { GuestProfileView } from '@/components/profile/GuestProfileView';
 import { MenuItem } from '@/components/profile/MenuItem';
-import { LayoutRules, Spacing } from '@/constants/theme';
+import { LayoutRules, Spacing, gradients } from '@/constants/theme';
 
 interface CommunityListItem {
   id: string;
@@ -262,7 +262,7 @@ export default function ProfileScreen() {
               {user?.avatarUrl ? (
                 <Image source={{ uri: user.avatarUrl }} style={s.avatarImage} contentFit="cover" />
               ) : (
-                <LinearGradient colors={['#0081C8', '#5B2EE5']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.avatarFallback}>
+                <LinearGradient colors={gradients.primary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.avatarFallback}>
                   <Text style={[s.avatarInitials, { color: colors.textInverse }]}>{initials}</Text>
                 </LinearGradient>
               )}

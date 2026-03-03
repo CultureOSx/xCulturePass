@@ -25,7 +25,7 @@ import Animated, {
   Extrapolation,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { TabBarTokens, gradients } from '@/constants/theme';
+import { TabBarTokens, gradients, CultureTokens } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
 import { WebSidebar } from '@/components/web/WebSidebar';
 
@@ -414,7 +414,7 @@ const tabItemStyles = StyleSheet.create({
     height: 2,
     width: '70%',
     borderRadius: 999,
-    backgroundColor: '#2C2A72',
+    backgroundColor: CultureTokens.indigo,
     marginTop: 2,
   },
 });

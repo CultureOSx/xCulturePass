@@ -63,6 +63,42 @@ export const CultureTokens = {
   info: "#3A86FF",          // Info = Blue
 } as const;
 
+/**
+ * Browse category colors — used for category chips, icons, and tints
+ * across Discover, search, and filter screens.
+ */
+export const CategoryColors = {
+  music:       "#FF6B6B",   // Warm Red
+  dance:       "#4ECDC4",   // Teal-Cyan
+  food:        "#FF9500",   // Apple Orange (matches sharedBase.accent)
+  art:         "#A855F7",   // Vivid Purple
+  wellness:    "#FF3B30",   // Apple Red
+  movies:      "#5AC8FA",   // Apple Teal-Blue
+  workshop:    "#FF9500",   // Apple Orange
+  heritage:    "#8B6914",   // Heritage Bronze (improved from #8B4513 for readability)
+  activities:  "#EC4899",   // Hot Pink
+  nightlife:   "#6366F1",   // Indigo-Violet
+  comedy:      "#F59E0B",   // Amber
+  sports:      "#EF4444",   // Bright Red
+  monuments:   "#94A3B8",   // Slate Gray
+  artists:     "#FBBF24",   // Golden Yellow
+  shopping:    "#AF52DE",   // Apple Purple
+} as const;
+
+/**
+ * Entity type colors — used in community/profile listings to
+ * colour-code organisations, venues, artists, etc.
+ */
+export const EntityTypeColors = {
+  community:    "#0081C8",  // Olympic Blue
+  organisation: "#5856D6",  // Apple Indigo
+  venue:        "#34C759",  // Apple Green
+  council:      "#FF9500",  // Apple Orange
+  government:   "#AF52DE",  // Apple Purple
+  artist:       "#FF2D55",  // Apple Pink
+  business:     "#5AC8FA",  // Apple Teal-Blue
+} as const;
+
 export type ColorTheme = {
   // Core brand
   primary: string;

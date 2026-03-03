@@ -14,17 +14,18 @@ import { queryClient } from '@/lib/query-client';
 import { useState, useMemo, useCallback } from 'react';
 import type { Profile } from '@shared/schema';
 import { FilterChipRow } from '@/components/FilterChip';
+import { EntityTypeColors } from '@/constants/theme';
 
 const isWeb = Platform.OS === 'web';
 
 const TYPE_META: Record<string, { color: string; icon: keyof typeof Ionicons.glyphMap }> = {
-  community:    { color: '#0081C8', icon: 'people' },
-  organisation: { color: '#5856D6', icon: 'business' },
-  venue:        { color: '#34C759', icon: 'location' },
-  council:      { color: '#FF9500', icon: 'shield-checkmark' },
-  government:   { color: '#AF52DE', icon: 'flag' },
-  artist:       { color: '#FF2D55', icon: 'musical-notes' },
-  business:     { color: '#5AC8FA', icon: 'storefront' },
+  community:    { color: EntityTypeColors.community, icon: 'people' },
+  organisation: { color: EntityTypeColors.organisation, icon: 'business' },
+  venue:        { color: EntityTypeColors.venue, icon: 'location' },
+  council:      { color: EntityTypeColors.council, icon: 'shield-checkmark' },
+  government:   { color: EntityTypeColors.government, icon: 'flag' },
+  artist:       { color: EntityTypeColors.artist, icon: 'musical-notes' },
+  business:     { color: EntityTypeColors.business, icon: 'storefront' },
 };
 
 const CATEGORIES = [

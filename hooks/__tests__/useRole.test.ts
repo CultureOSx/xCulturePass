@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react-hooks';
+import { renderHook } from '@testing-library/react-native';
 import { useRole } from '../useRole';
 import { useAuth } from '../../lib/auth';
 import type { UserRole } from '../../shared/schema';
