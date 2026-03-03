@@ -24,7 +24,7 @@ export function LocationPicker() {
   const colors = useColors();
   const scheme = useColorScheme();
   const isDark = scheme === 'dark';
-  const { states, citiesByState, getStateForCity } = useLocations();
+  const { states, citiesByState, getStateForCity, isLoading: locationsLoading, error: locationsError } = useLocations();
   const { detect, status: detectStatus } = useNearestCity();
   const isDetecting = detectStatus === 'requesting';
   const [visible, setVisible] = useState(false);
@@ -173,6 +173,24 @@ export function LocationPicker() {
                 <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
                   Or choose your area manually
                 </Text>
+                {locationsLoading && (
+                  <View style={styles.loadingRow}>
+                    <ActivityIndicator size="small" color={colors.primary} />
+                    <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading locations…</Text>
+                  </View>
+                )}
+                {!!locationsError && (
+                  <Text style={[styles.feedbackText, { color: colors.error }]}>Couldn&apos;t load updated locations. Showing fallback list.</Text>
+                )}
+                {detectStatus === 'denied' && (
+                  <Text style={[styles.feedbackText, { color: colors.error }]}>Location permission denied. Please choose a state and city manually.</Text>
+                )}
+                {detectStatus === 'unavailable' && (
+                  <Text style={[styles.feedbackText, { color: colors.warning }]}>Location services are off. Turn them on or choose manually.</Text>
+                )}
+                {detectStatus === 'error' && (
+                  <Text style={[styles.feedbackText, { color: colors.error }]}>Couldn&apos;t detect your city. Please select it manually.</Text>
+                )}
                 {states.map((s) => {
                   const isActive = s.code === currentStateCode;
                   return (
@@ -346,6 +364,22 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins_400Regular',
     marginBottom: 16,
     lineHeight: 20,
+  },
+  loadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 10,
+  },
+  loadingText: {
+    fontSize: 12,
+    fontFamily: 'Poppins_500Medium',
+  },
+  feedbackText: {
+    fontSize: 12,
+    fontFamily: 'Poppins_500Medium',
+    marginBottom: 10,
+    lineHeight: 17,
   },
   listContent: {
     padding: 20,

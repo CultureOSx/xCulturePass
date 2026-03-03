@@ -444,20 +444,6 @@ export default function SubmitScreen() {
           {(activeTab !== 'event' && activeTab !== 'perk') && (
             <View style={s.formSection}>
               <Text style={[s.sectionLabel, { color: colors.text }]}>Location</Text>
-              {[{ label: 'City', field: 'city', placeholder: 'Sydney' }, { label: 'Country', field: 'country', placeholder: 'Australia' }].map(({ label, field, placeholder }) => (
-                <View key={field}>
-                  <Text style={[s.fieldLabel, { color: colors.textSecondary }]}>{label}</Text>
-                  <TextInput style={[s.input, { backgroundColor: colors.surface, borderColor: colors.borderLight, color: colors.text }]}
-                    value={form[field as keyof typeof form]} onChangeText={v => setForm(p => ({ ...p, [field]: v }))}
-                    placeholder={placeholder} placeholderTextColor={colors.textTertiary} />
-                </View>
-              ))}
-            </View>
-          )}
-
-          {activeTab === 'event' && (
-            <View style={s.formSection}>
-              <Text style={[s.sectionLabel, { color: colors.text }]}>Location</Text>
               <View style={s.rowFields}>
                 <View style={s.halfField}>
                   <Text style={[s.fieldLabel, { color: colors.textSecondary }]}>City</Text>
@@ -478,6 +464,26 @@ export default function SubmitScreen() {
                   <TextInput style={[s.input, { backgroundColor: colors.surface, borderColor: colors.borderLight, color: colors.text }]}
                     value={form.postcode} onChangeText={v => setForm(p => ({ ...p, postcode: v }))}
                     placeholder="2000" placeholderTextColor={colors.textTertiary} keyboardType="number-pad" />
+                </View>
+                <View style={s.halfField}>
+                  <Text style={[s.fieldLabel, { color: colors.textSecondary }]}>Country</Text>
+                  <TextInput style={[s.input, { backgroundColor: colors.surface, borderColor: colors.borderLight, color: colors.text }]}
+                    value={form.country} onChangeText={v => setForm(p => ({ ...p, country: v }))}
+                    placeholder="Australia" placeholderTextColor={colors.textTertiary} />
+                </View>
+              </View>
+            </View>
+          )}
+
+          {activeTab === 'event' && (
+            <View style={s.formSection}>
+              <Text style={[s.sectionLabel, { color: colors.text }]}>Location</Text>
+              <View style={s.rowFields}>
+                <View style={s.halfField}>
+                  <Text style={[s.fieldLabel, { color: colors.textSecondary }]}>City</Text>
+                  <TextInput style={[s.input, { backgroundColor: colors.surface, borderColor: colors.borderLight, color: colors.text }]}
+                    value={form.city} onChangeText={v => setForm(p => ({ ...p, city: v }))}
+                    placeholder="Sydney" placeholderTextColor={colors.textTertiary} />
                 </View>
                 <View style={s.halfField}>
                   <Text style={[s.fieldLabel, { color: colors.textSecondary }]}>State</Text>

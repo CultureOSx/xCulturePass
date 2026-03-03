@@ -953,7 +953,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.backgroundSecondary,
+    backgroundColor: Colors.background,
   },
   topBar: {
     flexDirection: 'row',
@@ -961,7 +961,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    backgroundColor: Colors.backgroundSecondary,
+    backgroundColor: Colors.background,
     overflow: 'hidden',
   },
   topBarBorder: {

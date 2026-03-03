@@ -9,6 +9,7 @@ import { useState, useMemo } from 'react';
 import * as Haptics from 'expo-haptics';
 import NativeMapView from '@/components/NativeMapView';
 import type { EventData } from '@/shared/schema';
+import { getPostcodesByPlace } from '@shared/location/australian-postcodes';
 
 const CITY_COORDS: Record<string, { latitude: number; longitude: number }> = {
   'Sydney': { latitude: -33.8688, longitude: 151.2093 },
@@ -27,6 +28,18 @@ const CITY_COORDS: Record<string, { latitude: number; longitude: number }> = {
   'Vancouver': { latitude: 49.2827, longitude: -123.1207 },
   'Montreal': { latitude: 45.5017, longitude: -73.5673 },
 };
+
+function resolveCityCoords(city?: string): { latitude: number; longitude: number } | null {
+  if (!city) return null;
+  if (CITY_COORDS[city]) return CITY_COORDS[city];
+
+  const postcodeMatch = getPostcodesByPlace(city)[0];
+  if (postcodeMatch) {
+    return { latitude: postcodeMatch.latitude, longitude: postcodeMatch.longitude };
+  }
+
+  return null;
+}
 
 function formatDate(dateStr: string): string {
   const parts = dateStr.split('-');
@@ -151,9 +164,10 @@ export default function EventsMapScreen() {
     const groups: CityGroupMap = {};
     events.forEach(event => {
       const city = event.city;
-      if (!city || !CITY_COORDS[city]) return;
+      const coords = resolveCityCoords(city);
+      if (!city || !coords) return;
       if (!groups[city]) {
-        groups[city] = { coords: CITY_COORDS[city], events: [], count: 0 };
+        groups[city] = { coords, events: [], count: 0 };
       }
       groups[city].events.push(event);
       groups[city].count++;

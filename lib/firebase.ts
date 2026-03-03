@@ -57,8 +57,12 @@ export const auth = (() => {
     return initializeAuth(firebaseApp, {
       persistence: getReactNativePersistence(ReactNativeAsyncStorage),
     });
-  } catch {
-    // Auth already initialized (Expo fast refresh)
+  } catch (error) {
+    const maybeFirebaseError = error as { code?: string; message?: string };
+    if (maybeFirebaseError.code !== 'auth/already-initialized') {
+      console.warn('[firebase] initializeAuth fallback to getAuth:', maybeFirebaseError.message ?? error);
+    }
+    // Auth already initialized (Expo fast refresh) or native persistence init failed.
     return getAuth(firebaseApp);
   }
 })();

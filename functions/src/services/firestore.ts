@@ -50,6 +50,8 @@ export interface FirestoreUser {
   displayName: string;
   email: string;
   city?: string;
+  state?: string;
+  postcode?: number;
   country?: string;
   avatarUrl?: string;
   bio?: string;
