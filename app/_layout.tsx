@@ -29,6 +29,7 @@ import {
 import { SavedProvider } from "@/contexts/SavedContext";
 import { ContactsProvider } from "@/contexts/ContactsContext";
 import { Breakpoints, Colors } from "@/constants/theme";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 import {
   useFonts,
@@ -59,6 +60,9 @@ function DataSync() {
   // Track the previous user id so we can detect logout (authenticated → null)
   // without incorrectly resetting onboarding on the initial cold-start null state.
   const prevUserIdRef = useRef<string | null>(null);
+
+  // Register for push notifications when user is authenticated
+  usePushNotifications();
 
   useEffect(() => {
     if (user) {

@@ -191,7 +191,7 @@ function DirectoryCard({ profile, index, colors }: { profile: Profile; index: nu
 
 export default function DirectoryScreen() {
   const insets = useSafeAreaInsets();
-  const topInset = Platform.OS === 'web' ? 67 : insets.top;
+  const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const colors = useColors();
   const [selectedType, setSelectedType] = useState('All');
   const [search, setSearch] = useState('');

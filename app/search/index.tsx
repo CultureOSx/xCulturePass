@@ -27,7 +27,7 @@ const POPULAR_SEARCHES = ['Diwali', 'Comedy Night', 'Bollywood', 'Food Festival'
 
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
-  const topInset = Platform.OS === 'web' ? 67 : insets.top;
+  const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
   const colors = useColors();
   const [query, setQuery] = useState('');

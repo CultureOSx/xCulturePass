@@ -114,7 +114,7 @@ export default function AllEventsScreen() {
 
   return (
     <ErrorBoundary>
-      <View style={[s.container, { paddingTop: insets.top + (Platform.OS === 'web' ? 67 : 0), backgroundColor: colors.background }]}>
+      <View style={[s.container, { paddingTop: insets.top + (Platform.OS === 'web' ? 0 : 0), backgroundColor: colors.background }]}>
       <View style={[s.header, { paddingHorizontal: hPad }]}>
         <Pressable onPress={() => router.back()} hitSlop={12}>
           <Ionicons name="chevron-back" size={24} color={colors.text} />

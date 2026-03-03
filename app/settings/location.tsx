@@ -11,7 +11,7 @@ export default function SettingsLocationScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
   const { state } = useOnboarding();
-  const webTop = Platform.OS === 'web' ? 67 : 0;
+  const webTop = Platform.OS === 'web' ? 0 : 0;
 
   return (
     <View style={[s.container, { paddingTop: insets.top + webTop, backgroundColor: colors.background }]}>

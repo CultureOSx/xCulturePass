@@ -23,7 +23,7 @@ function formatDate(dateStr: string): string {
 
 export default function SavedScreen() {
   const insets = useSafeAreaInsets();
-  const topInset = Platform.OS === 'web' ? 67 : insets.top;
+  const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
   const colors = useColors();
   const [activeTab, setActiveTab] = useState<TabKey>('events');

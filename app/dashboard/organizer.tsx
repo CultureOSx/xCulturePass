@@ -200,7 +200,7 @@ function OrganizerDashboardContent() {
     }
   }, [isOrganizer, roleLoading]);
 
-  const topPad = Platform.OS === 'web' ? 67 : insets.top;
+  const topPad = Platform.OS === 'web' ? 0 : insets.top;
 
   // My events
   const {

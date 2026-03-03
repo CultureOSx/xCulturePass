@@ -26,7 +26,7 @@ const CATEGORIES = [
 
 export default function PerksScreen() {
   const insets = useSafeAreaInsets();
-  const webTop = Platform.OS === 'web' ? 67 : 0;
+  const webTop = Platform.OS === 'web' ? 0 : 0;
   const { userId } = useAuth();
   const colors = useColors();
   const [selectedCategory, setSelectedCategory] = useState('All');

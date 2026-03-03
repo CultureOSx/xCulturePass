@@ -10,7 +10,7 @@ import { useColors } from '@/hooks/useColors';
 
 export default function ForgotPasswordScreen() {
   const insets   = useSafeAreaInsets();
-  const topInset = Platform.OS === 'web' ? 67 : insets.top;
+  const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const colors   = useColors();
   const [email, setEmail] = useState('');
   const [sent,  setSent]  = useState(false);

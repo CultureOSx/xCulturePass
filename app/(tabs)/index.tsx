@@ -158,7 +158,7 @@ function cityToCoordinates(city?: string): { latitude: number; longitude: number
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
-  const topInset = Platform.OS === 'web' ? 67 : insets.top;
+  const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const colors = useColors();
   const scheme = useColorScheme();
   const isDark = scheme === 'dark';
@@ -452,13 +452,16 @@ export default function HomeScreen() {
             contentContainerStyle={styles.webScrollContent}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#E7EEF7" />}
           >
-            {/* Header */}
+            {/* Discover Header — branding lives in sidebar; just show search + actions */}
             <View style={styles.webTopRow}>
+              {/* Left: greeting */}
               <View style={styles.webTopRowLeft}>
-                <Ionicons name="globe-outline" size={24} color={Colors.primary} />
                 <View>
-                  <Text style={styles.webBrandName}>CulturePass</Text>
-                  <Text style={{ fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: Colors.primary, letterSpacing: 0.5 }}>Belong Anywhere</Text>
+                  <Text style={styles.webGreeting}>{timeGreeting}, {firstName}</Text>
+                  <View style={styles.webLocationRow}>
+                    <Ionicons name="location-outline" size={13} color="#F2A93B" />
+                    <Text style={styles.webLocationText}>{state.city || 'Sydney'}, {state.country || 'Australia'}</Text>
+                  </View>
                 </View>
               </View>
 
@@ -468,24 +471,27 @@ export default function HomeScreen() {
                 <TextInput
                   value={webSearch}
                   onChangeText={setWebSearch}
-                  placeholder="Search events, movies and restaurants"
+                  placeholder="Search events, communities, venues…"
                   placeholderTextColor="#8F9CBC"
                   style={styles.webSearchInput}
                 />
+                {webSearch.length > 0 && (
+                  <Pressable onPress={() => setWebSearch('')} hitSlop={8}>
+                    <Ionicons name="close-circle" size={16} color="#8F9CBC" />
+                  </Pressable>
+                )}
               </View>
 
               <View style={styles.webTopActions}>
-                <Pressable style={styles.webLocationBtn}>
-                  <Ionicons name="location-outline" size={16} color="#F2A93B" />
-                  <Text style={styles.webLocationTextBtn}>{state.city || 'Sydney'}, {state.country || 'Australia'}</Text>
-                  <Ionicons name="chevron-down-outline" size={14} color="#C7D2EE" />
+                <Pressable style={styles.webIconBtn} onPress={() => pushSafe('/notifications')}>
+                  <Ionicons name="notifications-outline" size={19} color="#EAF0FF" />
                 </Pressable>
                 <Pressable style={styles.webIconBtn} onPress={() => pushSafe('/map')}>
                   <Ionicons name="map-outline" size={19} color="#EAF0FF" />
                 </Pressable>
-                <View style={styles.webAvatarBtn}>
+                <Pressable style={styles.webAvatarBtn} onPress={() => pushSafe('/(tabs)/profile')}>
                   <Text style={styles.webAvatarText}>{firstName.slice(0, 1).toUpperCase()}</Text>
-                </View>
+                </Pressable>
               </View>
             </View>
 
@@ -1239,11 +1245,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    minWidth: 160,
   },
-  webBrandName: {
-    fontSize: 22,
-    fontFamily: 'Poppins_700Bold',
-    color: '#0F172A',
+  webGreeting: {
+    fontSize: 16,
+    fontFamily: 'Poppins_600SemiBold',
+    color: '#E8F0FF',
+    lineHeight: 22,
+  },
+  webLocationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
+  webLocationText: {
+    fontSize: 12,
+    fontFamily: 'Poppins_400Regular',
+    color: '#94A2C4',
   },
   webSearchWrap: {
     flex: 1,
@@ -1253,38 +1272,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255,255,255,0.07)',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: 'rgba(255,255,255,0.12)',
     maxWidth: 600,
   },
   webSearchInput: {
     flex: 1,
-    height: '100%',
-    color: '#0F172A',
+    height: '100%' as unknown as number,
+    color: '#E8F0FF',
     fontSize: 14,
     fontFamily: 'Poppins_500Medium',
-  },
+  } as object,
   webTopActions: {
     flexDirection: 'row',
-    gap: 16,
+    gap: 10,
     alignItems: 'center',
-  },
-  webLocationBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  webLocationTextBtn: {
-    fontSize: 14,
-    fontFamily: 'Poppins_500Medium',
-    color: '#334155',
   },
   webIconBtn: {
     width: 40,
@@ -1292,9 +1295,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255,255,255,0.07)',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   webAvatarBtn: {
     width: 40,

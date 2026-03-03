@@ -25,7 +25,7 @@ const SECTIONS = [
 
 export default function CookiesScreen() {
   const insets = useSafeAreaInsets();
-  const webTop = Platform.OS === 'web' ? 67 : 0;
+  const webTop = Platform.OS === 'web' ? 0 : 0;
   const colors = useColors();
 
   return (

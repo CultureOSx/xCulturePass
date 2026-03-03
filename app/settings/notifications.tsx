@@ -16,7 +16,7 @@ const NOTIFICATION_SETTINGS = [
 
 export default function NotificationSettingsScreen() {
   const insets = useSafeAreaInsets();
-  const webTop = Platform.OS === 'web' ? 67 : 0;
+  const webTop = Platform.OS === 'web' ? 0 : 0;
   const colors = useColors();
   const [settings, setSettings] = useState<Record<string, boolean>>({
     eventReminders:   true,
