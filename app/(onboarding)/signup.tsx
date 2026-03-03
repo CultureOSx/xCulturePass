@@ -1,0 +1,235 @@
+import { View, Text, Pressable, StyleSheet, Platform, KeyboardAvoidingView, ScrollView, useWindowDimensions } from 'react-native';
+import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Colors } from '@/constants/theme';
+import { useState } from 'react';
+import * as Haptics from 'expo-haptics';
+import { auth as firebaseAuth } from '@/lib/firebase';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { apiRequest } from '@/lib/query-client';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Checkbox } from '@/components/ui/Checkbox';
+import { PasswordStrengthIndicator } from '@/components/ui/PasswordStrengthIndicator';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useColors } from '@/hooks/useColors';
+
+export default function SignUpScreen() {
+  const insets = useSafeAreaInsets();
+  const colors = useColors();
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === 'web' && width >= 1024;
+  const topInset = Platform.OS === 'web' ? 67 : insets.top;
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [agreed, setAgreed] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const isValid = name.trim().length > 1 && email.includes('@') && password.length >= 6 && agreed;
+
+  const handleSignUp = async () => {
+    setError('');
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      setError('Please enter a valid email address.');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const credential = await createUserWithEmailAndPassword(firebaseAuth, normalizedEmail, password);
+      await updateProfile(credential.user, { displayName: name.trim() });
+
+      // Create Firestore user profile (fire-and-forget — non-blocking)
+      credential.user.getIdToken().then((idToken) => {
+        apiRequest(
+          'POST',
+          'api/auth/register',
+          { displayName: name.trim() },
+          { headers: { Authorization: `Bearer ${idToken}` } }
+        ).catch(() => { /* profile created lazily by GET /api/auth/me on next load */ });
+      });
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      router.push('/(onboarding)/location');
+    } catch (e: unknown) {
+      const code = (e as { code?: string }).code;
+      if (code === 'auth/email-already-in-use') {
+        setError('An account with this email already exists.');
+      } else if (code === 'auth/invalid-email') {
+        setError('Please enter a valid email address.');
+      } else if (code === 'auth/weak-password') {
+        setError('Password must be at least 6 characters.');
+      } else {
+        setError('Registration failed. Please try again.');
+      }
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formContent = (
+    <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scrollContent}>
+          <View style={styles.logoRow}>
+            <View style={styles.logoCircle}><Ionicons name="globe-outline" size={34} color={Colors.primary} /></View>
+            <Text style={[styles.brandLabel, { color: colors.textInverse + '99' }]}>culturepass.app</Text>
+          </View>
+          <Text style={[styles.title, { color: colors.textInverse }]}>Create Account</Text>
+          <Text style={[styles.benefitsRow, { color: colors.textInverse + '8C' }]}>Free events · Community access · Exclusive perks</Text>
+          <Text style={[styles.subtitle, { color: colors.textInverse + 'D9' }]}>Join thousands of community members celebrating culture together.</Text>
+
+          {error && <Text style={styles.errorText}>{error}</Text>}
+
+          <View style={styles.form}>
+            <Input
+              label="Full Name"
+              placeholder="Enter your full name"
+              leftIcon="person-outline"
+              value={name}
+              onChangeText={(value) => {
+                setName(value);
+                if (error) setError('');
+              }}
+              autoCapitalize="words"
+            />
+
+            <Input
+              label="Email Address"
+              placeholder="you@example.com"
+              leftIcon="mail-outline"
+              value={email}
+              onChangeText={(value) => {
+                setEmail(value);
+                if (error) setError('');
+              }}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+
+            <View>
+              <Input
+                label="Password"
+                placeholder="Min. 6 characters"
+                leftIcon="lock-closed-outline"
+                value={password}
+                onChangeText={(value) => {
+                  setPassword(value);
+                  if (error) setError('');
+                }}
+                secureTextEntry
+                passwordToggle
+                hint={password.length > 0 && password.length < 6 ? 'Password must be at least 6 characters' : undefined}
+              />
+              {password.length > 0 && <PasswordStrengthIndicator password={password} />}
+            </View>
+
+            <Checkbox
+              checked={agreed}
+              onToggle={setAgreed}
+              label={
+                <Text style={styles.checkText}>
+                  I agree to the <Text style={[styles.linkText, { color: colors.warning }]} onPress={() => router.push('/legal/terms')}>Terms of Service</Text> and <Text style={[styles.linkText, { color: colors.warning }]} onPress={() => router.push('/legal/privacy')}>Privacy Policy</Text>
+                </Text>
+              }
+            />
+          </View>
+
+          <Button
+            variant="primary"
+            size="lg"
+            fullWidth
+            rightIcon="arrow-forward"
+            loading={loading}
+            disabled={!isValid || loading}
+            onPress={handleSignUp}
+            style={styles.submitBtn}
+          >
+            Create Account
+          </Button>
+
+          <Pressable style={styles.switchRow} onPress={() => router.replace('/login')}>
+            <Text style={[styles.switchText, { color: colors.textInverse + 'D9' }]}>Already have an account? <Text style={[styles.switchLink, { color: colors.warning }]}>Sign In</Text></Text>
+          </Pressable>
+        </ScrollView>
+  );
+
+  // Desktop web: centred card on full-screen gradient
+  if (isDesktop) {
+    return (
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="height">
+        <View style={[styles.container, styles.desktopWrapper]}>
+          <LinearGradient
+            colors={['#001F4D', '#0081C8', '#EE334E', '#FCB131']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0.95 }}
+            style={StyleSheet.absoluteFillObject}
+          />
+          <View style={styles.desktopBackRow}>
+            <Pressable onPress={() => router.replace('/')} hitSlop={8} style={styles.desktopBackBtn}>
+              <Ionicons name="chevron-back" size={18} color={colors.textInverse} />
+              <Text style={[styles.desktopBackText, { color: colors.textInverse }]}>Back to Home</Text>
+            </Pressable>
+          </View>
+          <View style={styles.desktopCard}>
+            {formContent}
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    );
+  }
+
+  return (
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={0}>
+      <View style={[styles.container, { paddingTop: topInset }]}>
+        <LinearGradient
+          colors={['#001F4D', '#0081C8', '#EE334E', '#FCB131']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0.95 }}
+          style={StyleSheet.absoluteFillObject}
+        />
+        <View style={styles.header}>
+          <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/')} hitSlop={8}><Ionicons name="chevron-back" size={24} color={colors.textInverse} /></Pressable>
+        </View>
+        {formContent}
+      </View>
+    </KeyboardAvoidingView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#001F4D' },
+  header: { paddingHorizontal: 20, paddingVertical: 12 },
+  scrollContent: { paddingHorizontal: 24, paddingBottom: 40 },
+  logoRow: { alignItems: 'center', marginTop: 12, marginBottom: 20 },
+  logoCircle: { width: 68, height: 68, borderRadius: 34, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
+  brandLabel: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', letterSpacing: 1.5, marginTop: 10 },
+  title: { fontSize: 28, fontFamily: 'Poppins_700Bold', marginBottom: 8 },
+  subtitle: { fontSize: 15, fontFamily: 'Poppins_400Regular', lineHeight: 22, marginBottom: 28 },
+  errorText: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: Colors.error, textAlign: 'center', marginBottom: 16, backgroundColor: Colors.error + '15', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 12 },
+  form: { gap: 20, marginBottom: 28 },
+  label: { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
+  submitBtn: { marginBottom: 16 },
+  switchRow: { alignItems: 'center' },
+  switchText: { fontSize: 14, fontFamily: 'Poppins_400Regular' },
+  switchLink: { fontFamily: 'Poppins_600SemiBold' },
+  benefitsRow: { fontSize: 13, fontFamily: 'Poppins_400Regular', marginBottom: 4 },
+  checkText: { flex: 1, fontSize: 13, fontFamily: 'Poppins_400Regular', lineHeight: 20 },
+  linkText: { fontFamily: 'Poppins_600SemiBold' },
+  desktopWrapper: { alignItems: 'center', justifyContent: 'center' },
+  desktopBackRow: { position: 'absolute', top: 20, left: 32, zIndex: 10 },
+  desktopBackBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 },
+  desktopBackText: { fontSize: 14, fontFamily: 'Poppins_500Medium' },
+  desktopCard: {
+    width: 480,
+    backgroundColor: 'rgba(0,31,77,0.85)',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+    overflow: 'hidden',
+    ...(Platform.OS === 'web' ? { boxShadow: '0 24px 64px rgba(0,0,0,0.45)' } as object : {}),
+  },
+});

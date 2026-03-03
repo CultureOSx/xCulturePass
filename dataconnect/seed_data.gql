@@ -1,0 +1,44 @@
+mutation CreateDemoData @transaction @auth(level: USER, insecureReason: "This mutation inserts demo data and should only be run by authenticated users for testing purposes.") {
+  # Example for a hypothetical 'Movie' table
+  movie_insertMany(data: [
+    {
+      id: "550e8400-e29b-41d4-a716-446655440000",
+      title: "The Great Adventure",
+      releaseYear: 2023,
+      genre: "Adventure",
+      rating: 8.5,
+      description: "A thrilling journey across uncharted lands.",
+      imageUrl: "https://example.com/great_adventure.jpg",
+      tags: ["adventure", "fantasy"]
+    },
+    {
+      id: "550e8400-e29b-41d4-a716-446655440001",
+      title: "Mystery in the Manor",
+      releaseYear: 2022,
+      genre: "Mystery",
+      rating: 7.9,
+      description: "Detectives unravel a dark secret in an old manor.",
+      imageUrl: "https://example.com/mystery_manor.jpg",
+      tags: ["mystery", "thriller"]
+    }
+  ])
+  # Example for a hypothetical 'Product' table
+  product_insertMany(data: [
+    {
+      id: "prod-001",
+      name: "Wireless Headphones",
+      price: 99.99,
+      description: "High-quality sound with active noise cancellation.",
+      category: "Electronics",
+      stock: 150
+    },
+    {
+      id: "prod-002",
+      name: "Ergonomic Office Chair",
+      price: 349.00,
+      description: "Comfortable and supportive for long work hours.",
+      category: "Office Furniture",
+      stock: 75
+    }
+  ])
+}

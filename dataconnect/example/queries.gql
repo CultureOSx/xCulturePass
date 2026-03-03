@@ -1,0 +1,53 @@
+query ListAllCommunities @auth(level: PUBLIC, insecureReason: "This operation is safe to expose to the public as it only lists general community information.") {
+  communities {
+    id
+    name
+    description
+    culturalFocus
+    photoUrl
+    createdAt
+  }
+}
+
+query GetMyEvents @auth(level: USER, insecureReason: "This operation is safe to expose to all logged in users as it filters events by community memberships related to the authenticated user.") {
+  events(where: {community: {communityMemberships_on_community: {user: {id_expr: "auth.uid"}}}}) {
+    id
+    title
+    description
+    eventDate
+    location
+    startTime
+    endTime
+    photoUrl
+    community {
+      name
+    }
+  }
+}
+
+mutation CreateNewBusiness($name: String!, $category: String!, $description: String!, $address: String!, $photoUrl: String, $website: String, $phoneNumber: String, $culturalSpecialty: String) @auth(level: USER, insecureReason: "This operation allows any logged-in user to create a new business, which is an expected public contribution behavior.") {
+  business_insert(data: {
+    name: $name,
+    category: $category,
+    description: $description,
+    address: $address,
+    createdAt_expr: "request.time",
+    photoUrl: $photoUrl,
+    website: $website,
+    phoneNumber: $phoneNumber,
+    culturalSpecialty: $culturalSpecialty
+  }) {
+    id
+  }
+}
+
+mutation JoinCommunity($communityId: UUID!) @auth(level: USER, insecureReason: "This operation is safe to expose to all logged-in users as it allows them to join a community, linking their auth.uid.") {
+  communityMembership_insert(data: {
+    userId_expr: "auth.uid",
+    communityId: $communityId,
+    joinedAt_expr: "request.time"
+  }) {
+    userId
+    communityId
+  }
+}

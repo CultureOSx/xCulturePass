@@ -1,0 +1,46 @@
+type User @table {
+  displayName: String!
+  email: String!
+  createdAt: Timestamp!
+  photoUrl: String
+  bio: String
+  culturalBackground: String
+}
+
+type Community @table {
+  name: String!
+  description: String!
+  createdAt: Timestamp!
+  photoUrl: String
+  culturalFocus: String
+}
+
+type Event @table {
+  title: String!
+  description: String!
+  eventDate: Date!
+  location: String!
+  createdAt: Timestamp!
+  community: Community
+  photoUrl: String
+  startTime: String
+  endTime: String
+}
+
+type Business @table {
+  name: String!
+  category: String!
+  description: String!
+  address: String!
+  createdAt: Timestamp!
+  photoUrl: String
+  website: String
+  phoneNumber: String
+  culturalSpecialty: String
+}
+
+type CommunityMembership @table(key: ["user", "community"]) {
+  user: User!
+  community: Community!
+  joinedAt: Timestamp!
+}
