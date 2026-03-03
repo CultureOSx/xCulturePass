@@ -11,6 +11,7 @@ import { api } from '@/lib/api';
 import { FilterChipRow, FilterItem } from '@/components/FilterChip';
 import { useAuth } from '@/lib/auth';
 import { useColors } from '@/hooks/useColors';
+import { Colors } from '@/constants/theme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 interface Perk {
@@ -472,7 +473,7 @@ const s = StyleSheet.create({
   empty: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, gap: 12, borderRadius: 16, marginHorizontal: 4 },
   emptyText:{ fontSize: 15, fontFamily: 'Poppins_500Medium' },
 
-  perkCard:   { borderRadius: 16, padding: 18, marginBottom: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2, borderWidth: Platform.OS === 'web' ? 1 : 0, borderColor: '#E2E8F0' },
+  perkCard:   { borderRadius: 16, padding: 18, marginBottom: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2, borderWidth: Platform.OS === 'web' ? 1 : 0, borderColor: Colors.borderLight },
   perkTop:    { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 10 },
   perkBadge:  { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   perkInfo:   { flex: 1 },

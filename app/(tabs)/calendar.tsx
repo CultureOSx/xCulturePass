@@ -6,6 +6,7 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
+import { Colors } from '@/constants/theme';
 import { useQuery } from '@tanstack/react-query';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { api } from '@/lib/api';
@@ -365,7 +366,7 @@ const s = StyleSheet.create({
   empty: { alignItems: 'center', justifyContent: 'center', paddingVertical: 48, gap: 10, borderRadius: 16 },
   emptyText: { fontFamily: 'Poppins_500Medium', fontSize: 15 },
 
-  eventRow: { flexDirection: 'row', alignItems: 'center', borderRadius: 14, marginBottom: 10, padding: 12, gap: 12, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2, borderWidth: Platform.OS === 'web' ? 1 : 0, borderColor: '#E2E8F0' },
+  eventRow: { flexDirection: 'row', alignItems: 'center', borderRadius: 14, marginBottom: 10, padding: 12, gap: 12, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2, borderWidth: Platform.OS === 'web' ? 1 : 0, borderColor: Colors.borderLight },
   eventImg: { width: 60, height: 60, borderRadius: 12 },
   eventInfo: { flex: 1, gap: 3 },
   eventTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 14 },

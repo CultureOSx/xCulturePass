@@ -1222,7 +1222,7 @@ const styles = StyleSheet.create({
   exploreCtaSub: {
     fontSize: 13,
     fontFamily: 'Poppins_400Regular',
-    color: '#636366',
+    color: Colors.textTertiary,
     marginTop: 2,
   },
   webScrollContent: {
@@ -1305,7 +1305,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#EE334E',
+    backgroundColor: Colors.error,
     overflow: 'hidden',
   },
   webAvatarText: {
@@ -1322,9 +1322,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: Colors.borderLight,
     overflow: 'hidden',
   },
   webCategoryChipActive: {
@@ -1333,10 +1333,10 @@ const styles = StyleSheet.create({
   webCategoryChipText: {
     fontSize: 13,
     fontFamily: 'Poppins_500Medium',
-    color: '#64748B',
+    color: Colors.textSecondary,
   },
   webCategoryChipTextActive: {
-    color: '#0F172A',
+    color: Colors.text,
     fontFamily: 'Poppins_600SemiBold',
   },
   activityTile: {
