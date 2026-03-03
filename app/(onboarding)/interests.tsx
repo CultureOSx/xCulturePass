@@ -20,7 +20,7 @@ const DEFAULT_EXPANDED: Record<string, boolean> = interestCategories.reduce((acc
 
 export default function InterestsScreen() {
   const insets = useSafeAreaInsets();
-  const topInset = Platform.OS === 'web' ? 67 : insets.top;
+  const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const colors = useColors();
   const { user } = useAuth();
   const { state, setInterests: setSelectedInterests, completeOnboarding } = useOnboarding();

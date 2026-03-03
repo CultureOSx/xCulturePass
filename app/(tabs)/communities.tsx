@@ -160,7 +160,7 @@ function CommunityCard({ profile }: { profile: Profile }) {
 export default function CommunitiesScreen() {
   const insets  = useSafeAreaInsets();
   const colors  = useColors();
-  const topInset    = isWeb ? 67 : insets.top;
+  const topInset    = isWeb ? 0 : insets.top;
   const bottomInset = isWeb ? 34 : insets.bottom;
 
   const [search,        setSearch]        = useState('');

@@ -57,7 +57,7 @@ function capitalize(s: string): string {
 // ---------------------------------------------------------------------------
 export default function ProfileScreen() {
   const insets   = useSafeAreaInsets();
-  const topInset = Platform.OS === 'web' ? 67 : insets.top;
+  const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const { width } = useWindowDimensions();
   const isDesktopWeb = Platform.OS === 'web' && width >= 1024;
   const colors   = useColors();

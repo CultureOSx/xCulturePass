@@ -10,7 +10,7 @@ import * as Haptics from 'expo-haptics';
 export default function RestaurantDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
-  const topInset = Platform.OS === 'web' ? 67 : insets.top;
+  const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const { data: rest, isLoading } = useQuery({
     queryKey: ['/api/restaurants', id],
     queryFn: () => api.restaurants.get(id),

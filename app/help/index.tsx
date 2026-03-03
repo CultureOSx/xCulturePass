@@ -102,7 +102,7 @@ const QUICK_LINKS = [
 
 export default function HelpScreen() {
   const insets = useSafeAreaInsets();
-  const webTop = isWeb ? 67 : 0;
+  const webTop = isWeb ? 0 : 0;
   const colors = useColors();
 
   const [search, setSearch] = useState('');

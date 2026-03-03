@@ -57,7 +57,7 @@ const filterItems: FilterItem[] = CATEGORIES.map(cat => ({ id: cat.id, label: ca
 
 export default function PerksTabScreen() {
   const insets   = useSafeAreaInsets();
-  const webTop   = Platform.OS === 'web' ? 67 : 0;
+  const webTop   = Platform.OS === 'web' ? 0 : 0;
   const { width } = useWindowDimensions();
   const isDesktopWeb = Platform.OS === 'web' && width >= 1024;
   const colors   = useColors();

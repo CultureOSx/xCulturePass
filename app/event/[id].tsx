@@ -67,7 +67,7 @@ function cityToCoordinates(city?: string): { latitude: number; longitude: number
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
-  const topInset = Platform.OS === "web" ? 67 : insets.top;
+  const topInset = Platform.OS === "web" ? 0 : insets.top;
   const bottomInset = Platform.OS === "web" ? 34 : insets.bottom;
   const { data: event, isLoading } = useQuery({
     queryKey: ["/api/events", id],

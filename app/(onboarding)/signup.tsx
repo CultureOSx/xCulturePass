@@ -6,21 +6,30 @@ import { Colors } from '@/constants/theme';
 import { useState } from 'react';
 import * as Haptics from 'expo-haptics';
 import { auth as firebaseAuth } from '@/lib/firebase';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import {
+  createUserWithEmailAndPassword,
+  updateProfile,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithCredential,
+  OAuthProvider,
+} from 'firebase/auth';
 import { apiRequest } from '@/lib/query-client';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Checkbox } from '@/components/ui/Checkbox';
+import { SocialButton } from '@/components/ui/SocialButton';
 import { PasswordStrengthIndicator } from '@/components/ui/PasswordStrengthIndicator';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useColors } from '@/hooks/useColors';
+import * as AppleAuthentication from 'expo-apple-authentication';
 
 export default function SignUpScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === 'web' && width >= 1024;
-  const topInset = Platform.OS === 'web' ? 67 : insets.top;
+  const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -28,6 +37,66 @@ export default function SignUpScreen() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const isValid = name.trim().length > 1 && email.includes('@') && password.length >= 6 && agreed;
+
+  const handleGoogleSignUp = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      if (Platform.OS === 'web') {
+        const provider = new GoogleAuthProvider();
+        await signInWithPopup(firebaseAuth, provider);
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { GoogleSignin } = require('@react-native-google-signin/google-signin') as typeof import('@react-native-google-signin/google-signin');
+        GoogleSignin.configure({ webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID });
+        await GoogleSignin.hasPlayServices();
+        await GoogleSignin.signIn();
+        const tokens = await GoogleSignin.getTokens();
+        const credential = GoogleAuthProvider.credential(tokens.idToken);
+        await signInWithCredential(firebaseAuth, credential);
+      }
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      router.push('/(onboarding)/location');
+    } catch (e: unknown) {
+      const code = (e as { code?: string }).code;
+      if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request' && code !== '-5') {
+        setError('Google sign-up failed. Please try again.');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAppleSignUp = async () => {
+    if (Platform.OS !== 'ios') return;
+    setLoading(true);
+    setError('');
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+      const provider = new OAuthProvider('apple.com');
+      const firebaseCredential = provider.credential({
+        idToken: credential.identityToken ?? '',
+        rawNonce: credential.authorizationCode ?? '',
+      });
+      await signInWithCredential(firebaseAuth, firebaseCredential);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      router.push('/(onboarding)/location');
+    } catch (e: unknown) {
+      const code = (e as { code?: string }).code;
+      if (code !== 'ERR_REQUEST_CANCELED') {
+        setError('Apple sign-up failed. Please try again.');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSignUp = async () => {
     setError('');
@@ -151,6 +220,20 @@ export default function SignUpScreen() {
             Create Account
           </Button>
 
+          <View style={styles.socialDivider}>
+            <View style={styles.divLine} />
+            <Text style={[styles.divText, { color: colors.textInverse + 'D9' }]}>or sign up with</Text>
+            <View style={styles.divLine} />
+          </View>
+
+          <View style={styles.socialRow}>
+            <SocialButton provider="google" onPress={handleGoogleSignUp} disabled={loading} />
+            {Platform.OS === 'ios'
+              ? <SocialButton provider="apple" onPress={handleAppleSignUp} disabled={loading} />
+              : <SocialButton provider="apple" comingSoon disabled={loading} />
+            }
+          </View>
+
           <Pressable style={styles.switchRow} onPress={() => router.replace('/login')}>
             <Text style={[styles.switchText, { color: colors.textInverse + 'D9' }]}>Already have an account? <Text style={[styles.switchLink, { color: colors.warning }]}>Sign In</Text></Text>
           </Pressable>
@@ -212,7 +295,11 @@ const styles = StyleSheet.create({
   errorText: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: Colors.error, textAlign: 'center', marginBottom: 16, backgroundColor: Colors.error + '15', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 12 },
   form: { gap: 20, marginBottom: 28 },
   label: { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
-  submitBtn: { marginBottom: 16 },
+  submitBtn: { marginBottom: 20 },
+  socialDivider: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
+  divLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(255,255,255,0.35)' },
+  divText: { fontSize: 12, fontFamily: 'Poppins_400Regular' },
+  socialRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
   switchRow: { alignItems: 'center' },
   switchText: { fontSize: 14, fontFamily: 'Poppins_400Regular' },
   switchLink: { fontFamily: 'Poppins_600SemiBold' },

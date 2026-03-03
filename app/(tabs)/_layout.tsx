@@ -27,6 +27,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TabBarTokens, gradients } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
+import { WebSidebar } from '@/components/web/WebSidebar';
 
 // ---------------------------------------------------------------------------
 // Tab definitions
@@ -310,12 +311,31 @@ export default function TabLayout() {
     }
   }, [isWeb, pathname]);
 
+  // Desktop web: sidebar navigation on the left, content on the right (no tab bar)
+  if (isDesktop) {
+    return (
+      <View style={{ flex: 1, flexDirection: 'row', overflow: 'hidden' }}>
+        <WebSidebar />
+        <View style={{ flex: 1, overflow: 'hidden' }}>
+          <Tabs
+            initialRouteName="index"
+            screenOptions={{ headerShown: false }}
+            tabBar={() => null}
+          >
+            <TabScreens />
+          </Tabs>
+        </View>
+      </View>
+    );
+  }
+
+  // Mobile / tablet: bottom floating tab bar
   return (
     <View style={{ flex: 1, overflow: 'hidden' }}>
       <Tabs
         initialRouteName="index"
         screenOptions={{ headerShown: false }}
-        tabBar={(props) => <CustomTabBar {...props} position={isDesktop ? 'top' : 'bottom'} />}
+        tabBar={(props) => <CustomTabBar {...props} position="bottom" />}
       >
         <TabScreens />
       </Tabs>

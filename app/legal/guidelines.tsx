@@ -29,7 +29,7 @@ const RULES = [
 
 export default function CommunityGuidelinesScreen() {
   const insets = useSafeAreaInsets();
-  const topInset = Platform.OS === 'web' ? 67 : insets.top;
+  const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const colors = useColors();
 
   return (

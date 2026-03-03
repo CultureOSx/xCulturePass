@@ -74,7 +74,7 @@ function dedupeList(items: string[]): string[] {
 
 export default function CultureMatchScreen() {
   const insets = useSafeAreaInsets();
-  const topInset = Platform.OS === 'web' ? 67 : insets.top;
+  const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const colors = useColors();
   const { state, setEthnicityText, setLanguages } = useOnboarding();
 

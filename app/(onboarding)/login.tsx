@@ -6,7 +6,13 @@ import { Colors } from '@/constants/theme';
 import { useState } from 'react';
 import * as Haptics from 'expo-haptics';
 import { auth as firebaseAuth } from '@/lib/firebase';
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import {
+  signInWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithCredential,
+  OAuthProvider,
+} from 'firebase/auth';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Checkbox } from '@/components/ui/Checkbox';
@@ -14,6 +20,7 @@ import { SocialButton } from '@/components/ui/SocialButton';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useColors } from '@/hooks/useColors';
+import * as AppleAuthentication from 'expo-apple-authentication';
 
 function isInternalRoute(value: string) {
   return value.startsWith('/') && !value.startsWith('//') && !value.includes('://');
@@ -24,7 +31,7 @@ export default function LoginScreen() {
   const colors = useColors();
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === 'web' && width >= 1024;
-  const topInset = Platform.OS === 'web' ? 67 : insets.top;
+  const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const { state: onboardingState } = useOnboarding();
   const searchParams = useLocalSearchParams();
   const [email, setEmail] = useState('');
@@ -59,25 +66,64 @@ export default function LoginScreen() {
   };
 
   const handleGoogleSignIn = async () => {
-    if (Platform.OS !== 'web') {
-      // Native Google Sign-In requires @react-native-google-signin/google-signin
-      // which needs a native build. This is a planned feature.
-      Alert.alert(
-        'Use Email Sign-In',
-        'Google sign-in on the mobile app is coming soon. Please sign in with your email and password.',
-      );
-      return;
-    }
     setLoading(true);
     try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(firebaseAuth, provider);
+      if (Platform.OS === 'web') {
+        const provider = new GoogleAuthProvider();
+        await signInWithPopup(firebaseAuth, provider);
+      } else {
+        // Native: use @react-native-google-signin/google-signin
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { GoogleSignin } = require('@react-native-google-signin/google-signin') as typeof import('@react-native-google-signin/google-signin');
+        GoogleSignin.configure({
+          webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+        });
+        await GoogleSignin.hasPlayServices();
+        const userInfo = await GoogleSignin.signIn();
+        const tokens = await GoogleSignin.getTokens();
+        const credential = GoogleAuthProvider.credential(tokens.idToken);
+        await signInWithCredential(firebaseAuth, credential);
+      }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       postAuthRoute();
     } catch (e: unknown) {
       const code = (e as { code?: string }).code;
-      if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
+      if (
+        code !== 'auth/popup-closed-by-user' &&
+        code !== 'auth/cancelled-popup-request' &&
+        code !== '-5'  // Google Sign-In cancelled by user on native
+      ) {
         setError('Google sign-in failed. Please try again.');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    if (Platform.OS !== 'ios') return;
+    setLoading(true);
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+
+      const provider = new OAuthProvider('apple.com');
+      const firebaseCredential = provider.credential({
+        idToken: credential.identityToken ?? '',
+        rawNonce: credential.authorizationCode ?? '',
+      });
+      await signInWithCredential(firebaseAuth, firebaseCredential);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      postAuthRoute();
+    } catch (e: unknown) {
+      const code = (e as { code?: string }).code;
+      if (code !== 'ERR_REQUEST_CANCELED') {
+        setError('Apple sign-in failed. Please try again.');
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       }
     } finally {
@@ -188,7 +234,10 @@ export default function LoginScreen() {
 
       <View style={styles.socialRow}>
         <SocialButton provider="google" onPress={handleGoogleSignIn} disabled={loading} />
-        <SocialButton provider="apple" comingSoon disabled={loading} />
+        {Platform.OS === 'ios'
+          ? <SocialButton provider="apple" onPress={handleAppleSignIn} disabled={loading} />
+          : <SocialButton provider="apple" comingSoon disabled={loading} />
+        }
       </View>
 
       <Pressable style={styles.switchRow} onPress={() => router.replace('/signup')}>

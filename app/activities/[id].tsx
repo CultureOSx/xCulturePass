@@ -10,7 +10,7 @@ import * as Haptics from 'expo-haptics';
 export default function ActivityDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
-  const topInset = Platform.OS === 'web' ? 67 : insets.top;
+  const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const { data: act, isLoading } = useQuery({
     queryKey: ['/api/activities', id],
     queryFn: () => api.activities.get(id),

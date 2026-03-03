@@ -60,7 +60,7 @@ function parseCsv(value: string): string[] {
 
 export default function AdminNotificationsScreen() {
   const insets = useSafeAreaInsets();
-  const webTop = Platform.OS === 'web' ? 67 : 0;
+  const webTop = Platform.OS === 'web' ? 0 : 0;
   const colors = useColors();
   const { user } = useAuth();
   const { hasMinRole, isLoading: roleLoading } = useRole();

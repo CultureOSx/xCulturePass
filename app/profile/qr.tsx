@@ -41,7 +41,7 @@ const CORNER_WIDTH = 3;
 
 export default function QRScreen() {
   const insets      = useSafeAreaInsets();
-  const topInset    = Platform.OS === 'web' ? 67 : insets.top;
+  const topInset    = Platform.OS === 'web' ? 0 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
   const colors      = useColors();
   const [copied, setCopied] = useState(false);

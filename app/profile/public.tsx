@@ -39,7 +39,7 @@ import { LoadingSkeleton } from './components/LoadingSkeleton';
 export default function PublicProfileScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const topInset    = Platform.OS === 'web' ? 67 : insets.top;
+  const topInset    = Platform.OS === 'web' ? 0 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
   const { data: usersData, isLoading } = useQuery<User[]>({ queryKey: ['/api/users'] });

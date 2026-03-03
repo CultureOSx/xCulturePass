@@ -90,7 +90,7 @@ export default function ArtistDetailScreen() {
     .filter(Boolean)
     .join(", ");
 
-  const webTopInset = Platform.OS === "web" ? 67 : 0;
+  const webTopInset = Platform.OS === "web" ? 0 : 0;
 
   /* ---------------- UI ---------------- */
 

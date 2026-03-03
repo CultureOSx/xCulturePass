@@ -12,7 +12,7 @@ import { useNearestCity } from '@/hooks/useNearestCity';
 
 export default function LocationScreen() {
   const insets   = useSafeAreaInsets();
-  const topInset = Platform.OS === 'web' ? 67 : insets.top;
+  const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const colors   = useColors();
   const { state, setCountry, setCity } = useOnboarding();
   const [selectedCountry, setSelectedCountry] = useState(state.country);

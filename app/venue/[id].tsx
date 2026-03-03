@@ -29,7 +29,7 @@ export default function VenueDetailScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
   const navigation = useNavigation();
-  const webTopInset = Platform.OS === "web" ? 67 : 0;
+  const webTopInset = Platform.OS === "web" ? 0 : 0;
 
   const goBack = useCallback(() => {
     if (navigation.canGoBack()) {
