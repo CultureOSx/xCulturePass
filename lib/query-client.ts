@@ -83,7 +83,7 @@ async function throwIfResNotOk(res: Response): Promise<void> {
     errorText = await res.text();
   } catch {}
 
-  const error = new Error(`${res.status}: ${errorText}`) as Error & { status: number; response: string };
+  const error = new Error(`${res.status}: ${errorText} (${res.url})`) as Error & { status: number; response: string };
   error.status = res.status;
   error.response = errorText;
   throw error;
@@ -93,6 +93,8 @@ async function throwIfResNotOk(res: Response): Promise<void> {
  * Auth-aware API request. Reads token from module-level store (set by AuthProvider)
  * rather than calling useAuth() which would violate React hook rules.
  */
+const API_TIMEOUT_MS = 30_000; // 30 second timeout for API requests
+
 export async function apiRequest(
   method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',
   route: string,
@@ -111,14 +113,18 @@ export async function apiRequest(
   }
 
   // expo/fetch uses FetchRequestInit which rejects null signal — strip it out.
-  const { signal, ...safeOptions } = options as RequestInit & { signal?: AbortSignal | null };
+  const { signal: callerSignal, ...safeOptions } = options as RequestInit & { signal?: AbortSignal | null };
+
+  // Use caller's signal if provided, otherwise create a timeout signal
+  const signal = callerSignal ?? AbortSignal.timeout(API_TIMEOUT_MS);
+
   const res = await fetch(url.toString(), {
     ...safeOptions,
     method,
     headers,
     body: data !== undefined ? JSON.stringify(data) : undefined,
     credentials: 'include',
-    ...(signal != null ? { signal } : {}),
+    signal,
   } as Parameters<typeof fetch>[1]);
 
   await throwIfResNotOk(res);

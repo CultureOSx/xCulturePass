@@ -3,7 +3,7 @@
     "name": "CulturePass",
     "slug": "culturepass",
     "version": "1.1.0",
-    "description": "CulturePass — Your cultural lifestyle platform. Discover events, join diaspora communities, find local businesses, and celebrate diversity across Australia, New Zealand, UAE, UK & Canada.",
+    "description": "CulturePass \u2014 Your cultural lifestyle platform. Discover events, join diaspora communities, find local businesses, and celebrate diversity across Australia, New Zealand, UAE, UK & Canada.",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "culturepass",
@@ -25,7 +25,10 @@
         "NSContactsUsageDescription": "CulturePass accesses your contacts to help you connect with friends on the platform.",
         "NSFaceIDUsageDescription": "CulturePass uses Face ID for quick and secure sign-in.",
         "ITSAppUsesNonExemptEncryption": false,
-        "UIBackgroundModes": ["fetch", "remote-notification"]
+        "UIBackgroundModes": [
+          "fetch",
+          "remote-notification"
+        ]
       },
       "config": {
         "usesNonExemptEncryption": false,
@@ -66,7 +69,10 @@
               "pathPrefix": "/"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ],
       "permissions": [
@@ -81,7 +87,7 @@
     },
     "web": {
       "favicon": "./assets/images/favicon.png",
-      "name": "CulturePass — Cultural Events & Communities",
+      "name": "CulturePass \u2014 Cultural Events & Communities",
       "shortName": "CulturePass",
       "description": "Discover cultural events, join diaspora communities, find local businesses, and celebrate diversity. CulturePass connects you with cultural experiences across Australia, New Zealand, UAE, UK & Canada.",
       "lang": "en-AU",
@@ -110,14 +116,7 @@
           "locationWhenInUsePermission": "CulturePass uses your location to show events and communities near you."
         }
       ],
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/images/notification-icon.png",
-          "color": "#2C2A72",
-          "sounds": ["./assets/sounds/notification.wav"]
-        }
-      ],
+      "expo-notifications",
       [
         "expo-camera",
         {

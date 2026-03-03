@@ -37,7 +37,7 @@ import EventCard from '@/components/Discover/EventCard';
 import CategoryCard from '@/components/Discover/CategoryCard';
 import CommunityCard from '@/components/Discover/CommunityCard';
 import CityCard from '@/components/Discover/CityCard';
-import { Colors } from '@/constants/theme';
+import { Colors, CategoryColors, gradients } from '@/constants/theme';
 import { FilterChip } from '@/components/FilterChip';
 import SectionHeader from '@/components/Discover/SectionHeader';
 import SpotlightCard, { SpotlightItem } from '@/components/Discover/SpotlightCard';
@@ -52,7 +52,7 @@ const superAppSections = [
   { id: 'movies', label: 'Movies', icon: 'film', color: Colors.error, route: '/movies' },
   { id: 'restaurants', label: 'Dining', icon: 'restaurant', color: Colors.accent, route: '/restaurants' },
   { id: 'activities', label: 'Activities', icon: 'compass', color: Colors.success, route: '/activities' },
-  { id: 'shopping', label: 'Shopping', icon: 'bag-handle', color: '#AF52DE', route: '/shopping' },
+  { id: 'shopping', label: 'Shopping', icon: 'bag-handle', color: CategoryColors.shopping, route: '/shopping' },
   { id: 'events', label: 'Events', icon: 'calendar', color: Colors.tint, route: '/(tabs)/explore' },
   { id: 'directory', label: 'Directory', icon: 'storefront', color: Colors.secondary, route: '/(tabs)/directory' },
 ];
@@ -67,20 +67,20 @@ const SECTION_ROUTES: Record<string, string> = {
 };
 
 const browseCategories = [
-  { id: 'c1', label: 'Music', icon: 'musical-notes', color: '#FF6B6B' },
-  { id: 'c2', label: 'Dance', icon: 'body', color: '#4ECDC4' },
-  { id: 'c3', label: 'Food', icon: 'restaurant', color: Colors.warning },
-  { id: 'c4', label: 'Art', icon: 'color-palette', color: '#A855F7' },
-  { id: 'c5', label: 'Wellness', icon: 'heart', color: Colors.error },
-  { id: 'c6', label: 'Movies', icon: 'film', color: Colors.info },
-  { id: 'c7', label: 'Workshop', icon: 'construct', color: Colors.accent },
-  { id: 'c8', label: 'Heritage', icon: 'library', color: '#8B4513' },
-  { id: 'c9', label: 'Activities & Play', icon: 'game-controller', color: '#EC4899' },
-  { id: 'c10', label: 'Nightlife', icon: 'moon', color: '#6366F1' },
-  { id: 'c11', label: 'Comedy', icon: 'happy', color: '#F59E0B' },
-  { id: 'c12', label: 'Sports', icon: 'football', color: '#EF4444' },
-  { id: 'c13', label: 'Historical Monuments', icon: 'build', color: '#94A3B8' },
-  { id: 'c14', label: 'Featured Artists', icon: 'star', color: '#FBBF24' },
+  { id: 'c1', label: 'Music', icon: 'musical-notes', color: CategoryColors.music },
+  { id: 'c2', label: 'Dance', icon: 'body', color: CategoryColors.dance },
+  { id: 'c3', label: 'Food', icon: 'restaurant', color: CategoryColors.food },
+  { id: 'c4', label: 'Art', icon: 'color-palette', color: CategoryColors.art },
+  { id: 'c5', label: 'Wellness', icon: 'heart', color: CategoryColors.wellness },
+  { id: 'c6', label: 'Movies', icon: 'film', color: CategoryColors.movies },
+  { id: 'c7', label: 'Workshop', icon: 'construct', color: CategoryColors.workshop },
+  { id: 'c8', label: 'Heritage', icon: 'library', color: CategoryColors.heritage },
+  { id: 'c9', label: 'Activities & Play', icon: 'game-controller', color: CategoryColors.activities },
+  { id: 'c10', label: 'Nightlife', icon: 'moon', color: CategoryColors.nightlife },
+  { id: 'c11', label: 'Comedy', icon: 'happy', color: CategoryColors.comedy },
+  { id: 'c12', label: 'Sports', icon: 'football', color: CategoryColors.sports },
+  { id: 'c13', label: 'Historical Monuments', icon: 'build', color: CategoryColors.monuments },
+  { id: 'c14', label: 'Featured Artists', icon: 'star', color: CategoryColors.artists },
 ];
 
 const WEB_CATEGORIES = ['All', 'Music', 'Dance', 'Food', 'Art', 'Wellness', 'Movies', 'Workshop', 'Heritage', 'Activities & Play', 'Nightlife', 'Comedy', 'Sports', 'Historical Monuments', 'Featured Artists'];
@@ -617,7 +617,7 @@ export default function HomeScreen() {
         <View style={styles.heroSection}>
           <Text style={styles.heroSubtitle}>{timeGreeting}, {firstName}</Text>
           <LinearGradient
-            colors={['#FF8C42', '#FF5E5B', '#2C2A72']}
+            colors={gradients.culturepassBrandReversed}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={{ borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 }}
@@ -890,10 +890,10 @@ export default function HomeScreen() {
             <View style={styles.bannerDecoration2} />
             <View style={styles.plusBannerLeft}>
               <View style={styles.plusBannerIconWrap}>
-                <Ionicons name="star" size={20} color="#FFD700" />
+                <Ionicons name="star" size={20} color={Colors.gold} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.plusBannerTitle}>CulturePass <Text style={{ color: '#FFD700' }}>PRO</Text></Text>
+                <Text style={styles.plusBannerTitle}>CulturePass <Text style={{ color: Colors.gold }}>PRO</Text></Text>
                 <Text style={styles.plusBannerSub}>2% cashback & exclusive VIP access</Text>
               </View>
             </View>
@@ -913,7 +913,7 @@ export default function HomeScreen() {
             onPress={() => router.push('/perks')}
           >
             <LinearGradient
-              colors={['#5856D6', '#3634A3']}
+              colors={gradients.primary}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={StyleSheet.absoluteFillObject}
@@ -1168,7 +1168,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   plusBannerCta: {
-    backgroundColor: '#FFD700',
+    backgroundColor: Colors.gold,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 14,
@@ -1222,7 +1222,7 @@ const styles = StyleSheet.create({
   exploreCtaSub: {
     fontSize: 13,
     fontFamily: 'Poppins_400Regular',
-    color: '#636366',
+    color: Colors.textTertiary,
     marginTop: 2,
   },
   webScrollContent: {
@@ -1305,7 +1305,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#EE334E',
+    backgroundColor: Colors.error,
     overflow: 'hidden',
   },
   webAvatarText: {
@@ -1322,9 +1322,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: Colors.borderLight,
     overflow: 'hidden',
   },
   webCategoryChipActive: {
@@ -1333,10 +1333,10 @@ const styles = StyleSheet.create({
   webCategoryChipText: {
     fontSize: 13,
     fontFamily: 'Poppins_500Medium',
-    color: '#64748B',
+    color: Colors.textSecondary,
   },
   webCategoryChipTextActive: {
-    color: '#0F172A',
+    color: Colors.text,
     fontFamily: 'Poppins_600SemiBold',
   },
   activityTile: {

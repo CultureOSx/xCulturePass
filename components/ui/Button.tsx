@@ -120,13 +120,13 @@ export function Button({
   };
 
   const variantColors = {
-    primary:   { bg: colors.primary,     border: 'transparent', label: '#FFFFFF' },
+    primary:   { bg: colors.primary,     border: 'transparent', label: colors.textInverse },
     secondary: { bg: colors.primaryGlow, border: colors.primary, label: colors.primary },
     ghost:     { bg: 'transparent',      border: 'transparent', label: colors.primary },
-    danger:    { bg: colors.error,       border: 'transparent', label: '#FFFFFF' },
-    gold:      { bg: colors.gold,        border: 'transparent', label: '#1A1A1A' },
+    danger:    { bg: colors.error,       border: 'transparent', label: colors.textInverse },
+    gold:      { bg: colors.gold,        border: 'transparent', label: colors.textInverse },
     outline:   { bg: 'transparent',      border: colors.border,  label: colors.text },
-    gradient:  { bg: 'transparent',      border: 'transparent', label: '#FFFFFF' },
+    gradient:  { bg: 'transparent',      border: 'transparent', label: colors.textInverse },
   } as const;
 
   const vc = variantColors[variant];
