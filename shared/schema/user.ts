@@ -24,6 +24,8 @@ export interface User {
   email?: string;
   avatarUrl?: string;
   city?: string;
+  state?: string;
+  postcode?: number;
   country?: string;
   bio?: string;
   interests?: string[];

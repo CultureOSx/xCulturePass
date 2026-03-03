@@ -20,6 +20,8 @@ interface UserData {
   phone: string | null;
   bio: string | null;
   city: string | null;
+  state: string | null;
+  postcode: number | null;
   country: string | null;
   location: string | null;
   avatarUrl?: string | null;
@@ -48,7 +50,7 @@ export default function EditProfileScreen() {
   });
 
   const [form, setForm] = useState({
-    displayName: '', email: '', phone: '', bio: '', city: '', country: '',
+    displayName: '', email: '', phone: '', bio: '', city: '', state: '', postcode: '', country: 'Australia',
     website: '', instagram: '', twitter: '', linkedin: '',
   });
   const [avatarUri,      setAvatarUri]      = useState<string | null>(null);
@@ -63,7 +65,9 @@ export default function EditProfileScreen() {
         phone:       user.phone       || '',
         bio:         user.bio         || '',
         city:        user.city        || '',
-        country:     user.country     || '',
+        state:       user.state       || '',
+        postcode:    user.postcode != null ? String(user.postcode) : '',
+        country:     user.country     || 'Australia',
         website:     user.website     || '',
         instagram:   user.socialLinks?.instagram || '',
         twitter:     user.socialLinks?.twitter   || '',
@@ -151,14 +155,20 @@ export default function EditProfileScreen() {
         });
       } catch (error) { Alert.alert('Upload failed', String(error)); return; }
     }
+    const trimmedCountry = form.country.trim() || 'Australia';
+    const trimmedCity = form.city.trim();
+    const trimmedState = form.state.trim().toUpperCase();
+    const trimmedPostcode = form.postcode.trim();
     updateMutation.mutate({
       displayName: form.displayName.trim(),
       email:    form.email.trim()   || null,
       phone:    form.phone.trim()   || null,
       bio:      form.bio.trim()     || null,
-      city:     form.city.trim()    || null,
-      country:  form.country.trim() || null,
-      location: form.city && form.country ? `${form.city.trim()}, ${form.country.trim()}` : null,
+      city:     trimmedCity || null,
+      state:    trimmedState || null,
+      postcode: trimmedPostcode ? Number(trimmedPostcode) : null,
+      country:  trimmedCountry,
+      location: trimmedCity ? `${trimmedCity}, ${trimmedCountry}` : null,
       avatarUrl,
       website: form.website.trim() || null,
       socialLinks: {
@@ -261,13 +271,33 @@ export default function EditProfileScreen() {
           <View style={s.formSection}>
             <Text style={[s.sectionLabel, { color: colors.text }]}>Location</Text>
 
-            <Text style={[s.fieldLabel, { color: colors.text }]}>City</Text>
-            <TextInput style={inputStyle} value={form.city} onChangeText={v => setForm(p => ({ ...p, city: v }))}
-              placeholder="Sydney" placeholderTextColor={colors.textSecondary} />
+            <View style={s.rowFields}>
+              <View style={s.halfField}>
+                <Text style={[s.fieldLabel, { color: colors.text }]}>City</Text>
+                <TextInput style={inputStyle} value={form.city} onChangeText={v => setForm(p => ({ ...p, city: v }))}
+                  placeholder="Sydney" placeholderTextColor={colors.textSecondary} />
+              </View>
 
-            <Text style={[s.fieldLabel, { color: colors.text }]}>Country</Text>
-            <TextInput style={inputStyle} value={form.country} onChangeText={v => setForm(p => ({ ...p, country: v }))}
-              placeholder="Australia" placeholderTextColor={colors.textSecondary} />
+              <View style={s.halfField}>
+                <Text style={[s.fieldLabel, { color: colors.text }]}>State</Text>
+                <TextInput style={inputStyle} value={form.state} onChangeText={v => setForm(p => ({ ...p, state: v }))}
+                  placeholder="NSW" placeholderTextColor={colors.textSecondary} autoCapitalize="characters" />
+              </View>
+            </View>
+
+            <View style={s.rowFields}>
+              <View style={s.halfField}>
+                <Text style={[s.fieldLabel, { color: colors.text }]}>Postcode</Text>
+                <TextInput style={inputStyle} value={form.postcode} onChangeText={v => setForm(p => ({ ...p, postcode: v }))}
+                  placeholder="2000" placeholderTextColor={colors.textSecondary} keyboardType="number-pad" />
+              </View>
+
+              <View style={s.halfField}>
+                <Text style={[s.fieldLabel, { color: colors.text }]}>Country</Text>
+                <TextInput style={inputStyle} value={form.country} onChangeText={v => setForm(p => ({ ...p, country: v }))}
+                  placeholder="Australia" placeholderTextColor={colors.textSecondary} />
+              </View>
+            </View>
           </View>
 
           {/* Social links */}
@@ -325,6 +355,8 @@ const s = StyleSheet.create({
   input:            { borderRadius: 12, padding: 14, fontSize: 15, fontFamily: 'Poppins_400Regular', borderWidth: 1 },
   bioInput:         { minHeight: 100, paddingTop: 14 },
   charCount:        { fontSize: 11, fontFamily: 'Poppins_400Regular', textAlign: 'right', marginTop: 4 },
+  rowFields:        { flexDirection: 'row', gap: 12 },
+  halfField:        { flex: 1 },
   socialRow:        { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10 },
   socialIcon:       { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
 });

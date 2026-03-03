@@ -96,6 +96,8 @@ type AppUser = {
   displayName: string;
   email: string;
   city: string;
+  state?: string;
+  postcode?: number;
   country: string;
   bio?: string;
   avatarUrl?: string;
@@ -1404,6 +1406,8 @@ const userUpdateSchema = z.object({
   username: z.string().optional(),
   displayName: z.string().optional(),
   city: z.string().optional(),
+  state: z.string().optional(),
+  postcode: z.coerce.number().int().min(0).optional(),
   country: z.string().optional(),
   bio: z.string().optional(),
   avatarUrl: z.string().optional(),
@@ -1598,7 +1602,7 @@ app.get('/auth/me', requireAuth, authMeHandler);
 // POST /api/auth/register — create Firestore profile after Firebase Auth account creation
 const authRegisterHandler = async (req: Request, res: Response) => {
   const uid = req.user!.id;
-  const { displayName, city, country, username } = req.body ?? {};
+  const { displayName, city, state, postcode, country, username } = req.body ?? {};
   try {
     const snap = await db.collection('users').doc(uid).get();
     if (!snap.exists) {
@@ -1607,7 +1611,9 @@ const authRegisterHandler = async (req: Request, res: Response) => {
         displayName: displayName ?? req.user!.username,
         email: req.user!.email ?? null,
         city: city ?? null,
-        country: country ?? null,
+        state: state ?? null,
+        postcode: postcode != null ? Number(postcode) : null,
+        country: country ?? 'Australia',
         culturePassId: generateSecureId('CP-U'),
         createdAt: nowIso(),
       };
@@ -1622,7 +1628,7 @@ const authRegisterHandler = async (req: Request, res: Response) => {
           role: 'user',
           tier: 'free',
           ...(city && { city: String(city) }),
-          ...(country && { country: String(country) }),
+          country: String(country ?? 'Australia'),
           username: profile.username,
         }),
       ]);
@@ -1978,6 +1984,32 @@ app.put('/api/events/:id', requireAuth, moderationCheck, async (req, res) => {
       return res.status(403).json({ error: 'Forbidden: you do not own this event' });
     }
     const b = req.body ?? {};
+    const hasLocationFields =
+      b.city != null ||
+      b.state != null ||
+      b.postcode != null ||
+      b.country != null ||
+      b.latitude != null ||
+      b.longitude != null;
+    let resolvedLocation: ReturnType<typeof resolveAustralianLocation>['location'];
+    if (hasLocationFields) {
+      const resolvedLocationResult = resolveAustralianLocation(
+        {
+          city: b.city ?? existing.city,
+          state: b.state ?? existing.state,
+          postcode: b.postcode ?? existing.postcode,
+          country: b.country ?? existing.country,
+          latitude: b.latitude ?? existing.latitude,
+          longitude: b.longitude ?? existing.longitude,
+        },
+        false,
+      );
+      if (resolvedLocationResult.error || !resolvedLocationResult.location) {
+        return res.status(400).json({ error: resolvedLocationResult.error ?? 'invalid location payload' });
+      }
+      resolvedLocation = resolvedLocationResult.location;
+    }
+
     const updated = await eventsService.update(qparam(req.params.id), {
       ...(b.title        != null && { title:       String(b.title) }),
       ...(b.description  != null && { description: String(b.description) }),
@@ -1985,8 +2017,12 @@ app.put('/api/events/:id', requireAuth, moderationCheck, async (req, res) => {
       ...(b.time         != null && { time:        String(b.time) }),
       ...(b.venue        != null && { venue:       String(b.venue) }),
       ...(b.address      != null && { address:     String(b.address) }),
-      ...(b.city         != null && { city:        String(b.city) }),
-      ...(b.country      != null && { country:     String(b.country) }),
+      ...(resolvedLocation && { city:        resolvedLocation.city }),
+      ...(resolvedLocation && { state:       resolvedLocation.state }),
+      ...(resolvedLocation && { postcode:    resolvedLocation.postcode }),
+      ...(resolvedLocation && { latitude:    resolvedLocation.latitude }),
+      ...(resolvedLocation && { longitude:   resolvedLocation.longitude }),
+      ...(resolvedLocation && { country:     resolvedLocation.country }),
       ...(b.imageUrl     != null && { imageUrl:    String(b.imageUrl) }),
       ...(b.priceCents   != null && { priceCents:  Number(b.priceCents) }),
       ...(b.priceLabel   != null && { priceLabel:  String(b.priceLabel) }),

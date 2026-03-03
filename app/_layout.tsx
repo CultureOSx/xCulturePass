@@ -1,4 +1,7 @@
 import "react-native-reanimated"; // <-- CRUCIAL FIX: Must be at the very top
+import { Buffer } from "buffer";
+
+global.Buffer = Buffer;
 
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
@@ -46,7 +49,14 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 // ---------------------------------------------------------------------------
 function DataSync() {
   const { user } = useAuth();
-  const { setCity, setCountry, state, resetOnboarding } = useOnboarding();
+  const {
+    setCity,
+    setCountry,
+    setInterests,
+    setCommunities,
+    state,
+    resetOnboarding,
+  } = useOnboarding();
   // Track the previous user id so we can detect logout (authenticated → null)
   // without incorrectly resetting onboarding on the initial cold-start null state.
   const prevUserIdRef = useRef<string | null>(null);
@@ -61,14 +71,28 @@ function DataSync() {
       // page location filters work automatically after login.
       const city = user.city;
       const country = user.country;
+      const interests = user.interests ?? [];
+      const communities = user.communities ?? [];
       if (city && city !== state.city) setCity(city);
       if (country && country !== state.country) setCountry(country);
+      if (JSON.stringify(interests) !== JSON.stringify(state.interests)) {
+        setInterests(interests);
+      }
+      if (JSON.stringify(communities) !== JSON.stringify(state.communities)) {
+        setCommunities(communities);
+      }
     } else if (prevUserIdRef.current !== null) {
       // User was authenticated and has now signed out — clear onboarding state.
       prevUserIdRef.current = null;
       resetOnboarding();
     }
-  }, [user?.id, user?.city, user?.country]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [
+    user?.id,
+    user?.city,
+    user?.country,
+    user?.interests,
+    user?.communities,
+  ]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return null;
 }
@@ -143,7 +167,7 @@ function RootLayoutNav() {
       <Stack.Screen name="settings/help" />
       <Stack.Screen name="settings/notifications" />
       <Stack.Screen name="settings/privacy" />
-      <Stack.Screen name="dashboard/organizer" />
+      <Stack.Screen name="dashboard" />
 
       <Stack.Screen name="help/index" />
       <Stack.Screen name="legal/terms" />

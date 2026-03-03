@@ -16,8 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "au.culturepass.app",
-      "buildNumber": "2",
-      "minimumOsVersion": "16.0",
+      "buildNumber": "1",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "CulturePass uses your location to show events and communities near you.",
         "NSCameraUsageDescription": "CulturePass uses the camera to update your profile photo and scan event tickets.",
@@ -40,22 +39,16 @@
         "NSPrivacyAccessedAPITypes": [
           {
             "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
-            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
-          },
-          {
-            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
-            "NSPrivacyAccessedAPITypeReasons": ["C617.1"]
+            "NSPrivacyAccessedAPITypeReasons": [
+              "CA92.1"
+            ]
           }
         ]
       }
     },
     "android": {
       "package": "au.culturepass.app",
-      "versionCode": 2,
-      "minSdkVersion": 26,
-      "targetSdkVersion": 35,
-      "compileSdkVersion": 35,
-      "googleServicesFile": "./google-services.json",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#0B0B14",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -81,11 +74,9 @@
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
         "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
-        "RECEIVE_BOOT_COMPLETED",
         "VIBRATE",
-        "USE_BIOMETRIC",
-        "USE_FINGERPRINT"
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
       ]
     },
     "web": {
@@ -139,9 +130,11 @@
       "reactCompiler": true
     },
     "extra": {
+      "router": {},
       "eas": {
-        "projectId": "FILL_IN_EAS_PROJECT_UUID"
+        "projectId": "315fb04d-254b-4915-9c5b-ca7faf0c54cf"
       }
-    }
+    },
+    "owner": "airpizza"
   }
 }
