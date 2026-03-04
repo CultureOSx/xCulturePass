@@ -5,6 +5,8 @@ import { useAuth } from '@/lib/auth';
 import { api, type CouncilPreference } from '@/lib/api';
 import { getPostcodesByPlace } from '@shared/location/australian-postcodes';
 
+const DEFAULT_REMINDER_TIME = '19:00';
+
 function buildCouncilParams(city?: string, country?: string) {
   const fallbackPostcode = city ? getPostcodesByPlace(city)[0] : undefined;
   return {
@@ -72,7 +74,7 @@ export function useCouncil() {
       if (!councilId) throw new Error('Council not resolved');
       return api.council.updateWasteReminder(councilId, {
         enabled,
-        reminderTime: data?.reminder?.reminderTime ?? '19:00',
+        reminderTime: data?.reminder?.reminderTime ?? DEFAULT_REMINDER_TIME,
         postcode: data?.waste?.postcode,
         suburb: data?.waste?.suburb,
       });

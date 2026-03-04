@@ -66,7 +66,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newState)).catch((err) => {
         if (__DEV__) {
           // eslint-disable-next-line no-console
-          console.warn('[OnboardingContext] AsyncStorage.setItem failed — preferences will not persist across sessions.', err);
+          console.warn('[OnboardingContext] AsyncStorage.setItem failed — onboarding state will not persist across sessions.', err);
         }
       });
       return newState;

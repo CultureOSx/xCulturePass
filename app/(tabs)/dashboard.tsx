@@ -23,7 +23,7 @@ export default function DashboardTab() {
 function DashboardRedirect() {
   const { isOrganizer, isLoading } = useRole();
 
-  if (isLoading) return null;
+  if (isLoading) return null; // Brief auth-state resolution; organizer dashboard has its own loading UI
   if (!isOrganizer) return <Redirect href="/(tabs)" />;
 
   return <Redirect href="/dashboard/organizer" />;
