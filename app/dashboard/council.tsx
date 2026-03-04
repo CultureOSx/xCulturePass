@@ -26,17 +26,14 @@ export default function CouncilDashboardScreen() {
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const { isAdmin, isOrganizer, isLoading: roleLoading } = useRole();
-  const {
-    council,
-    activeAlerts,
-    openGrants,
-    facilities,
-    links,
-    waste,
-    following,
-    isLoading,
-    refetch,
-  } = useCouncil();
+  const { data: councilData, isLoading, refetch } = useCouncil();
+  const council = councilData?.council;
+  const activeAlerts = (councilData?.alerts ?? []).filter((alert) => alert.status === 'active');
+  const openGrants = (councilData?.grants ?? []).filter((grant) => grant.status === 'open');
+  const facilities = councilData?.facilities ?? [];
+  const links = councilData?.links ?? [];
+  const waste = councilData?.waste ?? null;
+  const following = councilData?.following ?? false;
 
   const myClaimsQuery = useQuery({
     queryKey: ['/api/council/claims/me', council?.id],

@@ -27,7 +27,6 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TabBarTokens, gradients, CultureTokens } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
-import { WebSidebar } from '@/components/web/WebSidebar';
 import { queryClient } from '@/lib/query-client';
 
 // ---------------------------------------------------------------------------
@@ -312,21 +311,18 @@ export default function TabLayout() {
     }
   }, [isWeb, pathname]);
 
-  // Desktop web: sidebar navigation on the left, content on the right (no tab bar)
+  // Desktop web: no sidebar, use top tab navigation for web-optimized parity
   if (isDesktop) {
     return (
       <QueryClientProvider client={queryClient}>
-        <View style={{ flex: 1, flexDirection: 'row', overflow: 'hidden' }}>
-          <WebSidebar />
-          <View style={{ flex: 1, overflow: 'hidden' }}>
-            <Tabs
-              initialRouteName="index"
-              screenOptions={{ headerShown: false }}
-              tabBar={() => null}
-            >
-              <TabScreens />
-            </Tabs>
-          </View>
+        <View style={{ flex: 1, overflow: 'hidden' }}>
+          <Tabs
+            initialRouteName="index"
+            screenOptions={{ headerShown: false }}
+            tabBar={(props) => <CustomTabBar {...props} position="top" />}
+          >
+            <TabScreens />
+          </Tabs>
         </View>
       </QueryClientProvider>
     );

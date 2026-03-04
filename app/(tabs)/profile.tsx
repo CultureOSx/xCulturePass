@@ -66,7 +66,7 @@ export default function ProfileScreen() {
   const { contacts } = useContacts();
   const [refreshing, setRefreshing] = useState(false);
   const { userId, logout } = useAuth();
-  const { isOrganizer, isAdmin, hasMinRole } = useRole();
+  const { role, isOrganizer, isAdmin } = useRole();
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -160,6 +160,17 @@ export default function ProfileScreen() {
     return pct;
   }, [user?.displayName, user?.bio, user?.avatarUrl, user?.city, user?.location, user?.username, user?.socialLinks]);
 
+  const missingProfileItems = useMemo(() => {
+    const items: string[] = [];
+    if (!user?.avatarUrl) items.push('photo');
+    if (!user?.bio) items.push('bio');
+    if (!(user?.city || user?.location)) items.push('location');
+    if (!(user?.socialLinks && Object.keys(user.socialLinks).length > 0)) items.push('social links');
+    return items;
+  }, [user?.avatarUrl, user?.bio, user?.city, user?.location, user?.socialLinks]);
+
+  const isProfileComplete = profileCompleteness >= 100 || missingProfileItems.length === 0;
+
   const nextTier = useMemo(() => {
     if (tier === 'free') return { name: 'Plus',    color: colors.info };
     if (tier === 'plus') return { name: 'Premium', color: colors.warning };
@@ -230,8 +241,11 @@ export default function ProfileScreen() {
 
   const completenessColor = profileCompleteness >= 80 ? colors.success : profileCompleteness >= 50 ? colors.accent : colors.primary;
   const initials = (displayName || 'U').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-  const heroTextColor = colors.textInverse;
-  const heroSubTextColor = colors.textInverse + 'E0';
+  const useWebReadableHero = Platform.OS === 'web';
+  const heroTextColor = useWebReadableHero ? colors.text : colors.textInverse;
+  const heroSubTextColor = useWebReadableHero ? colors.textSecondary : colors.textInverse + 'E0';
+  const heroChipBg = useWebReadableHero ? colors.surface + 'CC' : colors.textInverse + '29';
+  const heroActionBg = useWebReadableHero ? colors.surface + 'CC' : colors.textInverse + '2E';
 
   return (
     <ErrorBoundary>
@@ -253,12 +267,12 @@ export default function ProfileScreen() {
             />
             {/* Top bar */}
             <View style={s.headerTopBar}>
-              <Pressable style={[s.headerBtn, { backgroundColor: colors.textInverse + '2E' }]} onPress={handleShare}>
+              <Pressable style={[s.headerBtn, { backgroundColor: heroActionBg }]} onPress={handleShare}>
                 <Ionicons name="share-outline" size={20} color={heroTextColor} />
               </Pressable>
               <Text style={[s.headerTitle, { color: heroTextColor }]}>Profile</Text>
               <Pressable
-                style={[s.headerBtn, { backgroundColor: colors.textInverse + '2E' }]}
+                style={[s.headerBtn, { backgroundColor: heroActionBg }]}
                 onPress={() => router.push('/notifications')}
               >
                 <Ionicons name="notifications-outline" size={20} color={heroTextColor} />
@@ -290,13 +304,13 @@ export default function ProfileScreen() {
 
               <View style={s.idLocationRow}>
                 {user?.culturePassId ? (
-                  <View style={[s.chip, { backgroundColor: colors.textInverse + '29' }]}> 
+                  <View style={[s.chip, { backgroundColor: heroChipBg }]}> 
                     <Ionicons name="finger-print" size={12} color={heroTextColor} />
                     <Text style={[s.chipText, { color: heroTextColor }]}>{user.culturePassId}</Text>
                   </View>
                 ) : null}
                 {displayLocation ? (
-                  <View style={[s.chip, { backgroundColor: colors.textInverse + '29' }]}> 
+                  <View style={[s.chip, { backgroundColor: heroChipBg }]}> 
                     <Ionicons name="location" size={12} color={heroTextColor} />
                     <Text style={[s.chipText, { color: heroTextColor }]}>{displayLocation}</Text>
                   </View>
@@ -332,6 +346,27 @@ export default function ProfileScreen() {
               </Pressable>
             </View>
           </View>
+
+          {!isProfileComplete && (
+            <Pressable
+              style={[s.completeProfileCta, isDesktopWeb && s.webSection, { backgroundColor: colors.info + '0A', borderColor: colors.info + '2A' }]}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push('/profile/edit');
+              }}
+            >
+              <View style={[s.completeProfileIconWrap, { backgroundColor: colors.info + '18' }]}> 
+                <Ionicons name="sparkles-outline" size={18} color={colors.info} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[s.completeProfileTitle, { color: colors.info }]}>Complete your profile</Text>
+                <Text style={[s.completeProfileSub, { color: colors.textSecondary }]}>
+                  {profileCompleteness}% complete · Add {missingProfileItems.slice(0, 2).join(' + ')}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.info} />
+            </Pressable>
+          )}
 
           {/* ── Upgrade CTA ── */}
           {nextTier && (
@@ -495,18 +530,25 @@ export default function ProfileScreen() {
               {isOrganizer && (
                 <MenuItem icon="grid-outline"   label="Organizer Dashboard" color={colors.secondary}  onPress={() => router.push('/dashboard/organizer' as never)} colors={colors} />
               )}
-              {isAdmin && (
-                <MenuItem icon="people-circle-outline" label="Admin Panel" color={colors.error} onPress={() => router.push('/admin/users' as never)} colors={colors} />
-              )}
-              {hasMinRole('cityAdmin') && (
-                <MenuItem icon="megaphone-outline" label="Campaign Targeting" color={colors.info} onPress={() => router.push('/admin/notifications' as never)} colors={colors} />
-              )}
-              {hasMinRole('cityAdmin') && (
-                <MenuItem icon="document-text-outline" label="Campaign Audit Logs" color={colors.warning} onPress={() => router.push('/admin/audit-logs' as never)} colors={colors} />
-              )}
               <MenuItem icon="gift-outline"     label="Perks & Benefits" color={colors.accent}  showDivider={false}                                                         onPress={() => router.push('/perks')}            colors={colors} />
             </View>
           </View>
+
+          {/* ── Admin Tools ── */}
+          {isAdmin && (
+            <View style={[s.section, isDesktopWeb && s.webSection]}>
+              <Text style={[s.sectionTitle, { color: colors.text }]}>Admin Tools</Text>
+              <View style={[s.menuCard, { backgroundColor: colors.surface }]}> 
+                <MenuItem icon="shield-checkmark-outline" label="Role" value={role === 'platformAdmin' ? 'Platform Admin' : 'Admin'} color={colors.info} onPress={() => {}} colors={colors} />
+                <MenuItem icon="people-circle-outline" label="Users" color={colors.error} onPress={() => router.push('/admin/users' as never)} colors={colors} />
+                <MenuItem icon="document-text-outline" label="Council Claims" color={colors.warning} onPress={() => router.push('/admin/council-claims' as never)} colors={colors} />
+                <MenuItem icon="business-outline" label="Council Management" color={colors.secondary} onPress={() => router.push('/admin/council-management' as never)} colors={colors} />
+                <MenuItem icon="megaphone-outline" label="Notifications" color={colors.info} onPress={() => router.push('/admin/notifications' as never)} colors={colors} />
+                <MenuItem icon="clipboard-outline" label="Audit Logs" color={colors.warning} onPress={() => router.push('/admin/audit-logs' as never)} colors={colors} />
+                <MenuItem icon="stats-chart-outline" label="Council Dashboard" color={colors.primary} showDivider={false} onPress={() => router.push('/dashboard/council' as never)} colors={colors} />
+              </View>
+            </View>
+          )}
 
           {/* ── Payment & Billing ── */}
           <View style={[s.section, isDesktopWeb && s.webSection]}>
@@ -613,6 +655,11 @@ const s = StyleSheet.create({
   upgradeIconWrap:{ width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   upgradeCtaTitle:{ fontSize: 15, fontFamily: 'Poppins_600SemiBold' },
   upgradeCtaSub:  { fontSize: 13, fontFamily: 'Poppins_400Regular', marginTop: 1 },
+
+  completeProfileCta: { flexDirection: 'row', alignItems: 'center', gap: LayoutRules.iconTextGap, marginHorizontal: LayoutRules.screenHorizontalPadding, marginBottom: LayoutRules.betweenCards, paddingHorizontal: LayoutRules.cardPaddingMin, paddingVertical: 14, borderRadius: LayoutRules.borderRadius, borderWidth: 1 },
+  completeProfileIconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  completeProfileTitle: { fontSize: 15, fontFamily: 'Poppins_600SemiBold' },
+  completeProfileSub: { fontSize: 13, fontFamily: 'Poppins_400Regular', marginTop: 1 },
 
   quickRow:  { flexDirection: 'row', gap: LayoutRules.betweenCards, marginBottom: LayoutRules.sectionSpacing, paddingHorizontal: LayoutRules.screenHorizontalPadding },
   quickChip: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: LayoutRules.iconTextGap, paddingVertical: 14, borderRadius: LayoutRules.borderRadius, borderWidth: StyleSheet.hairlineWidth },

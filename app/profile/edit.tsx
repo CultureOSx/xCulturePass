@@ -81,15 +81,29 @@ export default function EditProfileScreen() {
 
   const uploadMutation = useMutation({
     mutationFn: async (uri: string): Promise<UploadedImage> => {
-      const processed = await manipulateAsync(
-        uri,
-        [
-          { rotate: avatarRotation },
-          ...(avatarScale === 'medium' ? [{ resize: { width: 1024 } }] : avatarScale === 'large' ? [{ resize: { width: 1600 } }] : []),
-        ],
-        { compress: 0.92, format: SaveFormat.JPEG },
-      );
-      const blobRes  = await fetch(processed.uri);
+      const actions = [
+        { rotate: avatarRotation },
+        ...(avatarScale === 'medium' ? [{ resize: { width: 1024 } }] : avatarScale === 'large' ? [{ resize: { width: 1600 } }] : []),
+      ];
+
+      let uploadUri = uri;
+      try {
+        const jpegFormat =
+          SaveFormat && typeof SaveFormat === 'object' && 'JPEG' in SaveFormat
+            ? SaveFormat.JPEG
+            : undefined;
+
+        const processed = await manipulateAsync(
+          uri,
+          actions,
+          jpegFormat ? { compress: 0.92, format: jpegFormat } : { compress: 0.92 },
+        );
+        uploadUri = processed.uri;
+      } catch {
+        uploadUri = uri;
+      }
+
+      const blobRes  = await fetch(uploadUri);
       const blob     = await blobRes.blob();
       const formData = new FormData();
       formData.append('image', blob as unknown as Blob, 'profile.jpg');

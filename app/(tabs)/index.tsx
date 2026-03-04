@@ -7,7 +7,6 @@ import {
   Platform,
   RefreshControl,
     ActivityIndicator,
-  Dimensions,
   TextInput,
   useColorScheme,
 } from 'react-native';
@@ -45,6 +44,7 @@ import WebRailSection from '@/components/Discover/WebRailSection';
 import WebHeroCarousel from '@/components/Discover/WebHeroCarousel';
 import { calculateDistance, getPostcodesByPlace } from '@shared/location/australian-postcodes';
 import { useCouncil } from '@/hooks/useCouncil';
+import { useLayout } from '@/hooks/useLayout';
 
 
 const isWeb = Platform.OS === 'web';
@@ -161,12 +161,17 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const colors = useColors();
+  const { width, isDesktop, isTablet } = useLayout();
   const scheme = useColorScheme();
   const isDark = scheme === 'dark';
   const { state } = useOnboarding();
   const { isAuthenticated, userId: authUserId, user: authUser } = useAuth();
   const pathname = usePathname();
-  const { council, activeAlerts, isCouncilVerified, lgaCode } = useCouncil({ city: state.city, country: state.country });
+  const { data: councilData } = useCouncil();
+  const council = councilData?.council;
+  const activeAlerts = (councilData?.alerts ?? []).filter((alert) => alert.status === 'active');
+  const isCouncilVerified = council?.verificationStatus === 'verified';
+  const lgaCode = council?.lgaCode;
 
   // Scroll-reactive header
   const scrollY = useSharedValue(0);
@@ -336,13 +341,15 @@ export default function HomeScreen() {
     return all.slice(0, 10);
   }, [allCommunities]);
 
-  const screenWidth = Dimensions.get('window').width;
-  // On desktop web, expand to full content area width (sidebar is 240px wide)
-  const isDesktopWeb = Platform.OS === 'web' && screenWidth >= 1024;
-  const maxWidth = Platform.OS === 'web'
-    ? (isDesktopWeb ? screenWidth - 240 : Math.min(screenWidth, 480))
-    : screenWidth;
-  const cityCardWidth = (maxWidth - 40 - 14) / 2;
+  const isCompactWeb = isWeb && width < 1100;
+  const contentMaxWidth = isWeb
+    ? (isDesktop ? 1360 : isTablet ? 1120 : 980)
+    : width;
+  const maxWidth = isWeb
+    ? Math.min(width - (isDesktop ? 48 : 24), contentMaxWidth)
+    : width;
+  const cityColumns = isWeb ? (isDesktop ? 4 : isTablet ? 3 : 2) : 2;
+  const cityCardWidth = Math.max(140, (maxWidth - 40 - (14 * (cityColumns - 1))) / cityColumns);
 
   const [refreshing, setRefreshing] = useState(false);
   const [webSearch, setWebSearch] = useState('');
@@ -463,11 +470,11 @@ export default function HomeScreen() {
           />
           <ScrollView
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.webScrollContent}
+            contentContainerStyle={[styles.webScrollContent, { maxWidth, paddingHorizontal: isDesktop ? 24 : 16 }]}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#E7EEF7" />}
           >
             {/* Discover Header — branding lives in sidebar; just show search + actions */}
-            <View style={styles.webTopRow}>
+            <View style={[styles.webTopRow, isCompactWeb && styles.webTopRowCompact]}>
               {/* Left: greeting */}
               <View style={styles.webTopRowLeft}>
                 <View>
@@ -480,7 +487,7 @@ export default function HomeScreen() {
               </View>
 
               {/* Central Search */}
-              <View style={styles.webSearchWrap}>
+              <View style={[styles.webSearchWrap, isCompactWeb && styles.webSearchWrapCompact]}>
                 <Ionicons name="search-outline" size={18} color="#94A2C4" />
                 <TextInput
                   value={webSearch}
@@ -496,7 +503,7 @@ export default function HomeScreen() {
                 )}
               </View>
 
-              <View style={styles.webTopActions}>
+              <View style={[styles.webTopActions, isCompactWeb && styles.webTopActionsCompact]}>
                 <Pressable style={styles.webIconBtn} onPress={openNotifications}>
                   <Ionicons name="notifications-outline" size={19} color="#EAF0FF" />
                 </Pressable>
@@ -556,6 +563,10 @@ export default function HomeScreen() {
                   {isCouncilVerified ? `Council Verified • LGA ${lgaCode}` : `LGA ${lgaCode ?? 'Unknown'}`}
                   {activeAlerts.length > 0 ? ` • ${activeAlerts.length} active alert${activeAlerts.length === 1 ? '' : 's'}` : ''}
                 </Text>
+                <Pressable style={styles.webCivicAction} onPress={() => router.push('/(tabs)/council')}>
+                  <Text style={styles.webCivicActionText}>Open Council</Text>
+                  <Ionicons name="chevron-forward" size={14} color="#EAF0FF" />
+                </Pressable>
               </View>
             )}
 
@@ -1361,6 +1372,10 @@ const styles = StyleSheet.create({
     gap: 20,
     paddingBottom: 20,
   },
+  webTopRowCompact: {
+    flexWrap: 'wrap',
+    rowGap: 12,
+  },
   webTopRowLeft: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1397,6 +1412,10 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.12)',
     maxWidth: 600,
   },
+  webSearchWrapCompact: {
+    minWidth: '100%',
+    maxWidth: '100%',
+  },
   webSearchInput: {
     flex: 1,
     height: '100%' as unknown as number,
@@ -1408,6 +1427,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
     alignItems: 'center',
+  },
+  webTopActionsCompact: {
+    marginLeft: 'auto',
   },
   webIconBtn: {
     width: 40,
@@ -1510,6 +1532,22 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Poppins_400Regular',
     marginTop: 4,
+  },
+  webCivicAction: {
+    marginTop: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  webCivicActionText: {
+    color: '#EAF0FF',
+    fontSize: 12,
+    fontFamily: 'Poppins_600SemiBold',
   },
   civicCard: {
     marginHorizontal: 20,

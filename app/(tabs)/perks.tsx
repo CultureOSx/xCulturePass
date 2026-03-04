@@ -1,4 +1,5 @@
-import { View, Text, Pressable, StyleSheet, ScrollView, Platform, Alert, Share, RefreshControl, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView, Platform, Alert, Share, RefreshControl, ActivityIndicator } from 'react-native';
+import type { ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,6 +14,7 @@ import { useAuth } from '@/lib/auth';
 import { useColors } from '@/hooks/useColors';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useCouncil } from '@/hooks/useCouncil';
+import { useLayout } from '@/hooks/useLayout';
 
 interface Perk {
   id: string;
@@ -58,11 +60,19 @@ const filterItems: FilterItem[] = CATEGORIES.map(cat => ({ id: cat.id, label: ca
 
 export default function PerksTabScreen() {
   const insets   = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
-  const isDesktopWeb = Platform.OS === 'web' && width >= 1024;
+  const { width, isDesktop, isTablet } = useLayout();
+  const isDesktopWeb = Platform.OS === 'web' && isDesktop;
   const colors   = useColors();
+  const webTopInset = Platform.OS === 'web' ? (isDesktopWeb ? 72 : 0) : insets.top;
+  const shellMaxWidth = Platform.OS === 'web'
+    ? (isDesktopWeb ? 1280 : isTablet ? 1040 : width)
+    : width;
+  const shellStyle: ViewStyle | undefined = Platform.OS === 'web'
+    ? { maxWidth: shellMaxWidth, alignSelf: 'center' }
+    : undefined;
   const { userId } = useAuth();
-  const { openGrants } = useCouncil();
+  const { data: councilData } = useCouncil();
+  const openGrants = (councilData?.grants ?? []).filter((grant) => grant.status === 'open');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [refreshing, setRefreshing] = useState(false);
   // FIX: Track which perk ID is being redeemed so only that card shows pending
@@ -167,10 +177,10 @@ export default function PerksTabScreen() {
 
   return (
     <ErrorBoundary>
-      <View style={[s.container, { paddingTop: insets.top, backgroundColor: colors.background }]}>
+      <View style={[s.container, { paddingTop: webTopInset, backgroundColor: colors.background }]}> 
 
         {/* Header */}
-        <View style={[s.headerRow, isDesktopWeb && s.webSection]}>
+        <View style={[s.headerRow, shellStyle]}>
           <View style={{ flex: 1 }}>
             <Text style={[s.headerTitle, { color: colors.text }]}>Perks</Text>
             <Text style={[s.headerSub, { color: colors.textSecondary }]}>{activePerkCount} available for you</Text>
@@ -188,7 +198,10 @@ export default function PerksTabScreen() {
 
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 110 + (Platform.OS === 'web' ? 34 : insets.bottom) }}
+          contentContainerStyle={{
+            paddingBottom: 110 + (Platform.OS === 'web' ? 34 : insets.bottom),
+            paddingHorizontal: Platform.OS === 'web' ? (isDesktopWeb ? 24 : 16) : 0,
+          }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
         >
           {/* Hero banner */}
@@ -196,7 +209,7 @@ export default function PerksTabScreen() {
             colors={[colors.primary, colors.secondary]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={[s.heroBanner, isDesktopWeb && s.webSection]}
+            style={[s.heroBanner, shellStyle]}
           >
             <View style={s.heroOrb} />
             <View style={s.heroIconWrap}>
@@ -216,7 +229,7 @@ export default function PerksTabScreen() {
           {/* Upgrade nudge for free users */}
           {!isPlusMember && (
             <Pressable
-              style={[s.upgradeBanner, isDesktopWeb && s.webSection, { backgroundColor: colors.surface, borderColor: colors.primary + '30' }]}
+              style={[s.upgradeBanner, shellStyle, { backgroundColor: colors.surface, borderColor: colors.primary + '30' }]}
               onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/membership/upgrade' as never); }}
             >
               <View style={[s.upgradeBannerIcon, { backgroundColor: colors.primaryGlow }]}>
@@ -241,7 +254,7 @@ export default function PerksTabScreen() {
           />
 
           {openGrants.length > 0 && (
-            <View style={[s.upgradeBanner, isDesktopWeb && s.webSection, { backgroundColor: colors.surface, borderColor: colors.info + '30' }]}>
+            <View style={[s.upgradeBanner, shellStyle, { backgroundColor: colors.surface, borderColor: colors.info + '30' }]}> 
               <View style={[s.upgradeBannerIcon, { backgroundColor: colors.info + '1A' }]}> 
                 <Ionicons name="library-outline" size={18} color={colors.info} />
               </View>
@@ -258,7 +271,7 @@ export default function PerksTabScreen() {
           )}
 
           {/* Section title */}
-          <View style={[s.sectionHeader, isDesktopWeb && s.webSection]}>
+          <View style={[s.sectionHeader, shellStyle]}>
             <Text style={[s.sectionTitle, { color: colors.text }]}>
               {selectedCategory === 'All'
                 ? 'All Perks'
@@ -272,7 +285,7 @@ export default function PerksTabScreen() {
           </View>
 
           {/* Perk list */}
-          <View style={[s.list, isDesktopWeb && s.webSection]}>
+          <View style={[s.list, shellStyle]}>
             {isLoading ? (
               <View style={s.empty}>
                 <ActivityIndicator size="large" color={colors.primary} />
@@ -544,5 +557,4 @@ const s = StyleSheet.create({
 
   redeemBtn:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 12, paddingVertical: 14 },
   redeemBtnText:{ fontSize: 15, fontFamily: 'Poppins_600SemiBold' },
-  webSection:   { maxWidth: 1024, width: '100%', alignSelf: 'center' },
 });

@@ -13,6 +13,7 @@ import { api } from '@/lib/api';
 import { useCouncil } from '@/hooks/useCouncil';
 import type { EventData } from '@/shared/schema';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { useLayout } from '@/hooks/useLayout';
 
 const DAYS   = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -52,14 +53,21 @@ export default function CalendarScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
   const { width } = useWindowDimensions();
-  const isDesktopWeb = Platform.OS === 'web' && width >= 1024;
-  const webTopInset = Platform.OS === 'web' ? 0 : 0;
+  const { isDesktop, isTablet } = useLayout();
+  const isDesktopWeb = Platform.OS === 'web' && isDesktop;
+  const webTopInset = Platform.OS === 'web' ? (isDesktopWeb ? 72 : 0) : insets.top;
+  const contentMaxWidth = Platform.OS === 'web'
+    ? (isDesktopWeb ? 1280 : isTablet ? 1040 : width)
+    : width;
+  const contentHorizontalPadding = Platform.OS === 'web' ? (isDesktopWeb ? 24 : 16) : 0;
   const today = useMemo(() => new Date(), []);
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear,  setCurrentYear]  = useState(today.getFullYear());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const { state } = useOnboarding();
-  const { waste, council } = useCouncil({ city: state.city, country: state.country });
+  const { data: councilData } = useCouncil();
+  const waste = councilData?.waste ?? null;
+  const council = councilData?.council;
 
   const { data: allEvents = [], isLoading } = useQuery<EventData[]>({
     queryKey: ['/api/events', state.country, state.city],
@@ -153,7 +161,7 @@ export default function CalendarScreen() {
   if (isLoading) {
     return (
       <ErrorBoundary>
-        <View style={[s.container, { paddingTop: insets.top + webTopInset, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <View style={[s.container, { paddingTop: webTopInset, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}> 
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={[s.loadingText, { color: colors.textSecondary }]}>Loading Calendar tab...</Text>
         </View>
@@ -163,8 +171,17 @@ export default function CalendarScreen() {
 
   return (
     <ErrorBoundary>
-      <View style={[s.container, { paddingTop: insets.top + webTopInset, backgroundColor: colors.background }]}>
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
+      <View style={[s.container, { paddingTop: webTopInset, backgroundColor: colors.background }]}> 
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingBottom: 120,
+            maxWidth: contentMaxWidth,
+            width: '100%',
+            alignSelf: 'center',
+            paddingHorizontal: contentHorizontalPadding,
+          }}
+        >
 
           {/* Header */}
           <View style={s.headerRow}>
@@ -191,6 +208,12 @@ export default function CalendarScreen() {
               <Ionicons name="today" size={13} color={colors.accent} />
               <Text style={[s.chipText, { color: colors.textSecondary }]}>{eventDates.size} days with events</Text>
             </View>
+            {isDesktopWeb ? (
+              <Pressable style={[s.chip, { backgroundColor: colors.surface, borderColor: colors.borderLight }]} onPress={() => router.push('/(tabs)/council' as never)}>
+                <Ionicons name="business-outline" size={13} color={colors.info} />
+                <Text style={[s.chipText, { color: colors.textSecondary }]}>Open Council</Text>
+              </Pressable>
+            ) : null}
           </View>
 
           <View style={isDesktopWeb ? s.desktopSplit : undefined}>
@@ -395,13 +418,13 @@ function EventRow({ event, colors }: { event: EventData; colors: ReturnType<type
 const s = StyleSheet.create({
   container: { flex: 1 },
   loadingText: { marginTop: 10, fontSize: 14, fontFamily: 'Poppins_500Medium' },
-  headerRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 4 },
+  headerRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 4 },
   headerTitle: { fontSize: 28, fontFamily: 'Poppins_700Bold', letterSpacing: -0.4 },
   headerSub: { fontSize: 13, fontFamily: 'Poppins_400Regular', marginTop: 1 },
   todayBtn: { paddingHorizontal: 16, paddingVertical: 7, borderRadius: 50 },
   todayBtnText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13 },
 
-  summaryRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 20, paddingVertical: 14 },
+  summaryRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 20, paddingVertical: 14, flexWrap: 'wrap' },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 50, borderWidth: 1 },
   chipText: { fontFamily: 'Poppins_500Medium', fontSize: 13 },
 
@@ -444,7 +467,7 @@ const s = StyleSheet.create({
   civicRow: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderRadius: 12, padding: 11, marginBottom: 8 },
   civicIcon: { width: 26, height: 26, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
 
-  desktopSplit: { flexDirection: 'row', alignItems: 'flex-start', gap: 20, paddingHorizontal: 16, maxWidth: 1120, width: '100%', alignSelf: 'center' },
+  desktopSplit: { flexDirection: 'row', alignItems: 'flex-start', gap: 20, paddingHorizontal: 16, width: '100%', alignSelf: 'center' },
   desktopCalendarCol: { flex: 1.5 },
   desktopUpcomingCol: { flex: 1, paddingTop: 4 },
 });
