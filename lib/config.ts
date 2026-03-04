@@ -50,7 +50,8 @@ export function getFirebaseWebConfig() {
   if (missing.length > 0) {
     console.warn(
       '[CulturePass] Missing Firebase environment variables: ' + missing.join(', ') +
-      '. Add them to .env and EAS build profiles. Firebase operations will fail until configured.'
+      '. Firebase services (Auth, Firestore, Storage) will not work.' +
+      ' The app will not be functional until these variables are configured in .env and EAS build profiles.'
     );
   }
 
