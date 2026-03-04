@@ -17,6 +17,7 @@ import * as Haptics from 'expo-haptics';
 import type { User, Membership } from '@shared/schema';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useColors } from '@/hooks/useColors';
+import { api } from '@/lib/api';
 
 import {
   CP,
@@ -42,8 +43,10 @@ export default function PublicProfileScreen() {
   const topInset    = Platform.OS === 'web' ? 0 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
-  const { data: usersData, isLoading } = useQuery<User[]>({ queryKey: ['/api/users'] });
-  const user   = usersData?.[0];
+  const { data: user, isLoading } = useQuery<User>({
+    queryKey: ['/api/users/me', 'profile-public'],
+    queryFn: () => api.users.me(),
+  });
   const userId = user?.id;
 
   const { data: membership } = useQuery<Membership>({

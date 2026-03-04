@@ -15,6 +15,8 @@ import { useState, useMemo, useCallback } from 'react';
 import type { Profile } from '@shared/schema';
 import { FilterChipRow } from '@/components/FilterChip';
 import { EntityTypeColors } from '@/constants/theme';
+import { useCouncil } from '@/hooks/useCouncil';
+import { useAuth } from '@/lib/auth';
 
 const isWeb = Platform.OS === 'web';
 
@@ -169,6 +171,8 @@ export default function CommunitiesScreen() {
   const [searchFocused, setSearchFocused] = useState(false);
 
   const { data: allProfiles, isLoading } = useQuery<Profile[]>({ queryKey: ['/api/profiles'] });
+  const { council, facilities } = useCouncil();
+  const { isAuthenticated } = useAuth();
 
   const filteredProfiles = useMemo(() => {
     let profiles = allProfiles ?? [];
@@ -276,17 +280,27 @@ export default function CommunitiesScreen() {
         style={[s.councilBar, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
         onPress={() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          router.push('/(tabs)/council');
+          if (isAuthenticated) {
+            router.push('/(tabs)/council');
+            return;
+          }
+          router.push({ pathname: '/council/select', params: { next: '/(tabs)/council' } });
         }}
         accessibilityRole="button"
-        accessibilityLabel="Open My Council"
+        accessibilityLabel={isAuthenticated ? 'Open My Council' : 'Choose My Council'}
+        accessibilityHint={isAuthenticated ? 'Opens your local council overview' : 'Opens council selection before council overview'}
       >
         <View style={[s.councilIcon, { backgroundColor: colors.primary + '18' }]}>
           <Ionicons name="business" size={16} color={colors.primary} />
         </View>
         <View style={s.councilTextWrap}>
           <Text style={[s.councilTitle, { color: colors.text }]}>My Council</Text>
-          <Text style={[s.councilSub, { color: colors.textSecondary }]}>Alerts, waste days, grants & links</Text>
+          <Text style={[s.councilSub, { color: colors.textSecondary }]}>
+            {council ? `${council.name} • ${facilities.length} local facilities` : 'Alerts, waste days, grants & links'}
+          </Text>
+          {!isAuthenticated ? (
+            <Text style={[s.councilHint, { color: colors.textTertiary }]}>Choose your council first</Text>
+          ) : null}
         </View>
         <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
       </Pressable>
@@ -381,6 +395,7 @@ const s = StyleSheet.create({
   councilTextWrap: { flex: 1 },
   councilTitle: { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
   councilSub: { fontSize: 12, fontFamily: 'Poppins_400Regular' },
+  councilHint: { fontSize: 11, fontFamily: 'Poppins_400Regular', marginTop: 2 },
 
   searchBar: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, paddingHorizontal: 14, paddingVertical: 10, gap: 10, borderRadius: 14, borderWidth: 1, marginBottom: 10, marginTop: 10 },
   searchInput: { flex: 1, fontSize: 15, fontFamily: 'Poppins_400Regular', padding: 0 },

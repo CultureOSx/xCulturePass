@@ -55,7 +55,7 @@ export default function LocationScreen() {
     if (effectiveCountry && selectedCity) {
       setCountry(effectiveCountry);
       setCity(selectedCity);
-      router.push('/(onboarding)/communities');
+      router.push({ pathname: '/council/select', params: { next: '/(onboarding)/communities' } });
       return;
     }
 

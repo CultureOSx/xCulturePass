@@ -73,6 +73,7 @@ export default function ProfileScreen() {
     try {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['api/auth/me'] }),
+        queryClient.invalidateQueries({ queryKey: ['/api/users/me', 'profile-tab', userId] }),
         queryClient.invalidateQueries({ queryKey: ['/api/wallet', userId] }),
         queryClient.invalidateQueries({ queryKey: [`/api/membership/${userId}`] }),
         queryClient.invalidateQueries({ queryKey: ['rewards', userId] }),
@@ -87,8 +88,8 @@ export default function ProfileScreen() {
   }, [userId]);
 
   const { data: user, isLoading: userLoading } = useQuery<User>({
-    queryKey: ['api/auth/me'],
-    queryFn: () => api.auth.me() as Promise<User>,
+    queryKey: ['/api/users/me', 'profile-tab', userId],
+    queryFn: () => api.users.me(),
     enabled: !!userId,
   });
 
@@ -229,6 +230,8 @@ export default function ProfileScreen() {
 
   const completenessColor = profileCompleteness >= 80 ? colors.success : profileCompleteness >= 50 ? colors.accent : colors.primary;
   const initials = (displayName || 'U').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  const heroTextColor = colors.textInverse;
+  const heroSubTextColor = colors.textInverse + 'E0';
 
   return (
     <ErrorBoundary>
@@ -242,17 +245,23 @@ export default function ProfileScreen() {
         >
           {/* ── Profile hero ── */}
           <View style={[s.profileHeader, isDesktopWeb && s.webSection]}>
+            <LinearGradient
+              colors={gradients.culturepassBrand}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0.95 }}
+              style={StyleSheet.absoluteFillObject}
+            />
             {/* Top bar */}
             <View style={s.headerTopBar}>
-              <Pressable style={[s.headerBtn, { backgroundColor: colors.surface }]} onPress={handleShare}>
-                <Ionicons name="share-outline" size={20} color={colors.primary} />
+              <Pressable style={[s.headerBtn, { backgroundColor: colors.textInverse + '2E' }]} onPress={handleShare}>
+                <Ionicons name="share-outline" size={20} color={heroTextColor} />
               </Pressable>
-              <Text style={[s.headerTitle, { color: colors.text }]}>Profile</Text>
+              <Text style={[s.headerTitle, { color: heroTextColor }]}>Profile</Text>
               <Pressable
-                style={[s.headerBtn, { backgroundColor: colors.surface }]}
+                style={[s.headerBtn, { backgroundColor: colors.textInverse + '2E' }]}
                 onPress={() => router.push('/notifications')}
               >
-                <Ionicons name="notifications-outline" size={20} color={colors.primary} />
+                <Ionicons name="notifications-outline" size={20} color={heroTextColor} />
                 {unreadCount > 0 && <View style={[s.notifDot, { backgroundColor: colors.error }]} />}
               </Pressable>
             </View>
@@ -263,10 +272,10 @@ export default function ProfileScreen() {
                 <Image source={{ uri: user.avatarUrl }} style={s.avatarImage} contentFit="cover" />
               ) : (
                 <LinearGradient colors={gradients.primary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.avatarFallback}>
-                  <Text style={[s.avatarInitials, { color: colors.textInverse }]}>{initials}</Text>
+                  <Text style={[s.avatarInitials, { color: heroTextColor }]}>{initials}</Text>
                 </LinearGradient>
               )}
-              <View style={[s.tierIcon, { backgroundColor: tierStyle.bg, borderColor: colors.background }]}>
+              <View style={[s.tierIcon, { backgroundColor: tierStyle.bg, borderColor: colors.textInverse + '99' }]}> 
                 <Ionicons name={tierStyle.icon as never} size={12} color={tierStyle.text} />
               </View>
             </View>
@@ -274,22 +283,22 @@ export default function ProfileScreen() {
             {/* Name, username, chips */}
             <View style={s.heroBody}>
               <View style={s.nameRow}>
-                <Text style={[s.name, { color: colors.text }]}>{displayName}</Text>
-                {user?.isVerified && <Ionicons name="checkmark-circle" size={18} color={colors.primary} />}
+                <Text style={[s.name, { color: heroTextColor }]}>{displayName}</Text>
+                {user?.isVerified && <Ionicons name="checkmark-circle" size={18} color={colors.warning} />}
               </View>
-              {user?.username ? <Text style={[s.username, { color: colors.textSecondary }]}>@{user.username}</Text> : null}
+              {user?.username ? <Text style={[s.username, { color: heroSubTextColor }]}>@{user.username}</Text> : null}
 
               <View style={s.idLocationRow}>
                 {user?.culturePassId ? (
-                  <View style={[s.chip, { backgroundColor: colors.primaryGlow }]}>
-                    <Ionicons name="finger-print" size={12} color={colors.primary} />
-                    <Text style={[s.chipText, { color: colors.primary }]}>{user.culturePassId}</Text>
+                  <View style={[s.chip, { backgroundColor: colors.textInverse + '29' }]}> 
+                    <Ionicons name="finger-print" size={12} color={heroTextColor} />
+                    <Text style={[s.chipText, { color: heroTextColor }]}>{user.culturePassId}</Text>
                   </View>
                 ) : null}
                 {displayLocation ? (
-                  <View style={[s.chip, { backgroundColor: colors.backgroundSecondary }]}>
-                    <Ionicons name="location" size={12} color={colors.text} />
-                    <Text style={[s.chipText, { color: colors.text }]}>{displayLocation}</Text>
+                  <View style={[s.chip, { backgroundColor: colors.textInverse + '29' }]}> 
+                    <Ionicons name="location" size={12} color={heroTextColor} />
+                    <Text style={[s.chipText, { color: heroTextColor }]}>{displayLocation}</Text>
                   </View>
                 ) : null}
                 <View style={[s.chip, { backgroundColor: tierStyle.bg }]}>
@@ -299,27 +308,27 @@ export default function ProfileScreen() {
               </View>
 
               {user?.bio ? (
-                <Text style={[s.bio, { color: colors.textSecondary }]} numberOfLines={2}>{user.bio}</Text>
+                <Text style={[s.bio, { color: heroSubTextColor }]} numberOfLines={2}>{user.bio}</Text>
               ) : null}
 
               {/* Profile completeness bar */}
-              <View style={[s.completenessBox, { backgroundColor: colors.surface }]}>
+              <View style={[s.completenessBox, { backgroundColor: colors.surface + 'B3' }]}> 
                 <View style={s.completenessHeader}>
-                  <Text style={[s.completenessLabel, { color: colors.text }]}>Profile completeness</Text>
+                  <Text style={[s.completenessLabel, { color: heroTextColor }]}>Profile completeness</Text>
                   <Text style={[s.completenessPercent, { color: completenessColor }]}>{profileCompleteness}%</Text>
                 </View>
-                <View style={[s.completenessTrack, { backgroundColor: colors.backgroundSecondary }]}>
+                <View style={[s.completenessTrack, { backgroundColor: colors.textInverse + '42' }]}> 
                   <View style={[s.completenessBar, { width: `${profileCompleteness}%` as never, backgroundColor: completenessColor }]} />
                 </View>
               </View>
 
               {/* Edit button */}
               <Pressable
-                style={[s.editBtn, { backgroundColor: colors.primary }]}
+                style={[s.editBtn, { backgroundColor: colors.textInverse }]}
                 onPress={() => router.push('/profile/edit')}
               >
-                <Ionicons name="create-outline" size={16} color={colors.textInverse} />
-                <Text style={[s.editBtnText, { color: colors.textInverse }]}>Edit Profile</Text>
+                <Ionicons name="create-outline" size={16} color={colors.background} />
+                <Text style={[s.editBtnText, { color: colors.background }]}>Edit Profile</Text>
               </Pressable>
             </View>
           </View>
@@ -477,17 +486,17 @@ export default function ProfileScreen() {
           <View style={[s.section, isDesktopWeb && s.webSection]}>
             <Text style={[s.sectionTitle, { color: colors.text }]}>Tickets & Wallet</Text>
             <View style={[s.menuCard, { backgroundColor: colors.surface }]}>
-              <MenuItem icon="ticket-outline"   label="My Tickets"       color="#FF3B30"        badge={tickets}                                                              onPress={() => router.push('/tickets')}          colors={colors} />
-              <MenuItem icon="wallet-outline"   label="Ticket Wallet"    color="#34C759"        value={`$${walletBalance.toFixed(2)}`}                                       onPress={() => router.push('/payment/wallet')}   colors={colors} />
+              <MenuItem icon="ticket-outline"   label="My Tickets"       color={colors.error}        badge={tickets}                                                              onPress={() => router.push('/tickets')}          colors={colors} />
+              <MenuItem icon="wallet-outline"   label="Ticket Wallet"    color={colors.success}      value={`$${walletBalance.toFixed(2)}`}                                       onPress={() => router.push('/payment/wallet')}   colors={colors} />
               <MenuItem icon="trophy-outline"   label="Rewards Status"   color={colors.warning} value={`${rewards?.tierLabel ?? 'Silver'} · ${rewards?.points ?? wallet?.points ?? 0} pts`} onPress={() => router.push('/payment/wallet')} colors={colors} />
-              <MenuItem icon="bookmark-outline" label="Saved Items"      color="#FF9500"        badge={savedEvents.length + joinedCommunities.length}                       onPress={() => router.push('/saved')}            colors={colors} />
+              <MenuItem icon="bookmark-outline" label="Saved Items"      color={colors.warning}      badge={savedEvents.length + joinedCommunities.length}                       onPress={() => router.push('/saved')}            colors={colors} />
               <MenuItem icon="people-outline"   label="My Contacts"      color={colors.secondary} badge={contacts.length}                                                  onPress={() => router.push('/contacts' as never)} colors={colors} />
               <MenuItem icon="scan-outline"     label="Scanner"          color={colors.primary}                                                                             onPress={() => router.push('/scanner')}          colors={colors} />
               {isOrganizer && (
                 <MenuItem icon="grid-outline"   label="Organizer Dashboard" color={colors.secondary}  onPress={() => router.push('/dashboard/organizer' as never)} colors={colors} />
               )}
               {isAdmin && (
-                <MenuItem icon="people-circle-outline" label="Admin Panel" color="#FF3B30" onPress={() => router.push('/admin/users' as never)} colors={colors} />
+                <MenuItem icon="people-circle-outline" label="Admin Panel" color={colors.error} onPress={() => router.push('/admin/users' as never)} colors={colors} />
               )}
               {hasMinRole('cityAdmin') && (
                 <MenuItem icon="megaphone-outline" label="Campaign Targeting" color={colors.info} onPress={() => router.push('/admin/notifications' as never)} colors={colors} />
@@ -503,8 +512,8 @@ export default function ProfileScreen() {
           <View style={[s.section, isDesktopWeb && s.webSection]}>
             <Text style={[s.sectionTitle, { color: colors.text }]}>Payment & Billing</Text>
             <View style={[s.menuCard, { backgroundColor: colors.surface }]}>
-              <MenuItem icon="card-outline"    label="Payment Methods"     color="#007AFF" onPress={() => router.push('/payment/methods')}      colors={colors} />
-              <MenuItem icon="receipt-outline" label="Transaction History" color="#5856D6" onPress={() => router.push('/payment/transactions')} showDivider={false} colors={colors} />
+              <MenuItem icon="card-outline"    label="Payment Methods"     color={colors.info} onPress={() => router.push('/payment/methods')}      colors={colors} />
+              <MenuItem icon="receipt-outline" label="Transaction History" color={colors.secondary} onPress={() => router.push('/payment/transactions')} showDivider={false} colors={colors} />
             </View>
           </View>
 
@@ -512,8 +521,8 @@ export default function ProfileScreen() {
           <View style={[s.section, isDesktopWeb && s.webSection]}>
             <Text style={[s.sectionTitle, { color: colors.text }]}>Notifications</Text>
             <View style={[s.menuCard, { backgroundColor: colors.surface }]}>
-              <MenuItem icon="notifications-outline" label="View Notifications"      color="#FF9500" badge={unreadCount} onPress={() => router.push('/notifications')}           colors={colors} />
-              <MenuItem icon="options-outline"       label="Notification Preferences" color="#FF3B30"                    onPress={() => router.push('/settings/notifications')} showDivider={false} colors={colors} />
+              <MenuItem icon="notifications-outline" label="View Notifications"      color={colors.warning} badge={unreadCount} onPress={() => router.push('/notifications')}           colors={colors} />
+              <MenuItem icon="options-outline"       label="Notification Preferences" color={colors.error}                    onPress={() => router.push('/settings/notifications')} showDivider={false} colors={colors} />
             </View>
           </View>
 
@@ -521,7 +530,7 @@ export default function ProfileScreen() {
           <View style={s.section}>
             <Text style={[s.sectionTitle, { color: colors.text }]}>Settings</Text>
             <View style={[s.menuCard, { backgroundColor: colors.surface }]}>
-              <MenuItem icon="shield-checkmark-outline" label="Privacy"         color="#5856D6"        onPress={() => router.push('/settings/privacy')} colors={colors} />
+              <MenuItem icon="shield-checkmark-outline" label="Privacy"         color={colors.secondary}        onPress={() => router.push('/settings/privacy')} colors={colors} />
               <MenuItem icon="add-circle-outline"       label="Submit a Listing" color={colors.secondary} onPress={() => router.push('/submit')}       showDivider={false} colors={colors} />
             </View>
           </View>
@@ -530,9 +539,9 @@ export default function ProfileScreen() {
           <View style={s.section}>
             <Text style={[s.sectionTitle, { color: colors.text }]}>Help & Support</Text>
             <View style={[s.menuCard, { backgroundColor: colors.surface }]}>
-              <MenuItem icon="help-buoy-outline"           label="Help Centre"          color="#34C759" onPress={() => router.push('/settings/help')}       colors={colors} />
-              <MenuItem icon="document-text-outline"       label="Terms & Privacy"      color="#8E8E93" onPress={() => router.push('/legal/terms')}          colors={colors} />
-              <MenuItem icon="shield-outline"              label="Community Guidelines" color="#5E5CE6" onPress={() => router.push('/legal/guidelines')}     colors={colors} />
+              <MenuItem icon="help-buoy-outline"           label="Help Centre"          color={colors.success} onPress={() => router.push('/settings/help')}       colors={colors} />
+              <MenuItem icon="document-text-outline"       label="Terms & Privacy"      color={colors.textSecondary} onPress={() => router.push('/legal/terms')}          colors={colors} />
+              <MenuItem icon="shield-outline"              label="Community Guidelines" color={colors.secondary} onPress={() => router.push('/legal/guidelines')}     colors={colors} />
               <MenuItem icon="information-circle-outline"  label="About CulturePass"    color={colors.primary} onPress={() => router.push('/settings/about')} showDivider={false} colors={colors} />
             </View>
           </View>
@@ -569,7 +578,7 @@ const s = StyleSheet.create({
   container: { flex: 1 },
   loadingText: { marginTop: Spacing.sm, fontSize: 14, fontFamily: 'Poppins_500Medium' },
 
-  profileHeader:  { paddingBottom: LayoutRules.betweenCards },
+  profileHeader:  { paddingBottom: LayoutRules.betweenCards, overflow: 'hidden', borderBottomLeftRadius: 22, borderBottomRightRadius: 22 },
   headerTopBar:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: LayoutRules.screenHorizontalPadding, paddingVertical: LayoutRules.iconTextGap },
   headerBtn:      { width: LayoutRules.buttonHeight, height: LayoutRules.buttonHeight, borderRadius: LayoutRules.borderRadius, alignItems: 'center', justifyContent: 'center' },
   headerTitle:    { fontSize: 22, fontFamily: 'Poppins_700Bold', letterSpacing: -0.4 },
@@ -610,7 +619,7 @@ const s = StyleSheet.create({
   quickIcon: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   quickLabel:{ fontSize: 11, fontFamily: 'Poppins_600SemiBold', textAlign: 'center' },
 
-  statsRow:  { flexDirection: 'row', marginHorizontal: LayoutRules.screenHorizontalPadding, marginBottom: LayoutRules.sectionSpacing, borderRadius: LayoutRules.borderRadius, paddingVertical: 18, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
+  statsRow:  { flexDirection: 'row', marginHorizontal: LayoutRules.screenHorizontalPadding, marginBottom: LayoutRules.sectionSpacing, borderRadius: LayoutRules.borderRadius, paddingVertical: 18, shadowColor: 'black', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
   statCell:  { flex: 1, alignItems: 'center', justifyContent: 'center' },
   statDivider:{ width: StyleSheet.hairlineWidth, marginVertical: 4 },
   statNum:   { fontSize: 22, fontFamily: 'Poppins_700Bold', letterSpacing: -0.5 },
@@ -624,7 +633,7 @@ const s = StyleSheet.create({
   activityText:   { fontSize: 14, fontFamily: 'Poppins_400Regular' },
   activityDivider:{ height: StyleSheet.hairlineWidth, marginLeft: 58 },
 
-  menuCard: { borderRadius: LayoutRules.borderRadius, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
+  menuCard: { borderRadius: LayoutRules.borderRadius, overflow: 'hidden', shadowColor: 'black', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
   divider:  { height: StyleSheet.hairlineWidth, marginLeft: 66 },
 
   miniCard: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: LayoutRules.cardPaddingMin, gap: LayoutRules.iconTextGap },
@@ -635,7 +644,7 @@ const s = StyleSheet.create({
   seeAllText:{ fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
 
   bottomActions:{ paddingHorizontal: LayoutRules.screenHorizontalPadding, marginBottom: LayoutRules.sectionSpacing, gap: LayoutRules.betweenCards },
-  actionBtn:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: LayoutRules.iconTextGap, borderRadius: LayoutRules.borderRadius, height: LayoutRules.buttonHeight, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
+  actionBtn:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: LayoutRules.iconTextGap, borderRadius: LayoutRules.borderRadius, height: LayoutRules.buttonHeight, shadowColor: 'black', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
   actionBtnText:{ fontSize: 16, fontFamily: 'Poppins_600SemiBold' },
   version:      { fontSize: 12, fontFamily: 'Poppins_400Regular', textAlign: 'center', marginBottom: LayoutRules.sectionSpacing },
   webSection:   { maxWidth: 1024, width: '100%', alignSelf: 'center' },

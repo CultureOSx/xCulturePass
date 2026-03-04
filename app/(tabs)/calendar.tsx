@@ -10,6 +10,7 @@ import { Colors } from '@/constants/theme';
 import { useQuery } from '@tanstack/react-query';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { api } from '@/lib/api';
+import { useCouncil } from '@/hooks/useCouncil';
 import type { EventData } from '@/shared/schema';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
@@ -33,6 +34,20 @@ function toSafeDateKey(value: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
 }
 
+function weekdayIndex(day?: string): number | null {
+  if (!day) return null;
+  const map: Record<string, number> = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
+  return map[day.toLowerCase()] ?? null;
+}
+
+function nextDateForWeekday(weekday: number, from = new Date()): Date {
+  const date = new Date(from);
+  const distance = (weekday - date.getDay() + 7) % 7;
+  date.setDate(date.getDate() + distance);
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
 export default function CalendarScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
@@ -44,6 +59,7 @@ export default function CalendarScreen() {
   const [currentYear,  setCurrentYear]  = useState(today.getFullYear());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const { state } = useOnboarding();
+  const { waste, council } = useCouncil({ city: state.city, country: state.country });
 
   const { data: allEvents = [], isLoading } = useQuery<EventData[]>({
     queryKey: ['/api/events', state.country, state.city],
@@ -86,6 +102,30 @@ export default function CalendarScreen() {
       })
       .slice(0, 6);
   }, [allEvents, today]);
+
+  const civicReminders = useMemo(() => {
+    if (!waste) return [] as { id: string; title: string; dateKey: string; note: string }[];
+    const rows = [
+      { id: 'general', day: waste.generalWasteDay, title: 'General Waste Collection', note: waste.frequencyGeneral },
+      { id: 'recycling', day: waste.recyclingDay, title: 'Recycling Collection', note: waste.frequencyRecycling },
+      { id: 'green', day: waste.greenWasteDay, title: 'Green Waste Collection', note: waste.frequencyGreen ?? 'schedule varies' },
+    ].filter((item) => Boolean(item.day));
+
+    return rows
+      .map((item) => {
+        const weekday = weekdayIndex(item.day);
+        if (weekday == null) return null;
+        const date = nextDateForWeekday(weekday, today);
+        const dateKey = formatDateKey(date.getFullYear(), date.getMonth(), date.getDate());
+        return {
+          id: item.id,
+          title: item.title,
+          dateKey,
+          note: item.note,
+        };
+      })
+      .filter((item): item is { id: string; title: string; dateKey: string; note: string } => Boolean(item));
+  }, [waste, today]);
 
   const prevMonth = useCallback(() => {
     Haptics.selectionAsync();
@@ -270,6 +310,32 @@ export default function CalendarScreen() {
             </View>
           )}
 
+          {!selectedDate && civicReminders.length > 0 && (
+            <View style={s.eventsSection}>
+              <View style={s.sectionRow}>
+                <Text style={[s.sectionTitle, { color: colors.text }]}>Civic Reminders</Text>
+                <Pressable onPress={() => router.push('/(tabs)/council' as never)}>
+                  <Text style={[s.seeAll, { color: colors.primary }]}>Open Council</Text>
+                </Pressable>
+              </View>
+              {civicReminders.map((reminder) => (
+                <View key={reminder.id} style={[s.civicRow, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+                  <View style={[s.civicIcon, { backgroundColor: colors.primaryGlow }]}> 
+                    <Ionicons name="business-outline" size={14} color={colors.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[s.eventTitle, { color: colors.text }]}>{reminder.title}</Text>
+                    <Text style={[s.eventVenue, { color: colors.textSecondary }]}>
+                      {new Date(`${reminder.dateKey}T00:00:00`).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'short' })}
+                      {' • '}{reminder.note}
+                      {council ? ` • ${council.name}` : ''}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
+
           {!isDesktopWeb && !selectedDate && upcomingEvents.length === 0 && (
             <View style={s.eventsSection}>
               <View style={[s.empty, { backgroundColor: colors.surface }]}> 
@@ -375,6 +441,8 @@ const s = StyleSheet.create({
   eventVenue: { fontFamily: 'Poppins_400Regular', fontSize: 12, flexShrink: 1 },
   priceChip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
   priceText: { fontFamily: 'Poppins_600SemiBold', fontSize: 12 },
+  civicRow: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderRadius: 12, padding: 11, marginBottom: 8 },
+  civicIcon: { width: 26, height: 26, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
 
   desktopSplit: { flexDirection: 'row', alignItems: 'flex-start', gap: 20, paddingHorizontal: 16, maxWidth: 1120, width: '100%', alignSelf: 'center' },
   desktopCalendarCol: { flex: 1.5 },

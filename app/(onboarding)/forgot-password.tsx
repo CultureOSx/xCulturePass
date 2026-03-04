@@ -103,7 +103,7 @@ export default function ForgotPasswordScreen() {
                 If you don&apos;t see it, check your spam folder. The link expires in 24 hours.
               </Text>
 
-              <Pressable style={[s.submitBtn, { backgroundColor: colors.primary }]} onPress={() => router.replace('/login')}>
+              <Pressable style={[s.submitBtn, { backgroundColor: colors.primary }]} onPress={() => router.replace('/(onboarding)/login')}>
                 <Ionicons name="chevron-back" size={18} color={colors.textInverse} />
                 <Text style={[s.submitText, { color: colors.textInverse }]}>Back to Sign In</Text>
               </Pressable>

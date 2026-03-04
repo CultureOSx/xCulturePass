@@ -6,6 +6,7 @@ import * as Haptics from 'expo-haptics';
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, getApiUrl, queryClient } from '@/lib/query-client';
+import { api } from '@/lib/api';
 import * as ImagePicker from 'expo-image-picker';
 import { manipulateAsync, SaveFormat } from '@/lib/image-manipulator';
 import { fetch } from 'expo/fetch';
@@ -45,8 +46,9 @@ export default function EditProfileScreen() {
   const { userId } = useAuth();
 
   const { data: user } = useQuery<UserData>({
-    queryKey: ['/api/users', userId],
+    queryKey: ['/api/users/me', userId],
     enabled: !!userId,
+    queryFn: () => api.users.me() as Promise<UserData>,
   });
 
   const [form, setForm] = useState({
@@ -104,6 +106,8 @@ export default function EditProfileScreen() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/users/me', userId] });
+      queryClient.invalidateQueries({ queryKey: ['api/auth/me'] });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert('Profile Updated', 'Your profile has been saved successfully.');
       router.back();

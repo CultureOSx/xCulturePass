@@ -2,7 +2,7 @@ import { View, Text, Pressable, StyleSheet, Platform, KeyboardAvoidingView, Scro
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors } from '@/constants/theme';
+import { Colors, gradients } from '@/constants/theme';
 import { useState } from 'react';
 import * as Haptics from 'expo-haptics';
 import { auth as firebaseAuth } from '@/lib/firebase';
@@ -14,7 +14,7 @@ import {
   signInWithCredential,
   OAuthProvider,
 } from 'firebase/auth';
-import { apiRequest } from '@/lib/query-client';
+import { api } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Checkbox } from '@/components/ui/Checkbox';
@@ -112,15 +112,8 @@ export default function SignUpScreen() {
       const credential = await createUserWithEmailAndPassword(firebaseAuth, normalizedEmail, password);
       await updateProfile(credential.user, { displayName: name.trim() });
 
-      // Create Firestore user profile (fire-and-forget — non-blocking)
-      credential.user.getIdToken().then((idToken) => {
-        apiRequest(
-          'POST',
-          'api/auth/register',
-          { displayName: name.trim() },
-          { headers: { Authorization: `Bearer ${idToken}` } }
-        ).catch(() => { /* profile created lazily by GET /api/auth/me on next load */ });
-      });
+      await credential.user.getIdToken(true);
+      await api.auth.register({ displayName: name.trim() });
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.push('/(onboarding)/location');
@@ -143,8 +136,9 @@ export default function SignUpScreen() {
 
   const formContent = (
     <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scrollContent}>
+        <View style={[styles.formCard, isDesktop && styles.formCardDesktop, { borderColor: colors.textInverse + '26', backgroundColor: colors.background + 'AD' }]}> 
           <View style={styles.logoRow}>
-            <View style={styles.logoCircle}><Ionicons name="globe-outline" size={34} color={Colors.primary} /></View>
+            <View style={[styles.logoCircle, { backgroundColor: colors.textInverse + '33' }]}><Ionicons name="globe-outline" size={34} color={Colors.primary} /></View>
             <Text style={[styles.brandLabel, { color: colors.textInverse + '99' }]}>culturepass.app</Text>
           </View>
           <Text style={[styles.title, { color: colors.textInverse }]}>Create Account</Text>
@@ -200,7 +194,7 @@ export default function SignUpScreen() {
               checked={agreed}
               onToggle={setAgreed}
               label={
-                <Text style={styles.checkText}>
+                <Text style={[styles.checkText, { color: colors.textInverse + 'D9' }]}>
                   I agree to the <Text style={[styles.linkText, { color: colors.warning }]} onPress={() => router.push('/legal/terms')}>Terms of Service</Text> and <Text style={[styles.linkText, { color: colors.warning }]} onPress={() => router.push('/legal/privacy')}>Privacy Policy</Text>
                 </Text>
               }
@@ -221,9 +215,9 @@ export default function SignUpScreen() {
           </Button>
 
           <View style={styles.socialDivider}>
-            <View style={styles.divLine} />
+            <View style={[styles.divLine, { backgroundColor: colors.textInverse + '59' }]} />
             <Text style={[styles.divText, { color: colors.textInverse + 'D9' }]}>or sign up with</Text>
-            <View style={styles.divLine} />
+            <View style={[styles.divLine, { backgroundColor: colors.textInverse + '59' }]} />
           </View>
 
           <View style={styles.socialRow}>
@@ -234,9 +228,10 @@ export default function SignUpScreen() {
             }
           </View>
 
-          <Pressable style={styles.switchRow} onPress={() => router.replace('/login')}>
+          <Pressable style={styles.switchRow} onPress={() => router.replace('/(onboarding)/login')}>
             <Text style={[styles.switchText, { color: colors.textInverse + 'D9' }]}>Already have an account? <Text style={[styles.switchLink, { color: colors.warning }]}>Sign In</Text></Text>
           </Pressable>
+        </View>
         </ScrollView>
   );
 
@@ -246,18 +241,18 @@ export default function SignUpScreen() {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="height">
         <View style={[styles.container, styles.desktopWrapper]}>
           <LinearGradient
-            colors={['#001F4D', '#0081C8', '#EE334E', '#FCB131']}
+            colors={gradients.culturepassBrand}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0.95 }}
             style={StyleSheet.absoluteFillObject}
           />
           <View style={styles.desktopBackRow}>
-            <Pressable onPress={() => router.replace('/(tabs)')} hitSlop={8} style={styles.desktopBackBtn}>
+            <Pressable onPress={() => router.replace('/(tabs)')} hitSlop={8} style={[styles.desktopBackBtn, { backgroundColor: colors.textInverse + '26' }]}>
               <Ionicons name="chevron-back" size={18} color={colors.textInverse} />
               <Text style={[styles.desktopBackText, { color: colors.textInverse }]}>Back to Discover</Text>
             </Pressable>
           </View>
-          <View style={styles.desktopCard}>
+          <View style={[styles.desktopCard, { backgroundColor: colors.background + 'D9', borderColor: colors.textInverse + '26' }, Platform.OS === 'web' ? ({ boxShadow: `0 24px 64px ${colors.background + '73'}` } as object) : null]}>
             {formContent}
           </View>
         </View>
@@ -269,7 +264,7 @@ export default function SignUpScreen() {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={0}>
       <View style={[styles.container, { paddingTop: topInset }]}>
         <LinearGradient
-          colors={['#001F4D', '#0081C8', '#EE334E', '#FCB131']}
+          colors={gradients.culturepassBrand}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0.95 }}
           style={StyleSheet.absoluteFillObject}
@@ -284,11 +279,24 @@ export default function SignUpScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#001F4D' },
+  container: { flex: 1, backgroundColor: 'transparent' },
   header: { paddingHorizontal: 20, paddingVertical: 12 },
-  scrollContent: { paddingHorizontal: 24, paddingBottom: 40 },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
+  formCard: {
+    borderRadius: 22,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+  },
+  formCardDesktop: {
+    borderRadius: 0,
+    borderWidth: 0,
+    backgroundColor: 'transparent',
+    paddingHorizontal: 0,
+    paddingBottom: 0,
+  },
   logoRow: { alignItems: 'center', marginTop: 12, marginBottom: 20 },
-  logoCircle: { width: 68, height: 68, borderRadius: 34, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
+  logoCircle: { width: 68, height: 68, borderRadius: 34, alignItems: 'center', justifyContent: 'center' },
   brandLabel: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', letterSpacing: 1.5, marginTop: 10 },
   title: { fontSize: 28, fontFamily: 'Poppins_700Bold', marginBottom: 8 },
   subtitle: { fontSize: 15, fontFamily: 'Poppins_400Regular', lineHeight: 22, marginBottom: 28 },
@@ -297,7 +305,7 @@ const styles = StyleSheet.create({
   label: { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
   submitBtn: { marginBottom: 20 },
   socialDivider: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
-  divLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(255,255,255,0.35)' },
+  divLine: { flex: 1, height: StyleSheet.hairlineWidth },
   divText: { fontSize: 12, fontFamily: 'Poppins_400Regular' },
   socialRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
   switchRow: { alignItems: 'center' },
@@ -308,15 +316,12 @@ const styles = StyleSheet.create({
   linkText: { fontFamily: 'Poppins_600SemiBold' },
   desktopWrapper: { alignItems: 'center', justifyContent: 'center' },
   desktopBackRow: { position: 'absolute', top: 20, left: 32, zIndex: 10 },
-  desktopBackBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 },
+  desktopBackBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 },
   desktopBackText: { fontSize: 14, fontFamily: 'Poppins_500Medium' },
   desktopCard: {
     width: 480,
-    backgroundColor: 'rgba(0,31,77,0.85)',
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
     overflow: 'hidden',
-    ...(Platform.OS === 'web' ? { boxShadow: '0 24px 64px rgba(0,0,0,0.45)' } as object : {}),
   },
 });

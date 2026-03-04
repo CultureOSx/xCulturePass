@@ -1,8 +1,6 @@
 import "react-native-reanimated"; // <-- CRUCIAL FIX: Must be at the very top
 import { Buffer } from "buffer";
 
-global.Buffer = Buffer;
-
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -11,13 +9,10 @@ import {
   Platform,
   View,
   StyleSheet,
-  useWindowDimensions,
-  useColorScheme,
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { queryClient } from "@/lib/query-client";
@@ -28,7 +23,7 @@ import {
 } from "@/contexts/OnboardingContext";
 import { SavedProvider } from "@/contexts/SavedContext";
 import { ContactsProvider } from "@/contexts/ContactsContext";
-import { Breakpoints, Colors } from "@/constants/theme";
+import { Colors } from "@/constants/theme";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 import {
@@ -38,6 +33,8 @@ import {
   Inter_600SemiBold,
   Inter_700Bold,
 } from "@expo-google-fonts/inter";
+
+global.Buffer = Buffer;
 
 // Prevent splash auto-hide safely
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -87,12 +84,17 @@ function DataSync() {
       resetOnboarding();
     }
   }, [
-    user?.id,
-    user?.city,
-    user?.country,
-    user?.interests,
-    user?.communities,
-  ]); // eslint-disable-line react-hooks/exhaustive-deps
+    resetOnboarding,
+    setCity,
+    setCommunities,
+    setCountry,
+    setInterests,
+    state.city,
+    state.communities,
+    state.country,
+    state.interests,
+    user,
+  ]);
 
   return null;
 }
@@ -117,6 +119,8 @@ function RootLayoutNav() {
 
       <Stack.Screen name="event/[id]" />
       <Stack.Screen name="community/[id]" />
+      <Stack.Screen name="council/select" />
+      <Stack.Screen name="council/claim" />
       <Stack.Screen name="business/[id]" />
       <Stack.Screen name="artist/[id]" />
       <Stack.Screen name="venue/[id]" />
@@ -176,8 +180,10 @@ function RootLayoutNav() {
       <Stack.Screen name="legal/guidelines" />
 
       <Stack.Screen name="admin/users" />
+      <Stack.Screen name="admin/council-management" />
       <Stack.Screen name="admin/notifications" />
       <Stack.Screen name="admin/audit-logs" />
+      <Stack.Screen name="admin/council-claims" />
     </Stack>
   );
 }

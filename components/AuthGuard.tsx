@@ -44,7 +44,7 @@ export function AuthGuard({
     return <>{children}</>;
   }
 
-  const topPad = Platform.OS === 'web' ? 67 : insets.top + 12;
+  const topPad = Platform.OS === 'web' ? 0 : insets.top + 12;
   const botPad = Platform.OS === 'web' ? 40 : insets.bottom + 24;
 
   return (
@@ -90,7 +90,7 @@ export function AuthGuard({
 
         <Pressable
           style={[styles.primaryBtn, { backgroundColor: colors.textInverse }]}
-          onPress={() => router.push({ pathname: '/signup', params: { redirectTo: pathname } } as any)}
+          onPress={() => router.push({ pathname: '/(onboarding)/signup', params: { redirectTo: pathname } } as any)}
         >
           <Text style={[styles.primaryBtnText, { color: colors.background }]}>Create Free Account</Text>
           <Ionicons name="arrow-forward" size={18} color={colors.background} />
@@ -98,7 +98,7 @@ export function AuthGuard({
 
         <Pressable
           style={styles.secondaryBtn}
-          onPress={() => router.push({ pathname: '/login', params: { redirectTo: pathname } } as any)}
+          onPress={() => router.push({ pathname: '/(onboarding)/login', params: { redirectTo: pathname } } as any)}
         >
           <Text style={[styles.secondaryBtnText, { color: colors.textInverse }]}>I already have an account</Text>
         </Pressable>

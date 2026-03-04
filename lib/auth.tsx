@@ -56,10 +56,13 @@ export interface AuthSession {
 }
 
 interface AuthProfileResponse {
+  id?: string;
   username?: string;
   displayName?: string;
   email?: string;
   role?: UserRole;
+  culturePassId?: string;
+  createdAt?: string | null;
   country?: string;
   city?: string;
   avatarUrl?: string;
@@ -132,7 +135,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         let userProfile: Partial<AuthUser> = {};
         try {
-          const profileData = await api.auth.me() as unknown as AuthProfileResponse;
+          let profileData = await api.auth.me() as unknown as AuthProfileResponse;
+          const needsBootstrap = !profileData.createdAt || !profileData.culturePassId;
+          if (needsBootstrap) {
+            await api.auth.register({
+              displayName: firebaseUser.displayName ?? undefined,
+              city: profileData.city,
+              country: profileData.country ?? 'Australia',
+            });
+            profileData = await api.auth.me() as unknown as AuthProfileResponse;
+          }
           const membership = profileData.membership;
           userProfile = {
             username: profileData.username,

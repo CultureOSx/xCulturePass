@@ -8,6 +8,7 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import { useCouncil } from '@/hooks/useCouncil';
 
 export default function BusinessDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -20,6 +21,11 @@ export default function BusinessDetailScreen() {
     queryKey: ['/api/businesses', id],
     queryFn: () => api.businesses.get(id as string),
     enabled: !!id,
+  });
+  const { council, isCouncilVerified, lgaCode } = useCouncil({
+    city: business?.city,
+    country: business?.country,
+    enabled: !!business,
   });
 
   if (isLoading) {
@@ -74,6 +80,12 @@ export default function BusinessDetailScreen() {
               )}
             </View>
             <Text style={styles.heroCategory}>{business.category} - {business.priceRange}</Text>
+            {isCouncilVerified && council ? (
+              <View style={[styles.verifiedBadge, { backgroundColor: 'rgba(52,152,219,0.85)', marginTop: 8 }]}>
+                <Ionicons name="shield-checkmark" size={16} color={colors.textInverse} />
+                <Text style={styles.verifiedText}>Council Verified • LGA {lgaCode}</Text>
+              </View>
+            ) : null}
           </View>
         </LinearGradient>
       </View>

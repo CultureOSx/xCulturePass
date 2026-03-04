@@ -9,6 +9,10 @@ import jobsRouter from './routes/jobs';
 dotenv.config();
 
 const PORT = Number(process.env.PORT || 8080);
+const CORS_ALLOWED_ORIGINS = (process.env.CORS_ALLOWED_ORIGINS ?? 'https://culturepass.app,https://www.culturepass.app')
+  .split(',')
+  .map((origin: string) => origin.trim())
+  .filter(Boolean);
 
 if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
   try {
@@ -24,7 +28,25 @@ if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
 }
 
 const app = express();
-app.use(cors());
+app.use(cors((req, callback) => {
+  const origin = req.header('Origin');
+
+  if (!origin) {
+    callback(null, { origin: false });
+    return;
+  }
+
+  const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
+  const isAllowedOrigin = CORS_ALLOWED_ORIGINS.includes(origin) || isLocalhost;
+
+  callback(null, {
+    origin: isAllowedOrigin,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Authorization', 'Content-Type'],
+    credentials: false,
+    maxAge: 600,
+  });
+}));
 app.use(express.json());
 
 // Public health
