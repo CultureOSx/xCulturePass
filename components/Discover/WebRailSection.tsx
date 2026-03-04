@@ -22,12 +22,6 @@ export default function WebRailSection({
     <View style={styles.webSection}>
       <View style={styles.webSectionHeader}>
         <View style={styles.webSectionTitleRow}>
-          <LinearGradient
-            colors={['#0081C8', '#EE334E']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 1 }}
-            style={styles.webSectionAccentBar}
-          />
           <View>
             <Text style={styles.webSectionTitle}>{title}</Text>
             {subtitle ? <Text style={styles.webSectionSub}>{subtitle}</Text> : null}
@@ -58,6 +52,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     justifyContent: 'space-between',
     gap: 10,
+    marginBottom: 4,
   },
   webSectionTitleRow: {
     flexDirection: 'row',
@@ -65,23 +60,18 @@ const styles = StyleSheet.create({
     gap: 12,
     flex: 1,
   },
-  webSectionAccentBar: {
-    width: 3,
-    height: 36,
-    borderRadius: 2,
-  },
   webSectionTitle: {
-    fontSize: 20,
-    lineHeight: 26,
+    fontSize: 24,
+    lineHeight: 30,
     fontFamily: 'Poppins_700Bold',
-    color: '#EAEEFF',
-    letterSpacing: -0.3,
+    color: '#FFFFFF',
+    letterSpacing: -0.5,
   },
   webSectionSub: {
-    marginTop: 3,
-    fontSize: 13,
+    marginTop: 4,
+    fontSize: 14,
     fontFamily: 'Poppins_400Regular',
-    color: '#7A88AA',
+    color: '#94A2C4',
   },
   webSeeAllBtn: {
     flexDirection: 'row',

@@ -99,6 +99,7 @@ export function LocationPicker() {
         animationType="slide"
         presentationStyle="pageSheet"
         onRequestClose={close}
+        transparent={Platform.OS === 'web'}
       >
         <View style={[styles.modal, { backgroundColor: colors.background }]}>
           {/* Blurred modal background — iOS only */}
@@ -310,9 +311,26 @@ const styles = StyleSheet.create({
   },
   modal: {
     flex: 1,
+    ...Platform.select({
+      web: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)', // Add overlay on web
+      }
+    })
   },
   modalInner: {
     flex: 1,
+    ...Platform.select({
+      web: {
+        width: '100%',
+        maxWidth: 500,
+        maxHeight: '80%',
+        borderRadius: 16,
+        overflow: 'hidden',
+        boxShadow: '0 10px 30px rgba(0,0,0,0.2)', // Add shadow for web
+      }
+    })
   },
   handle: {
     alignSelf: 'center',

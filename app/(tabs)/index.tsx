@@ -489,9 +489,15 @@ export default function HomeScreen() {
                 <Pressable style={styles.webIconBtn} onPress={() => pushSafe('/map')}>
                   <Ionicons name="map-outline" size={19} color="#EAF0FF" />
                 </Pressable>
-                <Pressable style={styles.webAvatarBtn} onPress={() => pushSafe('/(tabs)/profile')}>
-                  <Text style={styles.webAvatarText}>{firstName.slice(0, 1).toUpperCase()}</Text>
-                </Pressable>
+                {isAuthenticated ? (
+                  <Pressable style={styles.webAvatarBtn} onPress={() => pushSafe('/(tabs)/profile')}>
+                    <Text style={styles.webAvatarText}>{firstName.slice(0, 1).toUpperCase()}</Text>
+                  </Pressable>
+                ) : (
+                  <Pressable style={styles.webLoginBtn} onPress={() => router.push('/(onboarding)/login')}>
+                    <Text style={styles.webLoginText}>Sign in</Text>
+                  </Pressable>
+                )}
               </View>
             </View>
 
@@ -1229,7 +1235,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 120,
     gap: 24,
-    maxWidth: 1120,
+    maxWidth: 1200,
     width: '100%',
     alignSelf: 'center',
   },
@@ -1312,6 +1318,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Poppins_700Bold',
     color: '#fff',
+  },
+  webLoginBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: '#0081C8',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  webLoginText: {
+    fontSize: 14,
+    fontFamily: 'Poppins_600SemiBold',
+    color: '#FFF',
   },
   webCategoryChipsRow: {
     gap: 8,
