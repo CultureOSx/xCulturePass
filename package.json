@@ -28,7 +28,6 @@
     "build-web": "npx expo export --platform web",
     "deploy-web": "npm run build-web && firebase deploy --only hosting",
     "deploy-all": "cd functions && npm run build && cd .. && npm run build-web && firebase deploy --only functions,hosting",
-<<<<<<< HEAD
     "build:ios:preview": "npx eas-cli build --platform ios --profile preview",
     "build:android:preview": "npx eas-cli build --platform android --profile preview",
     "build:ios:production": "npx eas-cli build --platform ios --profile production",
@@ -39,16 +38,6 @@
     "submit:android:production": "npx eas-cli submit --platform android --profile production",
     "update:preview": "npx eas-cli update --branch preview",
     "update:production": "npx eas-cli update --branch production"
-=======
-    "build:ios:preview": "eas build --platform ios --profile preview",
-    "build:android:preview": "eas build --platform android --profile preview",
-    "build:ios:production": "eas build --platform ios --profile production",
-    "build:android:production": "eas build --platform android --profile production",
-    "submit:ios:production": "eas submit --platform ios --profile production",
-    "submit:android:production": "eas submit --platform android --profile production",
-    "update:preview": "eas update --branch preview",
-    "update:production": "eas update --branch production"
->>>>>>> 3c21a0e (fix: resolved council conflict with local version)
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.1",
