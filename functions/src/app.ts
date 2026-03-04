@@ -483,7 +483,6 @@ const targetedNotificationsLimiter = rateLimit({
     const normalizedIp = ip.startsWith('::ffff:') ? ip.slice(7) : ip;
     return `ip:${normalizedIp}`;
   },
-  validate: false,
   message: { error: 'Too many targeted notification requests' },
 });
 
