@@ -35,10 +35,22 @@ export default function UserProfileHero({
       <View style={styles.arcInner} pointerEvents="none" />
 
       <View style={styles.heroNav}>
-        <Pressable style={styles.navBtn} onPress={handleBack} hitSlop={8}>
+        <Pressable
+          style={styles.navBtn}
+          onPress={handleBack}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
           <Ionicons name="chevron-back" size={22} color="#FFF" />
         </Pressable>
-        <Pressable style={styles.navBtn} onPress={handleShare} hitSlop={8}>
+        <Pressable
+          style={styles.navBtn}
+          onPress={handleShare}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Share profile"
+        >
           <Ionicons name="share-outline" size={20} color="#FFF" />
         </Pressable>
       </View>
