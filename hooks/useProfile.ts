@@ -182,6 +182,27 @@ export function useSydneyEventRecommendations(userId: string | null) {
   });
 }
 
+/**
+ * Skeleton-ready profile hook.
+ * Returns `isLoading` alongside placeholder-safe values for `displayName`
+ * and `avatarUrl`, preventing layout jumps while Firebase data resolves.
+ */
+export function useProfileSkeleton() {
+  const { user, isLoading, error, refetch } = useCurrentUser();
+  return {
+    user,
+    isLoading,
+    error,
+    refetch,
+    /** Safe display name — empty string while loading so Skeleton can measure */
+    displayName: user?.displayName ?? user?.username ?? '',
+    /** Avatar URI — null while loading; consumers should render Skeleton when isLoading */
+    avatarUrl: user?.avatarUrl ?? null,
+    /** True once we have resolved user data (either found or definitively null) */
+    isResolved: !isLoading,
+  };
+}
+
 // Mutations with haptic feedback
 export function useToggleFavorite() {
   const queryClient = useQueryClient();

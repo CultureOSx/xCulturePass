@@ -44,7 +44,7 @@ export function AuthGuard({
     return <>{children}</>;
   }
 
-  const topPad = Platform.OS === 'web' ? 67 : insets.top + 12;
+  const topPad = Platform.OS === 'web' ? 0 : insets.top + 12;
   const botPad = Platform.OS === 'web' ? 40 : insets.bottom + 24;
 
   return (

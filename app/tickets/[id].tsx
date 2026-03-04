@@ -19,7 +19,8 @@ import * as Haptics from 'expo-haptics';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient, getQueryFn } from '@/lib/query-client';
 import { useColors } from '@/hooks/useColors';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ticket } from '@shared/schema';
 
 function formatDate(dateStr: string | null) {
@@ -34,6 +35,22 @@ function formatDate(dateStr: string | null) {
   return d.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 }
 
+const QR_CACHE_PREFIX = '@culturepass_ticket_qr:';
+
+/** Cache a ticket's QR code URI so it is available offline at the venue. */
+function cacheTicketQr(ticketId: string, qrCode: string) {
+  AsyncStorage.setItem(`${QR_CACHE_PREFIX}${ticketId}`, qrCode).catch(() => {});
+}
+
+/** Retrieve a previously-cached QR code URI for offline fallback. */
+async function getCachedTicketQr(ticketId: string): Promise<string | null> {
+  try {
+    return await AsyncStorage.getItem(`${QR_CACHE_PREFIX}${ticketId}`);
+  } catch {
+    return null;
+  }
+}
+
 export default function TicketDetailScreen() {
   const { id }      = useLocalSearchParams<{ id: string }>();
   const insets      = useSafeAreaInsets();
@@ -41,11 +58,27 @@ export default function TicketDetailScreen() {
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
   const colors      = useColors();
 
+  // Offline QR code fallback: cached URI used when ticket.qrCode is unavailable
+  const [cachedQr, setCachedQr] = useState<string | null>(null);
+
   const { data: ticket, isLoading } = useQuery<Ticket>({
     queryKey: ['/api/ticket', id],
     queryFn: getQueryFn({ on401: 'returnNull' }),
     enabled: !!id,
   });
+
+  // Cache the QR code whenever the ticket loads with one, and load cached QR on mount
+  useEffect(() => {
+    if (ticket?.qrCode && id) {
+      cacheTicketQr(id, ticket.qrCode);
+    }
+  }, [ticket?.qrCode, id]);
+
+  useEffect(() => {
+    if (id) {
+      getCachedTicketQr(id).then(setCachedQr);
+    }
+  }, [id]);
 
   const cancelMutation = useMutation({
     mutationFn: async (ticketId: string) => {
@@ -267,9 +300,9 @@ export default function TicketDetailScreen() {
                   <Text style={[s.qrTitle, { color: colors.text }]}> 
                     {isScanned ? 'Ticket Scanned' : isActive ? 'Scan at Entry' : 'Ticket Code'}
                   </Text>
-                  {ticket.qrCode && isActive ? (
+                  {(ticket.qrCode || cachedQr) && isActive ? (
                     <View style={[s.qrImageContainer, { borderColor: colors.borderLight }]}>
-                      <Image source={{ uri: ticket.qrCode }} style={s.qrImage} resizeMode="contain" />
+                      <Image source={{ uri: ticket.qrCode || cachedQr! }} style={s.qrImage} resizeMode="contain" />
                     </View>
                   ) : isScanned ? (
                     <View style={s.scannedOverlay}>

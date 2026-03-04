@@ -27,6 +27,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TabBarTokens, gradients, CultureTokens } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
+import { useRole } from '@/hooks/useRole';
 import { WebSidebar } from '@/components/web/WebSidebar';
 
 // ---------------------------------------------------------------------------
@@ -278,6 +279,8 @@ function CustomTabBar({ state, navigation, position = 'bottom' }: CustomTabBarPr
 // Tab screens definition (shared between desktop + mobile)
 // ---------------------------------------------------------------------------
 function TabScreens() {
+  const { isOrganizer } = useRole();
+
   return (
     <>
       <Tabs.Screen name="index"       options={{ title: 'Discover' }} />
@@ -288,7 +291,7 @@ function TabScreens() {
       <Tabs.Screen name="council"    options={{ href: null }} />
       <Tabs.Screen name="explore"    options={{ href: null }} />
       <Tabs.Screen name="directory"  options={{ href: null }} />
-      <Tabs.Screen name="dashboard"  options={{ href: null }} />
+      <Tabs.Screen name="dashboard"  options={{ href: isOrganizer ? undefined : null }} />
     </>
   );
 }
