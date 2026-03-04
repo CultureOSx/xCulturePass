@@ -71,9 +71,9 @@ const styles = StyleSheet.create({
   webRailCard: {
     width: 250,
     height: 300,
-    borderRadius: 16,
+    borderRadius: 12,
     overflow: 'hidden',
-    // backgroundColor & borderColor inline via useColors()
+    backgroundColor: '#1C1F2B',
     borderWidth: 1,
   },
   webRailImage: {

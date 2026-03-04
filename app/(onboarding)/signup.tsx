@@ -252,9 +252,9 @@ export default function SignUpScreen() {
             style={StyleSheet.absoluteFillObject}
           />
           <View style={styles.desktopBackRow}>
-            <Pressable onPress={() => router.replace('/')} hitSlop={8} style={styles.desktopBackBtn}>
+            <Pressable onPress={() => router.replace('/(tabs)')} hitSlop={8} style={styles.desktopBackBtn}>
               <Ionicons name="chevron-back" size={18} color={colors.textInverse} />
-              <Text style={[styles.desktopBackText, { color: colors.textInverse }]}>Back to Home</Text>
+              <Text style={[styles.desktopBackText, { color: colors.textInverse }]}>Back to Discover</Text>
             </Pressable>
           </View>
           <View style={styles.desktopCard}>
@@ -275,7 +275,7 @@ export default function SignUpScreen() {
           style={StyleSheet.absoluteFillObject}
         />
         <View style={styles.header}>
-          <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/')} hitSlop={8}><Ionicons name="chevron-back" size={24} color={colors.textInverse} /></Pressable>
+          <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')} hitSlop={8}><Ionicons name="chevron-back" size={24} color={colors.textInverse} /></Pressable>
         </View>
         {formContent}
       </View>
