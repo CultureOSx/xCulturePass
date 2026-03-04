@@ -43,7 +43,7 @@ export default function ScannerScreen() {
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
   const colors = useColors();
-  const { isOrganizer, isLoading: roleLoading } = useRole();
+  const { isOrganizer } = useRole();
   const canUseStaffScanner = isOrganizer;
 
   const [mode, setMode] = useState<ScanMode>('culturepass');

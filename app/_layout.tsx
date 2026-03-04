@@ -11,13 +11,10 @@ import {
   Platform,
   View,
   StyleSheet,
-  useWindowDimensions,
-  useColorScheme,
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { queryClient } from "@/lib/query-client";
@@ -28,7 +25,7 @@ import {
 } from "@/contexts/OnboardingContext";
 import { SavedProvider } from "@/contexts/SavedContext";
 import { ContactsProvider } from "@/contexts/ContactsContext";
-import { Breakpoints, Colors } from "@/constants/theme";
+import { Colors } from "@/constants/theme";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 import {
@@ -86,13 +83,17 @@ function DataSync() {
       prevUserIdRef.current = null;
       resetOnboarding();
     }
+    // Only re-run when the auth user's identity or profile fields change.
+    // The setter functions (setCity, setCommunities, etc.) are stable refs
+    // from OnboardingContext and don't need to be in the dep array.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     user?.id,
     user?.city,
     user?.country,
     user?.interests,
     user?.communities,
-  ]); // eslint-disable-line react-hooks/exhaustive-deps
+  ]);
 
   return null;
 }

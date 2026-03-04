@@ -1,4 +1,4 @@
-import { View, Text, Pressable, StyleSheet, Platform, KeyboardAvoidingView, ScrollView, Alert, useWindowDimensions } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Platform, KeyboardAvoidingView, ScrollView, useWindowDimensions } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -79,7 +79,7 @@ export default function LoginScreen() {
           webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
         });
         await GoogleSignin.hasPlayServices();
-        const userInfo = await GoogleSignin.signIn();
+        await GoogleSignin.signIn();
         const tokens = await GoogleSignin.getTokens();
         const credential = GoogleAuthProvider.credential(tokens.idToken);
         await signInWithCredential(firebaseAuth, credential);

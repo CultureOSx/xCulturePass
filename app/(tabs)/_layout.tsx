@@ -8,8 +8,7 @@ import {
   useWindowDimensions,
   useColorScheme,
 } from 'react-native';
-import { Tabs } from 'expo-router';
-import { router, usePathname } from 'expo-router';
+import { Tabs, usePathname, router } from 'expo-router';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
