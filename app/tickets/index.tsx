@@ -169,7 +169,7 @@ function TicketCard({ ticket, colors, onCancel }: RenderTicketProps) {
 
 export default function TicketsScreen() {
   const insets  = useSafeAreaInsets();
-  const webTop  = Platform.OS === 'web' ? 0 : 0;
+  const webTop  = 0;
   const colors  = useColors();
   const { userId } = useAuth();
 
