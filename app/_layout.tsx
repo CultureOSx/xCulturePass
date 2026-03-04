@@ -83,6 +83,10 @@ function DataSync() {
       prevUserIdRef.current = null;
       resetOnboarding();
     }
+    // Only re-run when the auth user's identity or profile fields change.
+    // The setter functions (setCity, setCommunities, etc.) and resetOnboarding
+    // are stable refs from OnboardingContext and don't need to be in the dep array.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     resetOnboarding,
     setCity,

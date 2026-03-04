@@ -26,11 +26,23 @@ import { Platform } from 'react-native';
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 import {
   getFirebaseWebConfig,
+  getMissingFirebaseEnvKeys,
   shouldUseFirebaseEmulators,
   getFirebaseEmulatorHost,
 } from '@/lib/config';
 
 const firebaseConfig = getFirebaseWebConfig();
+
+// Validate that the config has real values before initialising Firebase.
+// getFirebaseWebConfig() no longer throws (so module import succeeds), but
+// we still want a clear error at init time if the config is incomplete.
+const missingKeys = getMissingFirebaseEnvKeys();
+if (missingKeys.length > 0 && !getApps().length) {
+  console.error(
+    '[CulturePass] Firebase cannot initialise: missing env vars: ' + missingKeys.join(', ') +
+    '. Auth, Firestore, and Storage will not work.'
+  );
+}
 
 // Guard against duplicate initialization in hot-reload / fast refresh
 export const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
