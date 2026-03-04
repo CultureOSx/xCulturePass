@@ -39,7 +39,9 @@ const QR_CACHE_PREFIX = '@culturepass_ticket_qr:';
 
 /** Cache a ticket's QR code URI so it is available offline at the venue. */
 function cacheTicketQr(ticketId: string, qrCode: string) {
-  AsyncStorage.setItem(`${QR_CACHE_PREFIX}${ticketId}`, qrCode).catch(() => {});
+  AsyncStorage.setItem(`${QR_CACHE_PREFIX}${ticketId}`, qrCode).catch((err) => {
+    if (__DEV__) console.warn('QR cache write failed:', err);
+  });
 }
 
 /** Retrieve a previously-cached QR code URI for offline fallback. */
@@ -302,7 +304,7 @@ export default function TicketDetailScreen() {
                   </Text>
                   {(ticket.qrCode || cachedQr) && isActive ? (
                     <View style={[s.qrImageContainer, { borderColor: colors.borderLight }]}>
-                      <Image source={{ uri: ticket.qrCode || cachedQr! }} style={s.qrImage} resizeMode="contain" />
+                      <Image source={{ uri: ticket.qrCode ?? cachedQr ?? '' }} style={s.qrImage} resizeMode="contain" />
                     </View>
                   ) : isScanned ? (
                     <View style={s.scannedOverlay}>
