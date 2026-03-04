@@ -70,7 +70,6 @@ export interface MembershipSummary {
   earlyAccessHours: number;
   eventsAttended: number;
 }
-
 export interface WalletTransaction {
   id: string;
   userId: string;
@@ -186,6 +185,17 @@ export interface CouncilAlert {
   status: 'active' | 'expired' | 'archived';
 }
 
+export interface CouncilFacility {
+  id: string;
+  institutionId?: string;
+  name?: string;
+  category?: string;
+  city?: string;
+  country?: string;
+  isCouncilOwned?: boolean;
+  facilityType?: string;
+}
+
 export interface CouncilGrant {
   id: string;
   institutionId: string;
@@ -228,12 +238,49 @@ export interface CouncilDashboard {
   waste: CouncilWasteSchedule | null;
   alerts: CouncilAlert[];
   events: EventData[];
-  facilities: Array<Record<string, unknown>>;
+  facilities: CouncilFacility[];
   grants: CouncilGrant[];
   links: CouncilLink[];
   preferences: CouncilPreference[];
   reminder: CouncilWasteReminder | null;
   following: boolean;
+}
+
+export interface CouncilListResponse {
+  councils: CouncilData[];
+  total: number;
+  page: number;
+  pageSize: number;
+  hasNextPage: boolean;
+}
+
+export interface CouncilClaim {
+  id: string;
+  councilId: string;
+  userId: string;
+  workEmail: string;
+  roleTitle: string;
+  note?: string;
+  websiteDomain: string;
+  emailDomain: string;
+  domainMatch: boolean;
+  status: 'pending_admin_review' | 'approved' | 'rejected';
+  reviewedBy?: string;
+  reviewedAt?: string;
+  rejectionReason?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CouncilClaimLetter {
+  id: string;
+  councilId: string;
+  recipientEmail: string;
+  claimUrl: string;
+  subject: string;
+  body: string;
+  sentBy: string;
+  sentAt: string;
 }
 
 export interface AdminAuditLog {
@@ -304,6 +351,8 @@ async function request<T>(
 const auth = {
   me: () =>
     request<User>('GET', 'api/auth/me'),
+  register: (payload: { displayName?: string; username?: string; city?: string; state?: string; postcode?: number; country?: string }) =>
+    request<User>('POST', 'api/auth/register', payload),
 };
 
 // ---------------------------------------------------------------------------
@@ -413,6 +462,9 @@ const culture = {
 // Users
 // ---------------------------------------------------------------------------
 const users = {
+  me: () =>
+    request<User>('GET', 'api/users/me'),
+
   get: (id: string) =>
     request<User>('GET', `api/users/${id}`),
 
@@ -553,8 +605,14 @@ const profiles = {
 
   get: (id: string) => request<Profile>('GET', `api/profiles/${id}`),
 
+  create: (payload: Partial<Profile>) =>
+    request<Profile>('POST', 'api/profiles', payload),
+
   update: (id: string, payload: Record<string, unknown>) =>
     request<Profile>('PUT', `api/profiles/${id}`, payload),
+
+  remove: (id: string) =>
+    request<{ success: boolean }>('DELETE', `api/profiles/${id}`),
 };
 
 // ---------------------------------------------------------------------------
@@ -646,6 +704,20 @@ const businesses  = {
 };
 
 const council = {
+  list: (params?: { q?: string; state?: string; verificationStatus?: 'verified' | 'unverified'; sortBy?: 'name' | 'state' | 'verification'; sortDir?: 'asc' | 'desc'; page?: number; pageSize?: number }) => {
+    const qs = new URLSearchParams();
+    if (params?.q) qs.set('q', params.q);
+    if (params?.state) qs.set('state', params.state);
+    if (params?.verificationStatus) qs.set('verificationStatus', params.verificationStatus);
+    if (params?.sortBy) qs.set('sortBy', params.sortBy);
+    if (params?.sortDir) qs.set('sortDir', params.sortDir);
+    if (params?.page) qs.set('page', String(params.page));
+    if (params?.pageSize) qs.set('pageSize', String(params.pageSize));
+    const q = qs.toString();
+    return request<CouncilListResponse>('GET', `api/council/list${q ? `?${q}` : ''}`);
+  },
+  getSelected: () => request<{ council: CouncilData | null }>('GET', 'api/council/selected'),
+  select: (councilId: string) => request<{ success: boolean; councilId: string }>('POST', 'api/council/select', { councilId }),
   my: (params?: { postcode?: number; suburb?: string; city?: string; state?: string; country?: string }) => {
     const qs = new URLSearchParams();
     if (params?.postcode) qs.set('postcode', String(params.postcode));
@@ -669,7 +741,7 @@ const council = {
     return request<CouncilAlert[]>('GET', `api/council/${id}/alerts${q}`);
   },
   events: (id: string) => request<EventData[]>('GET', `api/council/${id}/events`),
-  facilities: (id: string) => request<Array<Record<string, unknown>>>('GET', `api/council/${id}/facilities`),
+  facilities: (id: string) => request<CouncilFacility[]>('GET', `api/council/${id}/facilities`),
   grants: (id: string) => request<CouncilGrant[]>('GET', `api/council/${id}/grants`),
   links: (id: string) => request<CouncilLink[]>('GET', `api/council/${id}/links`),
   follow: (id: string) => request<{ success: boolean; following: boolean; institutionId: string }>('POST', `api/council/${id}/follow`),
@@ -680,6 +752,39 @@ const council = {
   getWasteReminder: (id: string) => request<CouncilWasteReminder | null>('GET', `api/council/${id}/waste-reminder`),
   updateWasteReminder: (id: string, payload: { reminderTime: string; enabled: boolean; postcode?: number; suburb?: string }) =>
     request<{ success: boolean; reminder: CouncilWasteReminder }>('PUT', `api/council/${id}/waste-reminder`, payload),
+  claim: (id: string, payload: { workEmail: string; roleTitle: string; note?: string }) =>
+    request<CouncilClaim>('POST', `api/council/${id}/claim`, payload),
+  myClaims: (id: string) => request<CouncilClaim[]>('GET', `api/council/${id}/claims/me`),
+  updateProfileMedia: (id: string, payload: { logoUrl?: string; bannerUrl?: string }) =>
+    request<CouncilData>('PATCH', `api/council/${id}/profile-media`, payload),
+  admin: {
+    createAlert: (id: string, payload: Pick<CouncilAlert, 'title' | 'description' | 'category' | 'severity' | 'startAt' | 'endAt' | 'status'>) =>
+      request<CouncilAlert>('POST', `api/council/${id}/alerts`, payload),
+    updateAlert: (id: string, alertId: string, payload: Partial<Pick<CouncilAlert, 'title' | 'description' | 'category' | 'severity' | 'startAt' | 'endAt' | 'status'>>) =>
+      request<CouncilAlert>('PATCH', `api/council/${id}/alerts/${alertId}`, payload),
+    deleteAlert: (id: string, alertId: string) =>
+      request<{ success: boolean }>('DELETE', `api/council/${id}/alerts/${alertId}`),
+    createGrant: (id: string, payload: Pick<CouncilGrant, 'title' | 'description' | 'category' | 'fundingMin' | 'fundingMax' | 'opensAt' | 'closesAt' | 'applicationUrl' | 'status'>) =>
+      request<CouncilGrant>('POST', `api/council/${id}/grants`, payload),
+    updateGrant: (id: string, grantId: string, payload: Partial<Pick<CouncilGrant, 'title' | 'description' | 'category' | 'fundingMin' | 'fundingMax' | 'opensAt' | 'closesAt' | 'applicationUrl' | 'status'>>) =>
+      request<CouncilGrant>('PATCH', `api/council/${id}/grants/${grantId}`, payload),
+    deleteGrant: (id: string, grantId: string) =>
+      request<{ success: boolean }>('DELETE', `api/council/${id}/grants/${grantId}`),
+    listClaims: (status?: 'pending_admin_review' | 'approved' | 'rejected') => {
+      const q = status ? `?status=${encodeURIComponent(status)}` : '';
+      return request<CouncilClaim[]>('GET', `api/admin/council/claims${q}`);
+    },
+    approveClaim: (claimId: string) =>
+      request<{ success: boolean; claim: CouncilClaim }>('POST', `api/admin/council/claims/${claimId}/approve`),
+    rejectClaim: (claimId: string, reason?: string) =>
+      request<{ success: boolean; claim: CouncilClaim }>('POST', `api/admin/council/claims/${claimId}/reject`, reason ? { reason } : {}),
+    sendClaimLetter: (councilId: string, recipientEmail?: string) =>
+      request<{ success: boolean; letter: CouncilClaimLetter; message: string }>(
+        'POST',
+        `api/admin/council/${councilId}/send-claim-letter`,
+        recipientEmail ? { recipientEmail } : {},
+      ),
+  },
 };
 
 // ---------------------------------------------------------------------------

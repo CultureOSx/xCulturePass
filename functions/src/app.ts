@@ -13,6 +13,8 @@
 import express, { type Request, type Response, type NextFunction } from 'express';
 import Stripe from 'stripe';
 import { randomUUID, randomBytes, createHmac, timingSafeEqual } from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
 import multer from 'multer';
 import sharp from 'sharp';
 import rateLimit from 'express-rate-limit';
@@ -305,6 +307,35 @@ type AppUserWasteReminder = {
   reminderTime: string;
   enabled: boolean;
   updatedAt: string;
+};
+
+type AppCouncilClaim = {
+  id: string;
+  councilId: string;
+  userId: string;
+  workEmail: string;
+  roleTitle: string;
+  note?: string;
+  websiteDomain: string;
+  emailDomain: string;
+  domainMatch: boolean;
+  status: 'pending_admin_review' | 'approved' | 'rejected';
+  reviewedBy?: string;
+  reviewedAt?: string;
+  rejectionReason?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type AppCouncilClaimLetter = {
+  id: string;
+  councilId: string;
+  recipientEmail: string;
+  claimUrl: string;
+  subject: string;
+  body: string;
+  sentBy: string;
+  sentAt: string;
 };
 
 type AppTicket = {
@@ -725,6 +756,8 @@ const userCouncilLinks = new Map<string, { userId: string; institutionId: string
 const userCouncilFollows = new Map<string, Set<string>>();
 const userCouncilAlertPreferences = new Map<string, AppUserCouncilAlertPreference[]>();
 const userWasteReminders = new Map<string, AppUserWasteReminder>();
+const councilClaims: AppCouncilClaim[] = [];
+const councilClaimLetters: AppCouncilClaimLetter[] = [];
 
 const privacySettings = new Map<string, Record<string, boolean>>();
 const wallets = new Map<string, { id: string; userId: string; balance: number; currency: string; points: number }>();
@@ -754,6 +787,137 @@ const culturalTagStore: Array<{ id: string; name: string; slug: string; category
   { id: 'ct14', name: 'Startup', slug: 'startup', category: 'community' },
   { id: 'ct15', name: 'Indian', slug: 'indian', category: 'diaspora' },
 ];
+
+function parseCsvLine(line: string): string[] {
+  const out: string[] = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let index = 0; index < line.length; index++) {
+    const char = line[index];
+    if (char === '"') {
+      const next = line[index + 1];
+      if (inQuotes && next === '"') {
+        current += '"';
+        index++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+    if (char === ',' && !inQuotes) {
+      out.push(current.trim());
+      current = '';
+      continue;
+    }
+    current += char;
+  }
+  out.push(current.trim());
+  return out;
+}
+
+function councilIdFromAbs(abs: string): string {
+  return `co-au-${abs}`;
+}
+
+function tryLoadCouncilsFromCsv(): AppCouncil[] {
+  const candidates = [
+    path.resolve(process.cwd(), 'functions/src/data/LGDGPALL.csv'),
+    path.resolve(__dirname, 'data/LGDGPALL.csv'),
+    path.resolve(__dirname, '../src/data/LGDGPALL.csv'),
+  ];
+  const filePath = candidates.find((candidate) => fs.existsSync(candidate));
+  if (!filePath) return [];
+
+  try {
+    const raw = fs.readFileSync(filePath, 'utf8');
+    const lines = raw.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    if (lines.length < 2) return [];
+
+    const header = parseCsvLine(lines[1] ?? '');
+    const indexByName = new Map<string, number>();
+    header.forEach((name, index) => indexByName.set(name, index));
+
+    const get = (row: string[], key: string) => row[indexByName.get(key) ?? -1] ?? '';
+    const mapState = (value: string): AppCouncil['state'] => {
+      const normalized = value.trim().toUpperCase();
+      if (normalized === 'NSW' || normalized === 'VIC' || normalized === 'QLD' || normalized === 'WA' || normalized === 'SA' || normalized === 'TAS' || normalized === 'ACT' || normalized === 'NT') {
+        return normalized;
+      }
+      return 'NSW';
+    };
+
+    const next: AppCouncil[] = [];
+    for (const line of lines.slice(2)) {
+      const row = parseCsvLine(line);
+      const abs = get(row, 'ABS');
+      const name = get(row, 'ORGNAME');
+      if (!abs || !name) continue;
+
+      const state = mapState(get(row, 'POSTAL_STATE'));
+      const suburb = get(row, 'POSTAL_SUBURB') || get(row, 'STREET_SUBURB') || 'Unknown';
+      const postcodeNum = Number.parseInt(get(row, 'POSTAL_PCODE') || get(row, 'STREET_PCODE'), 10);
+      const postcode = Number.isFinite(postcodeNum) ? postcodeNum : 2000;
+      const websiteRaw = (get(row, 'WEB') || '').replace(/\s+/g, '');
+      const websiteUrl = websiteRaw
+        ? (websiteRaw.startsWith('http://') || websiteRaw.startsWith('https://') ? websiteRaw : `https://${websiteRaw}`)
+        : undefined;
+
+      next.push({
+        id: councilIdFromAbs(abs),
+        name,
+        abn: get(row, 'ABN') || undefined,
+        state,
+        lgaCode: abs,
+        websiteUrl,
+        email: get(row, 'EMAIL') || undefined,
+        phone: get(row, 'PHONE') || undefined,
+        addressLine1: get(row, 'STREET_ADD1') || get(row, 'POSTAL_ADD1') || undefined,
+        suburb,
+        postcode,
+        country: 'Australia',
+        description: `${name} local government services and community programs.`,
+        verificationStatus: 'unverified',
+        status: 'active',
+        openingHours: undefined,
+        servicePostcodes: [postcode],
+        serviceSuburbs: [suburb],
+        serviceCities: [suburb],
+        createdAt: nowIso(),
+        updatedAt: nowIso(),
+      });
+    }
+    return next;
+  } catch (error) {
+    console.error('[council-csv] failed to parse LGDGPALL.csv:', error);
+    return [];
+  }
+}
+
+const csvCouncils = tryLoadCouncilsFromCsv();
+if (csvCouncils.length > 0) {
+  const byLga = new Map(councils.map((council) => [council.lgaCode, council]));
+  for (const council of csvCouncils) {
+    const existing = byLga.get(council.lgaCode);
+    if (existing) {
+      Object.assign(existing, {
+        name: council.name,
+        abn: council.abn,
+        websiteUrl: council.websiteUrl,
+        email: council.email,
+        phone: council.phone,
+        addressLine1: council.addressLine1,
+        suburb: council.suburb,
+        postcode: council.postcode,
+        servicePostcodes: [...new Set([...existing.servicePostcodes, ...council.servicePostcodes])],
+        serviceSuburbs: [...new Set([...existing.serviceSuburbs, ...council.serviceSuburbs])],
+        serviceCities: [...new Set([...existing.serviceCities, ...council.serviceCities])],
+      });
+    } else {
+      councils.push(council);
+    }
+  }
+}
 
 const recommendationProfiles = new Map<string, { culturalTagWeights: Record<string, number>; eventTypeWeights: Record<string, number> }>();
 const discoveryFeedbackStore: Array<{ userId: string; eventId: string; signal: 'up' | 'down'; createdAt: string }> = [];
@@ -1162,6 +1326,10 @@ function qstr(v: unknown): string {
 function qparam(v: string | string[] | undefined): string {
   if (Array.isArray(v)) return v[0] ?? '';
   return v ?? '';
+}
+
+function respondWithGenericServerError(res: Response, message = 'Request failed'): Response {
+  return res.status(500).json({ error: message });
 }
 
 function suggestCultureValues(list: string[], query: string, limit: number): string[] {
@@ -1677,6 +1845,24 @@ app.get('/api/users', async (_req, res) => {
   return res.json(users);
 });
 
+app.get('/api/users/me', requireAuth, async (req, res) => {
+  const userId = req.user!.id;
+  if (!hasFirestoreProject) {
+    const localUser = users.find((item) => item.id === userId);
+    if (!localUser) return res.status(404).json({ error: 'User not found' });
+    return res.json(localUser);
+  }
+
+  try {
+    const user = await usersService.getById(userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    return res.json(user);
+  } catch (err) {
+    console.error('[GET /api/users/me]:', err);
+    return res.status(500).json({ error: 'Failed to fetch current user' });
+  }
+});
+
 app.get('/api/users/:id', async (req, res) => {
   if (!hasFirestoreProject) {
     const user = users.find((item) => item.id === qparam(req.params.id));
@@ -2125,7 +2311,7 @@ app.post('/api/locations/:countryCode/seed', [authenticate, requireRole('admin')
     return res.json({ ok: true, countryCode });
   } catch (err) {
     console.error('[POST /api/locations/seed]:', err);
-    return res.status(500).json({ error: 'Seed failed', detail: String(err) });
+    return respondWithGenericServerError(res, 'Seed failed');
   }
 });
 
@@ -2139,7 +2325,7 @@ app.post('/api/locations/:countryCode/states', [authenticate, requireRole('admin
     return res.json({ ok: true, code });
   } catch (err) {
     console.error('[POST /api/locations/:countryCode/states]:', err);
-    return res.status(500).json({ error: String(err) });
+    return respondWithGenericServerError(res, 'Failed to add state');
   }
 });
 
@@ -2152,7 +2338,7 @@ app.patch('/api/locations/:countryCode/states/:stateCode', [authenticate, requir
     return res.json({ ok: true });
   } catch (err) {
     console.error('[PATCH /api/locations/:countryCode/states/:stateCode]:', err);
-    return res.status(500).json({ error: String(err) });
+    return respondWithGenericServerError(res, 'Failed to update state');
   }
 });
 
@@ -2164,7 +2350,7 @@ app.delete('/api/locations/:countryCode/states/:stateCode', [authenticate, requi
     return res.json({ ok: true });
   } catch (err) {
     console.error('[DELETE /api/locations/:countryCode/states/:stateCode]:', err);
-    return res.status(500).json({ error: String(err) });
+    return respondWithGenericServerError(res, 'Failed to remove state');
   }
 });
 
@@ -2178,7 +2364,7 @@ app.post('/api/locations/:countryCode/states/:stateCode/cities', [authenticate, 
     return res.json({ ok: true, city });
   } catch (err) {
     console.error('[POST /api/locations/.../cities]:', err);
-    return res.status(500).json({ error: String(err) });
+    return respondWithGenericServerError(res, 'Failed to add city');
   }
 });
 
@@ -2190,7 +2376,7 @@ app.delete('/api/locations/:countryCode/states/:stateCode/cities/:city', [authen
     return res.json({ ok: true });
   } catch (err) {
     console.error('[DELETE /api/locations/.../cities/:city]:', err);
-    return res.status(500).json({ error: String(err) });
+    return respondWithGenericServerError(res, 'Failed to remove city');
   }
 });
 
@@ -2394,6 +2580,37 @@ app.put('/api/profiles/:id', requireAuth, moderationCheck, async (req, res) => {
   } catch (err) {
     console.error('[PUT /api/profiles/:id]:', err);
     return res.status(500).json({ error: 'Failed to update profile' });
+  }
+});
+
+app.delete('/api/profiles/:id', requireAuth, async (req, res) => {
+  const profileId = qparam(req.params.id);
+
+  if (!hasFirestoreProject) {
+    const index = profiles.findIndex((profile) => profile.id === profileId);
+    if (index === -1) return res.status(404).json({ error: 'Profile not found' });
+    const existing = profiles[index];
+    if (!isOwnerOrAdmin(req.user!, existing.ownerId)) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    profiles.splice(index, 1);
+    return res.json({ success: true });
+  }
+
+  try {
+    const ref = db.collection('profiles').doc(profileId);
+    const snap = await ref.get();
+    if (!snap.exists) return res.status(404).json({ error: 'Profile not found' });
+    const existing = { id: snap.id, ...(snap.data() as Record<string, unknown>) } as AppProfile;
+    if (!isOwnerOrAdmin(req.user!, existing.ownerId)) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    await ref.delete();
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('[DELETE /api/profiles/:id]:', err);
+    return res.status(500).json({ error: 'Failed to delete profile' });
   }
 });
 // List businesses with optional city/country + sponsorship sort
@@ -2747,6 +2964,146 @@ function councilMatchScore(council: AppCouncil, location: {
   return score;
 }
 
+function normalizeDomain(value: string): string {
+  const raw = value.trim().toLowerCase();
+  if (!raw) return '';
+  const noProtocol = raw.replace(/^https?:\/\//, '').replace(/^www\./, '');
+  return noProtocol.split('/')[0]?.trim() ?? '';
+}
+
+function buildCouncilClaimUrl(councilId: string): string {
+  const baseUrl = (process.env.CULTUREPASS_WEB_URL ?? 'https://culturepass.app').replace(/\/$/, '');
+  return `${baseUrl}/council/claim?councilId=${encodeURIComponent(councilId)}`;
+}
+
+function buildClaimLetter(council: AppCouncil, claimUrl: string): { subject: string; body: string } {
+  const subject = `Claim your CulturePass council page — ${council.name}`;
+  const body = [
+    `Dear ${council.name} team,`,
+    '',
+    'CulturePass has prepared your council profile page for local community updates, grants, and civic notices.',
+    'To claim and manage your page, please use the secure claim link below:',
+    claimUrl,
+    '',
+    'Important: Sign in with your official council work email. Your email domain must exactly match your council website domain for verification.',
+    'Once submitted, a super admin will review and approve your claim. After approval, your team can access council CRUD tools.',
+    '',
+    'Regards,',
+    'CulturePass Admin',
+  ].join('\n');
+  return { subject, body };
+}
+
+function mapCouncilClaimFromRecord(id: string, raw: Record<string, unknown>): AppCouncilClaim {
+  return {
+    id,
+    councilId: String(raw.councilId ?? ''),
+    userId: String(raw.userId ?? ''),
+    workEmail: String(raw.workEmail ?? '').toLowerCase(),
+    roleTitle: String(raw.roleTitle ?? ''),
+    note: raw.note ? String(raw.note) : undefined,
+    websiteDomain: String(raw.websiteDomain ?? ''),
+    emailDomain: String(raw.emailDomain ?? ''),
+    domainMatch: Boolean(raw.domainMatch),
+    status: String(raw.status ?? 'pending_admin_review') as AppCouncilClaim['status'],
+    reviewedBy: raw.reviewedBy ? String(raw.reviewedBy) : undefined,
+    reviewedAt: raw.reviewedAt ? String(raw.reviewedAt) : undefined,
+    rejectionReason: raw.rejectionReason ? String(raw.rejectionReason) : undefined,
+    createdAt: String(raw.createdAt ?? nowIso()),
+    updatedAt: String(raw.updatedAt ?? nowIso()),
+  };
+}
+
+function mapCouncilClaimLetterFromRecord(id: string, raw: Record<string, unknown>): AppCouncilClaimLetter {
+  return {
+    id,
+    councilId: String(raw.councilId ?? ''),
+    recipientEmail: String(raw.recipientEmail ?? '').toLowerCase(),
+    claimUrl: String(raw.claimUrl ?? ''),
+    subject: String(raw.subject ?? ''),
+    body: String(raw.body ?? ''),
+    sentBy: String(raw.sentBy ?? ''),
+    sentAt: String(raw.sentAt ?? nowIso()),
+  };
+}
+
+async function listCouncilClaims(params?: { councilId?: string; userId?: string; status?: AppCouncilClaim['status'] }): Promise<AppCouncilClaim[]> {
+  if (!hasFirestoreProject) {
+    return councilClaims
+      .filter((claim) => (!params?.councilId || claim.councilId === params.councilId)
+        && (!params?.userId || claim.userId === params.userId)
+        && (!params?.status || claim.status === params.status))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
+  let query: FirebaseFirestore.Query = db.collection('councilClaims');
+  if (params?.councilId) query = query.where('councilId', '==', params.councilId);
+  if (params?.userId) query = query.where('userId', '==', params.userId);
+  if (params?.status) query = query.where('status', '==', params.status);
+
+  const snap = await query.get();
+  return snap.docs
+    .map((doc) => mapCouncilClaimFromRecord(doc.id, doc.data() as Record<string, unknown>))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+async function getCouncilClaimById(claimId: string): Promise<AppCouncilClaim | null> {
+  if (!hasFirestoreProject) {
+    return councilClaims.find((item) => item.id === claimId) ?? null;
+  }
+
+  const snap = await db.collection('councilClaims').doc(claimId).get();
+  if (!snap.exists) return null;
+  return mapCouncilClaimFromRecord(snap.id, snap.data() as Record<string, unknown>);
+}
+
+async function saveCouncilClaim(claim: AppCouncilClaim): Promise<void> {
+  if (!hasFirestoreProject) {
+    const index = councilClaims.findIndex((item) => item.id === claim.id);
+    if (index === -1) {
+      councilClaims.unshift(claim);
+    } else {
+      councilClaims[index] = claim;
+    }
+    return;
+  }
+
+  await db.collection('councilClaims').doc(claim.id).set(claim, { merge: true });
+}
+
+async function saveCouncilClaimLetter(letter: AppCouncilClaimLetter): Promise<void> {
+  if (!hasFirestoreProject) {
+    councilClaimLetters.unshift(letter);
+    return;
+  }
+
+  await db.collection('councilClaimLetters').doc(letter.id).set(letter, { merge: true });
+}
+
+function getUserPrimaryCouncilId(userId: string): string | null {
+  for (const link of userCouncilLinks.values()) {
+    if (link.userId === userId && link.isPrimary) return link.institutionId;
+  }
+  return null;
+}
+
+function userCanManageCouncil(user: RequestUser, councilId: string): boolean {
+  if (user.role === 'admin' || user.role === 'platformAdmin') return true;
+  return councilClaims.some((claim) => claim.councilId === councilId && claim.userId === user.id && claim.status === 'approved');
+}
+
+async function userCanManageCouncilAccess(user: RequestUser, councilId: string): Promise<boolean> {
+  if (user.role === 'admin' || user.role === 'platformAdmin') return true;
+  if (!hasFirestoreProject) return userCanManageCouncil(user, councilId);
+
+  const approvedClaims = await listCouncilClaims({
+    councilId,
+    userId: user.id,
+    status: 'approved',
+  });
+  return approvedClaims.length > 0;
+}
+
 function resolveCouncilByLocation(input: Record<string, unknown>): AppCouncil | null {
   const cityRaw = String(input.city ?? '').trim();
   const suburbRaw = String(input.suburb ?? '').trim();
@@ -2856,6 +3213,109 @@ function councilDashboardPayload(params: {
   };
 }
 
+app.get('/api/council/list', (req, res) => {
+  const query = String(req.query.q ?? '').trim().toLowerCase();
+  const state = String(req.query.state ?? '').trim().toUpperCase();
+  const verificationStatus = String(req.query.verificationStatus ?? '').trim().toLowerCase();
+  const sortByRaw = String(req.query.sortBy ?? '').trim().toLowerCase();
+  const sortDirRaw = String(req.query.sortDir ?? '').trim().toLowerCase();
+  const page = Math.max(1, Number.parseInt(String(req.query.page ?? '1'), 10) || 1);
+  const pageSize = Math.min(200, Math.max(1, Number.parseInt(String(req.query.pageSize ?? '50'), 10) || 50));
+
+  const sortBy = sortByRaw === 'name' || sortByRaw === 'state' || sortByRaw === 'verification'
+    ? sortByRaw
+    : 'name';
+  const sortDir = sortDirRaw === 'desc' ? 'desc' : 'asc';
+  const direction = sortDir === 'desc' ? -1 : 1;
+
+  let items = councils.filter((item) => item.status === 'active');
+  if (state) items = items.filter((item) => item.state === state);
+  if (verificationStatus === 'verified') items = items.filter((item) => item.verificationStatus === 'verified');
+  if (verificationStatus === 'unverified') items = items.filter((item) => item.verificationStatus !== 'verified');
+  if (query) {
+    const levenshtein = (a: string, b: string) => {
+      if (a === b) return 0;
+      if (!a.length) return b.length;
+      if (!b.length) return a.length;
+      const matrix = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
+      for (let i = 0; i <= a.length; i += 1) matrix[i][0] = i;
+      for (let j = 0; j <= b.length; j += 1) matrix[0][j] = j;
+      for (let i = 1; i <= a.length; i += 1) {
+        for (let j = 1; j <= b.length; j += 1) {
+          const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j] + 1,
+            matrix[i][j - 1] + 1,
+            matrix[i - 1][j - 1] + cost,
+          );
+        }
+      }
+      return matrix[a.length][b.length];
+    };
+
+    items = items.filter((item) => {
+      const haystack = `${item.name} ${item.suburb} ${item.lgaCode} ${item.state} ${item.email ?? ''} ${item.websiteUrl ?? ''}`.toLowerCase();
+      if (haystack.includes(query)) return true;
+
+      if (query.length < 4) return false;
+
+      const queryTokens = query.split(/[^a-z0-9]+/).filter(Boolean);
+      const haystackTokens = haystack.split(/[^a-z0-9]+/).filter(Boolean);
+      if (queryTokens.length === 0 || haystackTokens.length === 0) return false;
+
+      return queryTokens.every((queryToken) => haystackTokens.some((token) => {
+        if (token === queryToken) return true;
+        if (Math.abs(token.length - queryToken.length) > 2) return false;
+        return levenshtein(token, queryToken) <= 2;
+      }));
+    });
+  }
+
+  items.sort((a, b) => {
+    if (sortBy === 'state') {
+      const stateCompare = a.state.localeCompare(b.state);
+      if (stateCompare !== 0) return stateCompare * direction;
+      return a.name.localeCompare(b.name) * direction;
+    }
+    if (sortBy === 'verification') {
+      const aValue = a.verificationStatus === 'verified' ? 1 : 0;
+      const bValue = b.verificationStatus === 'verified' ? 1 : 0;
+      if (aValue !== bValue) return (aValue - bValue) * direction;
+      return a.name.localeCompare(b.name) * direction;
+    }
+    return a.name.localeCompare(b.name) * direction;
+  });
+
+  const total = items.length;
+  const start = (page - 1) * pageSize;
+  const paged = items.slice(start, start + pageSize);
+  return res.json({ councils: paged, total, page, pageSize, hasNextPage: start + pageSize < total, sortBy, sortDir });
+});
+
+app.get('/api/council/selected', requireAuth, (req, res) => {
+  const selectedId = getUserPrimaryCouncilId(req.user!.id);
+  if (!selectedId) return res.json({ council: null });
+  const council = councils.find((item) => item.id === selectedId && item.status === 'active') ?? null;
+  return res.json({ council });
+});
+
+app.post('/api/council/select', requireAuth, (req, res) => {
+  const councilId = String(req.body?.councilId ?? '').trim();
+  if (!councilId) return res.status(400).json({ error: 'councilId is required' });
+
+  const council = councils.find((item) => item.id === councilId && item.status === 'active');
+  if (!council) return res.status(404).json({ error: 'Council not found' });
+
+  const userId = req.user!.id;
+  for (const [key, link] of userCouncilLinks.entries()) {
+    if (link.userId === userId) {
+      userCouncilLinks.set(key, { ...link, isPrimary: link.institutionId === councilId });
+    }
+  }
+  userCouncilLinks.set(`${userId}:${councilId}`, { userId, institutionId: councilId, isPrimary: true });
+  return res.json({ success: true, councilId });
+});
+
 app.get('/api/council/my', async (req, res) => {
   const postcode = Number.parseInt(String(req.query.postcode ?? ''), 10);
   const suburb = String(req.query.suburb ?? '').trim();
@@ -2931,6 +3391,307 @@ app.get('/api/council/:id/facilities', (req, res) => {
 app.get('/api/council/:id/grants', (req, res) => {
   const councilId = qparam(req.params.id);
   return res.json(councilGrants.filter((item) => item.institutionId === councilId));
+});
+
+app.post('/api/council/:id/claim', requireAuth, async (req, res) => {
+  const councilId = qparam(req.params.id);
+  const council = councils.find((item) => item.id === councilId && item.status === 'active');
+  if (!council) return res.status(404).json({ error: 'Council not found' });
+
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  const workEmail = String(body.workEmail ?? '').trim().toLowerCase();
+  const roleTitle = String(body.roleTitle ?? '').trim();
+  const note = String(body.note ?? '').trim();
+
+  if (!workEmail || !roleTitle) return res.status(400).json({ error: 'workEmail and roleTitle are required' });
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(workEmail)) return res.status(400).json({ error: 'Invalid workEmail' });
+
+  const emailDomain = normalizeDomain(workEmail.split('@')[1] ?? '');
+  const websiteDomain = normalizeDomain(council.websiteUrl ?? '');
+  const domainMatch = Boolean(emailDomain && websiteDomain && emailDomain === websiteDomain);
+  if (!domainMatch) {
+    return res.status(400).json({ error: 'Work email domain must exactly match official council website domain' });
+  }
+
+  try {
+    const existing = await listCouncilClaims({
+      councilId,
+      userId: req.user!.id,
+      status: 'pending_admin_review',
+    });
+    if (existing.length > 0) return res.status(409).json({ error: 'You already have a pending claim for this council' });
+
+    const claim: AppCouncilClaim = {
+      id: `cc-${generateSecureId('')}`,
+      councilId,
+      userId: req.user!.id,
+      workEmail,
+      roleTitle,
+      note: note || undefined,
+      websiteDomain,
+      emailDomain,
+      domainMatch,
+      status: 'pending_admin_review',
+      createdAt: nowIso(),
+      updatedAt: nowIso(),
+    };
+    await saveCouncilClaim(claim);
+    return res.status(201).json(claim);
+  } catch (error) {
+    console.error('[POST /api/council/:id/claim]:', error);
+    return res.status(500).json({ error: 'Failed to submit council claim' });
+  }
+});
+
+app.get('/api/council/:id/claims/me', requireAuth, async (req, res) => {
+  const councilId = qparam(req.params.id);
+  try {
+    const claims = await listCouncilClaims({ councilId, userId: req.user!.id });
+    return res.json(claims);
+  } catch (error) {
+    console.error('[GET /api/council/:id/claims/me]:', error);
+    return res.status(500).json({ error: 'Failed to load your claims' });
+  }
+});
+
+app.patch('/api/council/:id/profile-media', requireAuth, async (req, res) => {
+  const councilId = qparam(req.params.id);
+  const council = councils.find((item) => item.id === councilId && item.status === 'active');
+  if (!council) return res.status(404).json({ error: 'Council not found' });
+  if (!(await userCanManageCouncilAccess(req.user!, councilId))) return res.status(403).json({ error: 'Forbidden' });
+
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  const logoUrl = body.logoUrl != null ? String(body.logoUrl).trim() : undefined;
+  const bannerUrl = body.bannerUrl != null ? String(body.bannerUrl).trim() : undefined;
+
+  if (logoUrl !== undefined) council.logoUrl = logoUrl || undefined;
+  if (bannerUrl !== undefined) council.bannerUrl = bannerUrl || undefined;
+  council.updatedAt = nowIso();
+  return res.json(council);
+});
+
+app.get('/api/admin/council/claims', requireAuth, requireRole('admin'), async (req, res) => {
+  const status = String(req.query.status ?? '').trim();
+  try {
+    const list = await listCouncilClaims({ status: status ? (status as AppCouncilClaim['status']) : undefined });
+    return res.json(list);
+  } catch (error) {
+    console.error('[GET /api/admin/council/claims]:', error);
+    return res.status(500).json({ error: 'Failed to load council claims' });
+  }
+});
+
+app.post('/api/admin/council/claims/:claimId/approve', requireAuth, requireRole('admin'), async (req, res) => {
+  const claimId = qparam(req.params.claimId);
+  try {
+    const claim = await getCouncilClaimById(claimId);
+    if (!claim) return res.status(404).json({ error: 'Claim not found' });
+    if (claim.status !== 'pending_admin_review') return res.status(400).json({ error: 'Claim is not pending review' });
+
+    claim.status = 'approved';
+    claim.reviewedBy = req.user!.id;
+    claim.reviewedAt = nowIso();
+    claim.updatedAt = nowIso();
+    await saveCouncilClaim(claim);
+
+    const council = councils.find((item) => item.id === claim.councilId);
+    if (council) {
+      council.verificationStatus = 'verified';
+      council.verifiedBy = req.user!.id;
+      council.verifiedAt = nowIso();
+      council.updatedAt = nowIso();
+    }
+
+    userCouncilLinks.set(`${claim.userId}:${claim.councilId}`, { userId: claim.userId, institutionId: claim.councilId, isPrimary: true });
+    return res.json({ success: true, claim });
+  } catch (error) {
+    console.error('[POST /api/admin/council/claims/:claimId/approve]:', error);
+    return res.status(500).json({ error: 'Failed to approve claim' });
+  }
+});
+
+app.post('/api/admin/council/claims/:claimId/reject', requireAuth, requireRole('admin'), async (req, res) => {
+  const claimId = qparam(req.params.claimId);
+  try {
+    const claim = await getCouncilClaimById(claimId);
+    if (!claim) return res.status(404).json({ error: 'Claim not found' });
+    if (claim.status !== 'pending_admin_review') return res.status(400).json({ error: 'Claim is not pending review' });
+
+    const reason = String(req.body?.reason ?? '').trim();
+    claim.status = 'rejected';
+    claim.reviewedBy = req.user!.id;
+    claim.reviewedAt = nowIso();
+    claim.rejectionReason = reason || undefined;
+    claim.updatedAt = nowIso();
+    await saveCouncilClaim(claim);
+    return res.json({ success: true, claim });
+  } catch (error) {
+    console.error('[POST /api/admin/council/claims/:claimId/reject]:', error);
+    return res.status(500).json({ error: 'Failed to reject claim' });
+  }
+});
+
+app.post('/api/admin/council/:id/send-claim-letter', requireAuth, requireRole('admin'), async (req, res) => {
+  const councilId = qparam(req.params.id);
+  const council = councils.find((item) => item.id === councilId && item.status === 'active');
+  if (!council) return res.status(404).json({ error: 'Council not found' });
+
+  const requestedEmail = String(req.body?.recipientEmail ?? '').trim().toLowerCase();
+  const recipientEmail = requestedEmail || String(council.email ?? '').trim().toLowerCase();
+  if (!recipientEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail)) {
+    return res.status(400).json({ error: 'A valid recipientEmail is required' });
+  }
+
+  const claimUrl = buildCouncilClaimUrl(councilId);
+  const { subject, body } = buildClaimLetter(council, claimUrl);
+  const letter: AppCouncilClaimLetter = {
+    id: `cl-${generateSecureId('')}`,
+    councilId,
+    recipientEmail,
+    claimUrl,
+    subject,
+    body,
+    sentBy: req.user!.id,
+    sentAt: nowIso(),
+  };
+  try {
+    await saveCouncilClaimLetter(letter);
+    return res.status(201).json({
+      success: true,
+      letter,
+      message: 'Claim letter generated and marked as sent. Wire your email provider to dispatch this body.',
+    });
+  } catch (error) {
+    console.error('[POST /api/admin/council/:id/send-claim-letter]:', error);
+    return res.status(500).json({ error: 'Failed to generate claim letter' });
+  }
+});
+
+app.post('/api/council/:id/alerts', requireAuth, async (req, res) => {
+  const councilId = qparam(req.params.id);
+  if (!(await userCanManageCouncilAccess(req.user!, councilId))) return res.status(403).json({ error: 'Forbidden' });
+  const council = councils.find((item) => item.id === councilId && item.status === 'active');
+  if (!council) return res.status(404).json({ error: 'Council not found' });
+
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  const title = String(body.title ?? '').trim();
+  const description = String(body.description ?? '').trim();
+  const category = String(body.category ?? 'community_notice') as AppCouncilAlert['category'];
+  const severity = String(body.severity ?? 'low') as AppCouncilAlert['severity'];
+  if (!title || !description) return res.status(400).json({ error: 'title and description are required' });
+
+  const created: AppCouncilAlert = {
+    id: `ca-${generateSecureId('')}`,
+    institutionId: councilId,
+    title,
+    description,
+    category,
+    severity,
+    startAt: String(body.startAt ?? nowIso()),
+    endAt: body.endAt ? String(body.endAt) : undefined,
+    status: String(body.status ?? 'active') as AppCouncilAlert['status'],
+    createdAt: nowIso(),
+    updatedAt: nowIso(),
+  };
+  councilAlerts.unshift(created);
+  return res.status(201).json(created);
+});
+
+app.patch('/api/council/:id/alerts/:alertId', requireAuth, async (req, res) => {
+  const councilId = qparam(req.params.id);
+  if (!(await userCanManageCouncilAccess(req.user!, councilId))) return res.status(403).json({ error: 'Forbidden' });
+  const alertId = qparam(req.params.alertId);
+  const index = councilAlerts.findIndex((item) => item.id === alertId && item.institutionId === councilId);
+  if (index === -1) return res.status(404).json({ error: 'Alert not found' });
+
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  const current = councilAlerts[index]!;
+  const next: AppCouncilAlert = {
+    ...current,
+    ...(body.title != null ? { title: String(body.title) } : {}),
+    ...(body.description != null ? { description: String(body.description) } : {}),
+    ...(body.category != null ? { category: String(body.category) as AppCouncilAlert['category'] } : {}),
+    ...(body.severity != null ? { severity: String(body.severity) as AppCouncilAlert['severity'] } : {}),
+    ...(body.startAt != null ? { startAt: String(body.startAt) } : {}),
+    ...(body.endAt != null ? { endAt: body.endAt ? String(body.endAt) : undefined } : {}),
+    ...(body.status != null ? { status: String(body.status) as AppCouncilAlert['status'] } : {}),
+    updatedAt: nowIso(),
+  };
+  councilAlerts[index] = next;
+  return res.json(next);
+});
+
+app.delete('/api/council/:id/alerts/:alertId', requireAuth, async (req, res) => {
+  const councilId = qparam(req.params.id);
+  if (!(await userCanManageCouncilAccess(req.user!, councilId))) return res.status(403).json({ error: 'Forbidden' });
+  const alertId = qparam(req.params.alertId);
+  const index = councilAlerts.findIndex((item) => item.id === alertId && item.institutionId === councilId);
+  if (index === -1) return res.status(404).json({ error: 'Alert not found' });
+  councilAlerts.splice(index, 1);
+  return res.json({ success: true });
+});
+
+app.post('/api/council/:id/grants', requireAuth, async (req, res) => {
+  const councilId = qparam(req.params.id);
+  if (!(await userCanManageCouncilAccess(req.user!, councilId))) return res.status(403).json({ error: 'Forbidden' });
+  const council = councils.find((item) => item.id === councilId && item.status === 'active');
+  if (!council) return res.status(404).json({ error: 'Council not found' });
+
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  const title = String(body.title ?? '').trim();
+  const description = String(body.description ?? '').trim();
+  if (!title || !description) return res.status(400).json({ error: 'title and description are required' });
+
+  const created: AppCouncilGrant = {
+    id: `cg-${generateSecureId('')}`,
+    institutionId: councilId,
+    title,
+    description,
+    category: String(body.category ?? 'community') as AppCouncilGrant['category'],
+    fundingMin: body.fundingMin != null ? Number(body.fundingMin) : undefined,
+    fundingMax: body.fundingMax != null ? Number(body.fundingMax) : undefined,
+    opensAt: body.opensAt ? String(body.opensAt) : undefined,
+    closesAt: body.closesAt ? String(body.closesAt) : undefined,
+    applicationUrl: body.applicationUrl ? String(body.applicationUrl) : undefined,
+    status: String(body.status ?? 'upcoming') as AppCouncilGrant['status'],
+  };
+  councilGrants.unshift(created);
+  return res.status(201).json(created);
+});
+
+app.patch('/api/council/:id/grants/:grantId', requireAuth, async (req, res) => {
+  const councilId = qparam(req.params.id);
+  if (!(await userCanManageCouncilAccess(req.user!, councilId))) return res.status(403).json({ error: 'Forbidden' });
+  const grantId = qparam(req.params.grantId);
+  const index = councilGrants.findIndex((item) => item.id === grantId && item.institutionId === councilId);
+  if (index === -1) return res.status(404).json({ error: 'Grant not found' });
+
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  const current = councilGrants[index]!;
+  const next: AppCouncilGrant = {
+    ...current,
+    ...(body.title != null ? { title: String(body.title) } : {}),
+    ...(body.description != null ? { description: String(body.description) } : {}),
+    ...(body.category != null ? { category: String(body.category) as AppCouncilGrant['category'] } : {}),
+    ...(body.fundingMin != null ? { fundingMin: Number(body.fundingMin) } : {}),
+    ...(body.fundingMax != null ? { fundingMax: Number(body.fundingMax) } : {}),
+    ...(body.opensAt != null ? { opensAt: body.opensAt ? String(body.opensAt) : undefined } : {}),
+    ...(body.closesAt != null ? { closesAt: body.closesAt ? String(body.closesAt) : undefined } : {}),
+    ...(body.applicationUrl != null ? { applicationUrl: body.applicationUrl ? String(body.applicationUrl) : undefined } : {}),
+    ...(body.status != null ? { status: String(body.status) as AppCouncilGrant['status'] } : {}),
+  };
+  councilGrants[index] = next;
+  return res.json(next);
+});
+
+app.delete('/api/council/:id/grants/:grantId', requireAuth, async (req, res) => {
+  const councilId = qparam(req.params.id);
+  if (!(await userCanManageCouncilAccess(req.user!, councilId))) return res.status(403).json({ error: 'Forbidden' });
+  const grantId = qparam(req.params.grantId);
+  const index = councilGrants.findIndex((item) => item.id === grantId && item.institutionId === councilId);
+  if (index === -1) return res.status(404).json({ error: 'Grant not found' });
+  councilGrants.splice(index, 1);
+  return res.json({ success: true });
 });
 
 app.get('/api/council/:id/links', (req, res) => {
@@ -4587,6 +5348,205 @@ app.put('/api/privacy/settings/:userId', requireAuth, (req, res) => {
   const merged = { ...(privacySettings.get(qparam(req.params.userId)) ?? {}), ...(req.body ?? {}) };
   privacySettings.set(qparam(req.params.userId), merged);
   return res.json(merged);
+});
+
+const ACCOUNT_ORPHAN_CLEANUP_TARGETS: Array<{ collection: string; field: string }> = [
+  { collection: 'wallets', field: 'userId' },
+  { collection: 'tickets', field: 'userId' },
+  { collection: 'notifications', field: 'userId' },
+  { collection: 'redemptions', field: 'userId' },
+  { collection: 'paymentMethods', field: 'userId' },
+  { collection: 'councilClaims', field: 'userId' },
+  { collection: 'councilClaimLetters', field: 'sentBy' },
+  { collection: 'profiles', field: 'ownerId' },
+  { collection: 'reports', field: 'reporterUserId' },
+];
+
+function purgeInMemoryAccountData(userId: string): void {
+  const userIndex = users.findIndex((user) => user.id === userId);
+  if (userIndex !== -1) {
+    users.splice(userIndex, 1);
+  }
+
+  wallets.delete(userId);
+  memberships.delete(userId);
+  notifications.delete(userId);
+  paymentMethods.delete(userId);
+  transactions.delete(userId);
+  redemptions.delete(userId);
+  privacySettings.delete(userId);
+  userCouncilFollows.delete(userId);
+
+  const reminderKeysToDelete: string[] = [];
+  for (const [key, reminder] of userWasteReminders.entries()) {
+    if (reminder.userId === userId) {
+      reminderKeysToDelete.push(key);
+    }
+  }
+  for (const key of reminderKeysToDelete) {
+    userWasteReminders.delete(key);
+  }
+
+  const councilLinkKeysToDelete: string[] = [];
+  for (const [key, link] of userCouncilLinks.entries()) {
+    if (link.userId === userId) {
+      councilLinkKeysToDelete.push(key);
+    }
+  }
+  for (const key of councilLinkKeysToDelete) {
+    userCouncilLinks.delete(key);
+  }
+
+  const councilClaimIndexesToDelete: number[] = [];
+  for (let index = 0; index < councilClaims.length; index++) {
+    if (councilClaims[index]?.userId === userId) {
+      councilClaimIndexesToDelete.push(index);
+    }
+  }
+  for (let index = councilClaimIndexesToDelete.length - 1; index >= 0; index--) {
+    const claimIndex = councilClaimIndexesToDelete[index] as number;
+    councilClaims.splice(claimIndex, 1);
+  }
+
+  const claimLetterIndexesToDelete: number[] = [];
+  for (let index = 0; index < councilClaimLetters.length; index++) {
+    if (councilClaimLetters[index]?.sentBy === userId) {
+      claimLetterIndexesToDelete.push(index);
+    }
+  }
+  for (let index = claimLetterIndexesToDelete.length - 1; index >= 0; index--) {
+    const letterIndex = claimLetterIndexesToDelete[index] as number;
+    councilClaimLetters.splice(letterIndex, 1);
+  }
+
+  const ticketIdsToDelete = new Set(
+    tickets.filter((ticket) => ticket.userId === userId).map((ticket) => ticket.id),
+  );
+  const keptTickets = tickets.filter((ticket) => ticket.userId !== userId);
+  tickets.splice(0, tickets.length, ...keptTickets);
+
+  const keptScanEvents = scanEvents.filter((event) => !ticketIdsToDelete.has(event.ticketId));
+  scanEvents.splice(0, scanEvents.length, ...keptScanEvents);
+}
+
+async function deleteDocsByField(
+  collectionName: string,
+  field: string,
+  value: string,
+): Promise<number> {
+  let deletedCount = 0;
+  const pageSize = 200;
+
+  while (true) {
+    const snap = await db.collection(collectionName).where(field, '==', value).limit(pageSize).get();
+    if (snap.empty) {
+      break;
+    }
+
+    const batch = db.batch();
+    for (const doc of snap.docs) {
+      batch.delete(doc.ref);
+    }
+    await batch.commit();
+    deletedCount += snap.size;
+
+    if (snap.size < pageSize) {
+      break;
+    }
+  }
+
+  return deletedCount;
+}
+
+async function cleanupFirestoreAccountData(userId: string): Promise<{ deleted: Record<string, number>; userTreeDeleted: boolean }> {
+  const deleted: Record<string, number> = {};
+
+  for (const target of ACCOUNT_ORPHAN_CLEANUP_TARGETS) {
+    const count = await deleteDocsByField(target.collection, target.field, userId);
+    deleted[`${target.collection}:${target.field}`] = count;
+  }
+
+  const userRef = db.collection('users').doc(userId);
+  const userSnap = await userRef.get();
+  if (!userSnap.exists) {
+    return { deleted, userTreeDeleted: false };
+  }
+
+  await db.recursiveDelete(userRef);
+  return { deleted, userTreeDeleted: true };
+}
+
+app.delete('/api/account/:userId', requireAuth, async (req, res) => {
+  const targetUserId = qparam(req.params.userId);
+  if (!isOwnerOrAdmin(req.user!, targetUserId)) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  const requestingUserId = req.user!.id;
+
+  if (!hasFirestoreProject) {
+    purgeInMemoryAccountData(targetUserId);
+
+    let authDeleted = false;
+    let authMissing = false;
+
+    try {
+      await authAdmin.deleteUser(targetUserId);
+      authDeleted = true;
+    } catch (error: unknown) {
+      const code = typeof error === 'object' && error !== null && 'code' in error
+        ? String((error as { code?: unknown }).code ?? '')
+        : '';
+      if (code === 'auth/user-not-found') {
+        authMissing = true;
+      } else {
+        throw error;
+      }
+    }
+
+    return res.json({
+      success: true,
+      userId: targetUserId,
+      requestedBy: requestingUserId,
+      firestore: { enabled: false },
+      auth: { deleted: authDeleted, missing: authMissing },
+    });
+  }
+
+  try {
+    const firestoreCleanup = await cleanupFirestoreAccountData(targetUserId);
+
+    let authDeleted = false;
+    let authMissing = false;
+    try {
+      await authAdmin.deleteUser(targetUserId);
+      authDeleted = true;
+    } catch (error: unknown) {
+      const code = typeof error === 'object' && error !== null && 'code' in error
+        ? String((error as { code?: unknown }).code ?? '')
+        : '';
+      if (code === 'auth/user-not-found') {
+        authMissing = true;
+      } else {
+        throw error;
+      }
+    }
+
+    return res.json({
+      success: true,
+      userId: targetUserId,
+      requestedBy: requestingUserId,
+      firestore: {
+        enabled: true,
+        userTreeDeleted: firestoreCleanup.userTreeDeleted,
+        deleted: firestoreCleanup.deleted,
+      },
+      auth: { deleted: authDeleted, missing: authMissing },
+    });
+  } catch (err) {
+    console.error('[DELETE /api/account/:userId]:', err);
+    return res.status(500).json({ error: 'Failed to delete account' });
+  }
 });
 
 // ---------------------------------------------------------------------------

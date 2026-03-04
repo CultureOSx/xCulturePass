@@ -37,7 +37,21 @@ const defaultState: OnboardingState = {
   interests: [],
 };
 
-const OnboardingContext = createContext<OnboardingContextValue | null>(null);
+const defaultContextValue: OnboardingContextValue = {
+  state: defaultState,
+  isLoading: false,
+  setCountry: () => {},
+  setCity: () => {},
+  setCommunities: () => {},
+  setEthnicityText: () => {},
+  setLanguages: () => {},
+  setInterests: () => {},
+  completeOnboarding: async () => {},
+  resetOnboarding: async () => {},
+  updateLocation: async () => {},
+};
+
+const OnboardingContext = createContext<OnboardingContextValue>(defaultContextValue);
 
 export function OnboardingProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<OnboardingState>(defaultState);
@@ -63,7 +77,12 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   const persistUpdate = async (patch: Partial<OnboardingState>) => {
     setState((prev) => {
       const newState = { ...prev, ...patch };
-      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newState)).catch(() => {});
+      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newState)).catch((err) => {
+        if (__DEV__) {
+          // eslint-disable-next-line no-console
+          console.warn('[OnboardingContext] AsyncStorage.setItem failed — onboarding state will not persist across sessions.', err);
+        }
+      });
       return newState;
     });
   };
@@ -93,7 +112,5 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 }
 
 export function useOnboarding(): OnboardingContextValue {
-  const ctx = useContext(OnboardingContext);
-  if (!ctx) throw new Error('useOnboarding must be used within OnboardingProvider');
-  return ctx;
+  return useContext(OnboardingContext);
 }

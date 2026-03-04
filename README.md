@@ -72,14 +72,24 @@ Publishing readiness checklist: [`docs/PUBLISHING_READINESS.md`](docs/PUBLISHING
 
 ### iOS App Store
 ```bash
-eas build --profile production --platform ios
-eas submit --profile production --platform ios
+npm run build:ios:production
+npm run submit:ios:production
 ```
 
 ### Google Play Store
 ```bash
-eas build --profile production --platform android
-eas submit --platform android
+npm run build:android:production
+npm run submit:android:production
+```
+
+### Remote tester distribution
+```bash
+# Internal preview builds (share install links from Expo dashboard)
+npm run build:ios:preview
+npm run build:android:preview
+
+# OTA updates for preview testers
+npm run update:preview -- --message "QA update"
 ```
 
 ### Web (Firebase Hosting)

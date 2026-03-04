@@ -1,8 +1,6 @@
 import "react-native-reanimated"; // <-- CRUCIAL FIX: Must be at the very top
 import { Buffer } from "buffer";
 
-global.Buffer = Buffer;
-
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -35,6 +33,8 @@ import {
   Inter_600SemiBold,
   Inter_700Bold,
 } from "@expo-google-fonts/inter";
+
+global.Buffer = Buffer;
 
 // Prevent splash auto-hide safely
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -88,11 +88,16 @@ function DataSync() {
     // are stable refs from OnboardingContext and don't need to be in the dep array.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    user?.id,
-    user?.city,
-    user?.country,
-    user?.interests,
-    user?.communities,
+    resetOnboarding,
+    setCity,
+    setCommunities,
+    setCountry,
+    setInterests,
+    state.city,
+    state.communities,
+    state.country,
+    state.interests,
+    user,
   ]);
 
   return null;
@@ -118,6 +123,8 @@ function RootLayoutNav() {
 
       <Stack.Screen name="event/[id]" />
       <Stack.Screen name="community/[id]" />
+      <Stack.Screen name="council/select" />
+      <Stack.Screen name="council/claim" />
       <Stack.Screen name="business/[id]" />
       <Stack.Screen name="artist/[id]" />
       <Stack.Screen name="venue/[id]" />
@@ -177,8 +184,10 @@ function RootLayoutNav() {
       <Stack.Screen name="legal/guidelines" />
 
       <Stack.Screen name="admin/users" />
+      <Stack.Screen name="admin/council-management" />
       <Stack.Screen name="admin/notifications" />
       <Stack.Screen name="admin/audit-logs" />
+      <Stack.Screen name="admin/council-claims" />
     </Stack>
   );
 }

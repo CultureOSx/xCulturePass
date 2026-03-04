@@ -7,11 +7,10 @@ import {
   Platform,
   RefreshControl,
     ActivityIndicator,
-  Dimensions,
   TextInput,
   useColorScheme,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -44,6 +43,8 @@ import SpotlightCard, { SpotlightItem } from '@/components/Discover/SpotlightCar
 import WebRailSection from '@/components/Discover/WebRailSection';
 import WebHeroCarousel from '@/components/Discover/WebHeroCarousel';
 import { calculateDistance, getPostcodesByPlace } from '@shared/location/australian-postcodes';
+import { useCouncil } from '@/hooks/useCouncil';
+import { useLayout } from '@/hooks/useLayout';
 
 
 const isWeb = Platform.OS === 'web';
@@ -160,10 +161,17 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const colors = useColors();
+  const { width, isDesktop, isTablet } = useLayout();
   const scheme = useColorScheme();
   const isDark = scheme === 'dark';
   const { state } = useOnboarding();
   const { isAuthenticated, userId: authUserId, user: authUser } = useAuth();
+  const pathname = usePathname();
+  const { data: councilData } = useCouncil();
+  const council = councilData?.council;
+  const activeAlerts = (councilData?.alerts ?? []).filter((alert) => alert.status === 'active');
+  const isCouncilVerified = council?.verificationStatus === 'verified';
+  const lgaCode = council?.lgaCode;
 
   // Scroll-reactive header
   const scrollY = useSharedValue(0);
@@ -333,17 +341,30 @@ export default function HomeScreen() {
     return all.slice(0, 10);
   }, [allCommunities]);
 
-  const screenWidth = Dimensions.get('window').width;
-  // On desktop web, expand to full content area width (sidebar is 240px wide)
-  const isDesktopWeb = Platform.OS === 'web' && screenWidth >= 1024;
-  const maxWidth = Platform.OS === 'web'
-    ? (isDesktopWeb ? screenWidth - 240 : Math.min(screenWidth, 480))
-    : screenWidth;
-  const cityCardWidth = (maxWidth - 40 - 14) / 2;
+  const isCompactWeb = isWeb && width < 1100;
+  const contentMaxWidth = isWeb
+    ? (isDesktop ? 1360 : isTablet ? 1120 : 980)
+    : width;
+  const maxWidth = isWeb
+    ? Math.min(width - (isDesktop ? 48 : 24), contentMaxWidth)
+    : width;
+  const cityColumns = isWeb ? (isDesktop ? 4 : isTablet ? 3 : 2) : 2;
+  const cityCardWidth = Math.max(140, (maxWidth - 40 - (14 * (cityColumns - 1))) / cityColumns);
 
   const [refreshing, setRefreshing] = useState(false);
   const [webSearch, setWebSearch] = useState('');
   const [webCategoryFilter, setWebCategoryFilter] = useState('All');
+  const signInRoute = useMemo(() => {
+    const redirectTo = pathname && pathname.startsWith('/') ? pathname : '/(tabs)';
+    return `/(onboarding)/login?redirectTo=${encodeURIComponent(redirectTo)}`;
+  }, [pathname]);
+  const openNotifications = useCallback(() => {
+    if (isAuthenticated) {
+      pushSafe('/notifications');
+      return;
+    }
+    pushSafe('/(onboarding)/login?redirectTo=/notifications');
+  }, [isAuthenticated]);
   const categoryFilteredEvents = useCallback((evts: EventData[]) => {
     if (webCategoryFilter === 'All') return evts;
     return evts.filter((event) => {
@@ -449,11 +470,11 @@ export default function HomeScreen() {
           />
           <ScrollView
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.webScrollContent}
+            contentContainerStyle={[styles.webScrollContent, { maxWidth, paddingHorizontal: isDesktop ? 24 : 16 }]}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#E7EEF7" />}
           >
             {/* Discover Header — branding lives in sidebar; just show search + actions */}
-            <View style={styles.webTopRow}>
+            <View style={[styles.webTopRow, isCompactWeb && styles.webTopRowCompact]}>
               {/* Left: greeting */}
               <View style={styles.webTopRowLeft}>
                 <View>
@@ -466,7 +487,7 @@ export default function HomeScreen() {
               </View>
 
               {/* Central Search */}
-              <View style={styles.webSearchWrap}>
+              <View style={[styles.webSearchWrap, isCompactWeb && styles.webSearchWrapCompact]}>
                 <Ionicons name="search-outline" size={18} color="#94A2C4" />
                 <TextInput
                   value={webSearch}
@@ -482,8 +503,8 @@ export default function HomeScreen() {
                 )}
               </View>
 
-              <View style={styles.webTopActions}>
-                <Pressable style={styles.webIconBtn} onPress={() => pushSafe('/notifications')}>
+              <View style={[styles.webTopActions, isCompactWeb && styles.webTopActionsCompact]}>
+                <Pressable style={styles.webIconBtn} onPress={openNotifications}>
                   <Ionicons name="notifications-outline" size={19} color="#EAF0FF" />
                 </Pressable>
                 <Pressable style={styles.webIconBtn} onPress={() => pushSafe('/map')}>
@@ -494,9 +515,14 @@ export default function HomeScreen() {
                     <Text style={styles.webAvatarText}>{firstName.slice(0, 1).toUpperCase()}</Text>
                   </Pressable>
                 ) : (
-                  <Pressable style={styles.webLoginBtn} onPress={() => router.push('/(onboarding)/login')}>
-                    <Text style={styles.webLoginText}>Sign in</Text>
-                  </Pressable>
+                  <>
+                    <Pressable style={styles.webSignupBtn} onPress={() => pushSafe('/(onboarding)/signup')}>
+                      <Text style={styles.webSignupText}>Sign up</Text>
+                    </Pressable>
+                    <Pressable style={styles.webLoginBtn} onPress={() => pushSafe(signInRoute)}>
+                      <Text style={styles.webLoginText}>Sign in</Text>
+                    </Pressable>
+                  </>
                 )}
               </View>
             </View>
@@ -526,6 +552,23 @@ export default function HomeScreen() {
 
             {/* Auto-cycling hero carousel */}
             <WebHeroCarousel events={webHeroEvents} />
+
+            {council && (
+              <View style={styles.webCivicCard}>
+                <View style={styles.webCivicRow}>
+                  <Ionicons name="business-outline" size={16} color="#F2A93B" />
+                  <Text style={styles.webCivicTitle}>{council.name}</Text>
+                </View>
+                <Text style={styles.webCivicSub}>
+                  {isCouncilVerified ? `Council Verified • LGA ${lgaCode}` : `LGA ${lgaCode ?? 'Unknown'}`}
+                  {activeAlerts.length > 0 ? ` • ${activeAlerts.length} active alert${activeAlerts.length === 1 ? '' : 's'}` : ''}
+                </Text>
+                <Pressable style={styles.webCivicAction} onPress={() => router.push('/(tabs)/council')}>
+                  <Text style={styles.webCivicActionText}>Open Council</Text>
+                  <Ionicons name="chevron-forward" size={14} color="#EAF0FF" />
+                </Pressable>
+              </View>
+            )}
 
             {/* Event rails */}
             {webNearYou.length > 0 && (
@@ -593,9 +636,9 @@ export default function HomeScreen() {
           <Pressable style={styles.iconButton} onPress={() => pushSafe('/map')} testID="map-btn" accessibilityLabel="Events Map">
             <Ionicons name="map-outline" size={24} color={Colors.text} />
           </Pressable>
-          <Pressable style={styles.iconButton} onPress={() => router.push('/notifications')} testID="notifications-btn" accessibilityLabel="Notifications">
+          <Pressable style={styles.iconButton} onPress={openNotifications} testID="notifications-btn" accessibilityLabel="Notifications">
             <Ionicons name="notifications-outline" size={24} color={Colors.text} />
-            <View style={styles.notifDot} />
+            {isAuthenticated ? <View style={styles.notifDot} /> : null}
           </Pressable>
         </View>
       </View>
@@ -616,6 +659,30 @@ export default function HomeScreen() {
           />
         }
       >
+        {!isAuthenticated && (
+          <View style={styles.guestAuthRow}>
+            <Text style={styles.guestAuthHint}>Create an account to save events and get personalised recommendations.</Text>
+            <View style={styles.guestAuthButtons}>
+              <Pressable
+                style={[styles.guestAuthBtn, styles.guestSignupBtn]}
+                onPress={() => pushSafe('/(onboarding)/signup')}
+                accessibilityRole="button"
+                accessibilityLabel="Sign up"
+              >
+                <Text style={[styles.guestAuthBtnText, styles.guestSignupText]}>Sign up</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.guestAuthBtn, styles.guestSigninBtn]}
+                onPress={() => pushSafe(signInRoute)}
+                accessibilityRole="button"
+                accessibilityLabel="Sign in"
+              >
+                <Text style={[styles.guestAuthBtnText, styles.guestSigninText]}>Sign in</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
+
         <View style={styles.locationPickerRow}>
           <LocationPicker />
         </View>
@@ -633,6 +700,19 @@ export default function HomeScreen() {
             </Text>
           </LinearGradient>
         </View>
+
+        {council && (
+          <View style={styles.civicCard}>
+            <View style={styles.civicCardHeader}>
+              <Ionicons name="shield-checkmark-outline" size={16} color={Colors.primary} />
+              <Text style={styles.civicCardTitle}>{council.name}</Text>
+            </View>
+            <Text style={styles.civicCardSub}>
+              {isCouncilVerified ? `Council Verified • LGA ${lgaCode}` : `LGA ${lgaCode ?? 'Unknown'}`}
+              {activeAlerts.length > 0 ? ` • ${activeAlerts.length} active alert${activeAlerts.length === 1 ? '' : 's'}` : ''}
+            </Text>
+          </View>
+        )}
 
         {land && (
           <View style={styles.landBanner}>
@@ -1005,6 +1085,51 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 12,
   },
+  guestAuthRow: {
+    marginTop: 8,
+    marginHorizontal: 20,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: Colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: Colors.borderLight,
+    gap: 10,
+  },
+  guestAuthHint: {
+    fontSize: 13,
+    fontFamily: 'Poppins_500Medium',
+    color: Colors.textSecondary,
+  },
+  guestAuthButtons: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  guestAuthBtn: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 10,
+    paddingVertical: 10,
+    borderWidth: 1,
+  },
+  guestSignupBtn: {
+    backgroundColor: 'transparent',
+    borderColor: Colors.border,
+  },
+  guestSigninBtn: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  guestAuthBtnText: {
+    fontSize: 14,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  guestSignupText: {
+    color: Colors.text,
+  },
+  guestSigninText: {
+    color: Colors.textInverse,
+  },
   topBarRight: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1247,6 +1372,10 @@ const styles = StyleSheet.create({
     gap: 20,
     paddingBottom: 20,
   },
+  webTopRowCompact: {
+    flexWrap: 'wrap',
+    rowGap: 12,
+  },
   webTopRowLeft: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1283,6 +1412,10 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.12)',
     maxWidth: 600,
   },
+  webSearchWrapCompact: {
+    minWidth: '100%',
+    maxWidth: '100%',
+  },
   webSearchInput: {
     flex: 1,
     height: '100%' as unknown as number,
@@ -1294,6 +1427,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
     alignItems: 'center',
+  },
+  webTopActionsCompact: {
+    marginLeft: 'auto',
   },
   webIconBtn: {
     width: 40,
@@ -1327,10 +1463,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  webSignupBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.28)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   webLoginText: {
     fontSize: 14,
     fontFamily: 'Poppins_600SemiBold',
     color: '#FFF',
+  },
+  webSignupText: {
+    fontSize: 14,
+    fontFamily: 'Poppins_600SemiBold',
+    color: '#EAF0FF',
   },
   webCategoryChipsRow: {
     gap: 8,
@@ -1357,6 +1508,71 @@ const styles = StyleSheet.create({
   webCategoryChipTextActive: {
     color: Colors.text,
     fontFamily: 'Poppins_600SemiBold',
+  },
+  webCivicCard: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  webCivicRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  webCivicTitle: {
+    color: '#EAF0FF',
+    fontSize: 13,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  webCivicSub: {
+    color: '#94A2C4',
+    fontSize: 12,
+    fontFamily: 'Poppins_400Regular',
+    marginTop: 4,
+  },
+  webCivicAction: {
+    marginTop: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  webCivicActionText: {
+    color: '#EAF0FF',
+    fontSize: 12,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  civicCard: {
+    marginHorizontal: 20,
+    marginBottom: 16,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: Colors.borderLight,
+    backgroundColor: Colors.surface,
+  },
+  civicCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  civicCardTitle: {
+    fontSize: 13,
+    fontFamily: 'Poppins_600SemiBold',
+    color: Colors.text,
+  },
+  civicCardSub: {
+    fontSize: 12,
+    fontFamily: 'Poppins_400Regular',
+    color: Colors.textSecondary,
+    marginTop: 4,
   },
   activityTile: {
     width: 238,

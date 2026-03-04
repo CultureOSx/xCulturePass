@@ -21,6 +21,14 @@ export default function BusinessDetailScreen() {
     queryFn: () => api.businesses.get(id as string),
     enabled: !!id,
   });
+  const { data: councilData } = useQuery({
+    queryKey: ['/api/council/my', business?.city, business?.country],
+    queryFn: () => api.council.my({ city: business?.city, country: business?.country }),
+    enabled: !!business,
+  });
+  const council = councilData?.council;
+  const isCouncilVerified = council?.verificationStatus === 'verified';
+  const lgaCode = council?.lgaCode;
 
   if (isLoading) {
     return (
@@ -74,6 +82,12 @@ export default function BusinessDetailScreen() {
               )}
             </View>
             <Text style={styles.heroCategory}>{business.category} - {business.priceRange}</Text>
+            {isCouncilVerified && council ? (
+              <View style={[styles.verifiedBadge, { backgroundColor: 'rgba(52,152,219,0.85)', marginTop: 8 }]}>
+                <Ionicons name="shield-checkmark" size={16} color={colors.textInverse} />
+                <Text style={styles.verifiedText}>Council Verified • LGA {lgaCode}</Text>
+              </View>
+            ) : null}
           </View>
         </LinearGradient>
       </View>

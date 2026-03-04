@@ -69,3 +69,15 @@ functions/.env.*
 
 # Firebase project config (update .firebaserc with your new project ID)
 # .firebaserc is tracked — do NOT commit project IDs if open-sourcing
+
+# Mac & IDE
+.DS_Store
+.vscode/
+
+# Expo & Dependencies
+.expo/
+node_modules/
+dist/
+
+# Backups
+*_backup.*

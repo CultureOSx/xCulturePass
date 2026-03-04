@@ -16,6 +16,7 @@ export default function DashboardLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="organizer" />
+      <Stack.Screen name="council" />
     </Stack>
   );
 }

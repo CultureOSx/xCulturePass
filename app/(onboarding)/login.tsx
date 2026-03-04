@@ -2,7 +2,7 @@ import { View, Text, Pressable, StyleSheet, Platform, KeyboardAvoidingView, Scro
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors } from '@/constants/theme';
+import { Colors, gradients } from '@/constants/theme';
 import { useState } from 'react';
 import * as Haptics from 'expo-haptics';
 import { auth as firebaseAuth } from '@/lib/firebase';
@@ -162,8 +162,9 @@ export default function LoginScreen() {
 
   const formContent = (
     <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scrollContent}>
+      <View style={[styles.formCard, isDesktop && styles.formCardDesktop, { borderColor: colors.textInverse + '26', backgroundColor: colors.background + 'AD' }]}> 
       <View style={styles.logoRow}>
-        <View style={styles.logoCircle}><Ionicons name="globe-outline" size={34} color={Colors.primary} /></View>
+        <View style={[styles.logoCircle, { backgroundColor: colors.textInverse + '33' }]}><Ionicons name="globe-outline" size={34} color={Colors.primary} /></View>
         <Text style={[styles.brandLabel, { color: colors.textInverse + '99' }]}>culturepass.app</Text>
       </View>
 
@@ -189,7 +190,7 @@ export default function LoginScreen() {
         <View>
           <View style={styles.passwordHeader}>
             <Text style={[styles.label, { color: colors.textInverse }]}>Password</Text>
-            <Pressable onPress={() => router.push('/forgot-password')}>
+            <Pressable onPress={() => router.push('/(onboarding)/forgot-password')}>
               <Text style={[styles.forgotText, { color: colors.warning }]}>Forgot Password?</Text>
             </Pressable>
           </View>
@@ -227,9 +228,9 @@ export default function LoginScreen() {
       </Button>
 
       <View style={styles.socialDivider}>
-        <View style={styles.divLine} />
+        <View style={[styles.divLine, { backgroundColor: colors.textInverse + '59' }]} />
         <Text style={[styles.divText, { color: colors.textInverse + 'D9' }]}>or</Text>
-        <View style={styles.divLine} />
+        <View style={[styles.divLine, { backgroundColor: colors.textInverse + '59' }]} />
       </View>
 
       <View style={styles.socialRow}>
@@ -240,9 +241,10 @@ export default function LoginScreen() {
         }
       </View>
 
-      <Pressable style={styles.switchRow} onPress={() => router.replace('/signup')}>
+      <Pressable style={styles.switchRow} onPress={() => router.replace('/(onboarding)/signup')}>
         <Text style={[styles.switchText, { color: colors.textInverse + 'D9' }]}>Don&apos;t have an account? <Text style={[styles.switchLink, { color: colors.warning }]}>Sign Up</Text></Text>
       </Pressable>
+      </View>
     </ScrollView>
   );
 
@@ -252,19 +254,19 @@ export default function LoginScreen() {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="height">
         <View style={[styles.container, styles.desktopWrapper]}>
           <LinearGradient
-            colors={['#001F4D', '#0081C8', '#EE334E', '#FCB131']}
+            colors={gradients.culturepassBrand}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0.95 }}
             style={StyleSheet.absoluteFillObject}
           />
           {/* Back to landing */}
           <View style={styles.desktopBackRow}>
-            <Pressable onPress={() => router.replace('/(tabs)')} hitSlop={8} style={styles.desktopBackBtn}>
+            <Pressable onPress={() => router.replace('/(tabs)')} hitSlop={8} style={[styles.desktopBackBtn, { backgroundColor: colors.textInverse + '26' }]}>
               <Ionicons name="chevron-back" size={18} color={colors.textInverse} />
               <Text style={[styles.desktopBackText, { color: colors.textInverse }]}>Back to Discover</Text>
             </Pressable>
           </View>
-          <View style={styles.desktopCard}>
+          <View style={[styles.desktopCard, { backgroundColor: colors.background + 'D9', borderColor: colors.textInverse + '26' }, Platform.OS === 'web' ? ({ boxShadow: `0 24px 64px ${colors.background + '73'}` } as object) : null]}>
             {formContent}
           </View>
         </View>
@@ -276,7 +278,7 @@ export default function LoginScreen() {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={0}>
       <View style={[styles.container, { paddingTop: topInset }]}>
         <LinearGradient
-          colors={['#001F4D', '#0081C8', '#EE334E', '#FCB131']}
+          colors={gradients.culturepassBrand}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0.95 }}
           style={StyleSheet.absoluteFillObject}
@@ -291,9 +293,22 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#001F4D' },
+  container: { flex: 1, backgroundColor: 'transparent' },
   header: { paddingHorizontal: 20, paddingVertical: 12 },
-  scrollContent: { paddingHorizontal: 24, paddingBottom: 40 },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
+  formCard: {
+    borderRadius: 22,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+  },
+  formCardDesktop: {
+    borderRadius: 0,
+    borderWidth: 0,
+    backgroundColor: 'transparent',
+    paddingHorizontal: 0,
+    paddingBottom: 0,
+  },
   desktopWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -308,7 +323,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(255,255,255,0.15)',
     borderRadius: 20,
     paddingHorizontal: 14,
     paddingVertical: 8,
@@ -317,15 +331,12 @@ const styles = StyleSheet.create({
   desktopCard: {
     width: 480,
     maxHeight: '90%' as unknown as number,
-    backgroundColor: 'rgba(0,31,77,0.85)',
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
     overflow: 'hidden',
-    ...(Platform.OS === 'web' ? { boxShadow: '0 24px 64px rgba(0,0,0,0.45)' } as object : {}),
   },
   logoRow: { alignItems: 'center', marginTop: 12, marginBottom: 28, gap: 0 },
-  logoCircle: { width: 68, height: 68, borderRadius: 34, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
+  logoCircle: { width: 68, height: 68, borderRadius: 34, alignItems: 'center', justifyContent: 'center' },
   brandLabel: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', letterSpacing: 1.5, marginTop: 10 },
   title: { fontSize: 34, fontFamily: 'Poppins_700Bold', textAlign: 'center', marginBottom: 8, letterSpacing: 0.37 },
   subtitle: { fontSize: 15, fontFamily: 'Poppins_400Regular', lineHeight: 22, textAlign: 'center', marginBottom: 32 },
@@ -336,7 +347,7 @@ const styles = StyleSheet.create({
   forgotText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
   submitBtn: { marginBottom: 28 },
   socialDivider: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 },
-  divLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(255,255,255,0.35)' },
+  divLine: { flex: 1, height: StyleSheet.hairlineWidth },
   divText: { fontSize: 13, fontFamily: 'Poppins_400Regular' },
   socialRow: { flexDirection: 'row', gap: 12, marginBottom: 28 },
   switchRow: { alignItems: 'center' },
