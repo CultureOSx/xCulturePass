@@ -103,10 +103,22 @@ export default function EditProfileScreen() {
         uploadUri = uri;
       }
 
-      const blobRes  = await fetch(uploadUri);
-      const blob     = await blobRes.blob();
       const formData = new FormData();
-      formData.append('image', blob as unknown as Blob, 'profile.jpg');
+      const isDataUrl = uploadUri.startsWith('data:');
+
+      if (Platform.OS === 'web' || isDataUrl) {
+        const blobRes = await fetch(uploadUri);
+        const blob = await blobRes.blob();
+        formData.append('image', blob as unknown as Blob, 'profile.jpg');
+      } else {
+        const mimeType = uploadUri.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+        formData.append('image', {
+          uri: uploadUri,
+          name: 'profile.jpg',
+          type: mimeType,
+        } as unknown as Blob);
+      }
+
       const base      = getApiUrl();
       const uploadRes = await fetch(`${base}api/uploads/image`, { method: 'POST', body: formData });
       if (!uploadRes.ok) throw new Error('Upload failed');
