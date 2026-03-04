@@ -51,6 +51,7 @@ function DataSync() {
     setCountry,
     setInterests,
     setCommunities,
+    setSubscriptionTier,
     state,
     resetOnboarding,
   } = useOnboarding();
@@ -70,6 +71,7 @@ function DataSync() {
       const country = user.country;
       const interests = user.interests ?? [];
       const communities = user.communities ?? [];
+      const tier = user.subscriptionTier ?? 'free';
       if (city && city !== state.city) setCity(city);
       if (country && country !== state.country) setCountry(country);
       if (JSON.stringify(interests) !== JSON.stringify(state.interests)) {
@@ -78,12 +80,26 @@ function DataSync() {
       if (JSON.stringify(communities) !== JSON.stringify(state.communities)) {
         setCommunities(communities);
       }
+      if (tier !== state.subscriptionTier) {
+        setSubscriptionTier(tier);
+      }
     } else if (prevUserIdRef.current !== null) {
       // User was authenticated and has now signed out — clear onboarding state.
       prevUserIdRef.current = null;
       resetOnboarding();
     }
+    // Only re-run when the auth user's identity or profile fields change.
+    // The setter functions (setCity, setCommunities, etc.) and resetOnboarding
+    // are stable refs from OnboardingContext and don't need to be in the dep array.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
+    user?.id,
+    user?.city,
+    user?.country,
+    user?.interests,
+    user?.communities,
+    user?.subscriptionTier,
+  ]); // eslint-disable-line react-hooks/exhaustive-deps
     resetOnboarding,
     setCity,
     setCommunities,

@@ -26,6 +26,7 @@ export default function CouncilDashboardScreen() {
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const { isAdmin, isOrganizer, isLoading: roleLoading } = useRole();
+<<<<<<< HEAD
   const { data: councilData, isLoading, refetch } = useCouncil();
   const council = councilData?.council;
   const activeAlerts = (councilData?.alerts ?? []).filter((alert) => alert.status === 'active');
@@ -34,6 +35,19 @@ export default function CouncilDashboardScreen() {
   const links = councilData?.links ?? [];
   const waste = councilData?.waste ?? null;
   const following = councilData?.following ?? false;
+=======
+  const {
+    council,
+    activeAlerts,
+    openGrants,
+    facilities,
+    links,
+    waste,
+    following,
+    isLoading,
+    refetch,
+  } = useCouncil();
+>>>>>>> 54b1145 (feat: add council ecosystem design, admin views, and support data)
 
   const myClaimsQuery = useQuery({
     queryKey: ['/api/council/claims/me', council?.id],
