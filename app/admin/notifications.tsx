@@ -42,7 +42,7 @@ interface CampaignFormState {
 interface TargetedResult {
   dryRun: boolean;
   targetedCount: number;
-  audiencePreview: Array<{ userId: string; city: string; country: string }>;
+  audiencePreview: { userId: string; city: string; country: string }[];
   idempotentReplay?: boolean;
   approvalToken?: string;
   approvalExpiresAt?: string;

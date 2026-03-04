@@ -40,11 +40,13 @@ const EXPLORE_NAV: NavItem[] = [
 
 const ORGANIZER_NAV: NavItem[] = [
   { label: 'Dashboard',   icon: 'grid-outline',          iconActive: 'grid',           route: '/dashboard/organizer', matchPrefix: true },
+  { label: 'Council Ops', icon: 'shield-checkmark-outline', iconActive: 'shield-checkmark', route: '/dashboard/council', matchPrefix: true },
   { label: 'Submit Event',icon: 'add-circle-outline',    iconActive: 'add-circle',     route: '/submit' },
   { label: 'Scanner',     icon: 'qr-code-outline',       iconActive: 'qr-code',        route: '/scanner' },
 ];
 
 const ADMIN_NAV: NavItem[] = [
+  { label: 'Council Mgmt', icon: 'business-outline',       iconActive: 'business',       route: '/admin/council-management', matchPrefix: true },
   { label: 'Users',       icon: 'people-outline',         iconActive: 'people',         route: '/admin/users', matchPrefix: true },
   { label: 'Audit Logs',  icon: 'list-outline',           iconActive: 'list',           route: '/admin/audit-logs', matchPrefix: true },
   { label: 'Notify',      icon: 'megaphone-outline',      iconActive: 'megaphone',      route: '/admin/notifications', matchPrefix: true },

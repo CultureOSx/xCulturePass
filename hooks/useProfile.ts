@@ -11,7 +11,7 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
  */
 
 export function useCurrentUser() {
-  const { data: usersData, isLoading, error, refetch } = useQuery<User[]>({
+  const { data: user, isLoading, error, refetch } = useQuery<User>({
     queryKey: ['currentUser'],
     queryFn: async () => {
       const res = await apiRequest('GET', '/api/auth/me');
@@ -21,9 +21,8 @@ export function useCurrentUser() {
     retry: 2,
   });
   
-  const user = usersData?.[0] ?? null;
   return { 
-    user, 
+    user: user ?? null, 
     userId: user?.id ?? null, 
     isLoading, 
     error, 

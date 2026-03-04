@@ -104,7 +104,7 @@ export default function UpgradeScreen() {
     } finally {
       setLoading(false);
     }
-  }, [userId, billingPeriod]);
+  }, [userId, billingPeriod, pathname]);
 
   const handleCancel = useCallback(async () => {
     if (!userId) return;

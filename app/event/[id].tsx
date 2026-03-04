@@ -420,6 +420,7 @@ function EventDetail({ event, topInset, bottomInset }: EventDetailProps) {
     totalPrice,
     effectiveQty,
     buyMode,
+    pathname,
     purchaseMutation,
     purchaseFreeTicket,
   ]);

@@ -48,19 +48,20 @@ export function getMissingFirebaseEnvKeys(): RequiredFirebaseEnvKey[] {
 export function getFirebaseWebConfig() {
   const missing = getMissingFirebaseEnvKeys();
   if (missing.length > 0) {
-    throw new Error(
+    console.warn(
       '[CulturePass] Missing Firebase environment variables: ' + missing.join(', ') +
-      '. Add them to .env and EAS build profiles.'
+      '. Firebase services (Auth, Firestore, Storage) will not work.' +
+      ' The app will not be functional until these variables are configured in .env and EAS build profiles.'
     );
   }
 
   return {
-    apiKey: getEnv('EXPO_PUBLIC_FIREBASE_API_KEY')!,
-    authDomain: getEnv('EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN')!,
-    projectId: getEnv('EXPO_PUBLIC_FIREBASE_PROJECT_ID')!,
-    storageBucket: getEnv('EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET')!,
-    messagingSenderId: getEnv('EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID')!,
-    appId: getEnv('EXPO_PUBLIC_FIREBASE_APP_ID')!,
+    apiKey: getEnv('EXPO_PUBLIC_FIREBASE_API_KEY') ?? '',
+    authDomain: getEnv('EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN') ?? '',
+    projectId: getEnv('EXPO_PUBLIC_FIREBASE_PROJECT_ID') ?? '',
+    storageBucket: getEnv('EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET') ?? '',
+    messagingSenderId: getEnv('EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID') ?? '',
+    appId: getEnv('EXPO_PUBLIC_FIREBASE_APP_ID') ?? '',
   };
 }
 

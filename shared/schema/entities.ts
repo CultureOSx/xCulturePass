@@ -67,3 +67,30 @@ export interface Sponsor {
   status?: ContentStatus;
   createdAt?: string;
 }
+
+export interface Council {
+  id: string;
+  name: string;
+  state: 'NSW' | 'VIC' | 'QLD' | 'WA' | 'SA' | 'TAS' | 'ACT' | 'NT';
+  lgaCode: string;
+  suburb: string;
+  postcode: number;
+  country: string;
+  verificationStatus: 'unverified' | 'pending' | 'verified';
+  websiteUrl?: string;
+  email?: string;
+  phone?: string;
+  openingHours?: string;
+  status?: 'active' | 'draft' | 'suspended';
+}
+
+export interface Facility {
+  id: string;
+  institutionId: string;
+  name: string;
+  category?: string;
+  facilityType?: string;
+  city?: string;
+  country?: string;
+  isCouncilOwned?: boolean;
+}

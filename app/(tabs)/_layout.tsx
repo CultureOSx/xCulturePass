@@ -1,4 +1,5 @@
 import React from 'react';
+import { QueryClientProvider } from '@tanstack/react-query';
 import {
   Platform,
   StyleSheet,
@@ -8,8 +9,7 @@ import {
   useWindowDimensions,
   useColorScheme,
 } from 'react-native';
-import { Tabs } from 'expo-router';
-import { router, usePathname } from 'expo-router';
+import { Tabs, router, usePathname } from 'expo-router';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
@@ -29,6 +29,7 @@ import { TabBarTokens, gradients, CultureTokens } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
 import { useRole } from '@/hooks/useRole';
 import { WebSidebar } from '@/components/web/WebSidebar';
+import { queryClient } from '@/lib/query-client';
 
 // ---------------------------------------------------------------------------
 // Tab definitions
@@ -314,35 +315,36 @@ export default function TabLayout() {
     }
   }, [isWeb, pathname]);
 
-  // Desktop web: sidebar navigation on the left, content on the right (no tab bar)
+  // Desktop web: no sidebar, use top tab navigation for web-optimized parity
   if (isDesktop) {
     return (
-      <View style={{ flex: 1, flexDirection: 'row', overflow: 'hidden' }}>
-        <WebSidebar />
+      <QueryClientProvider client={queryClient}>
         <View style={{ flex: 1, overflow: 'hidden' }}>
           <Tabs
             initialRouteName="index"
             screenOptions={{ headerShown: false }}
-            tabBar={() => null}
+            tabBar={(props) => <CustomTabBar {...props} position="top" />}
           >
             <TabScreens />
           </Tabs>
         </View>
-      </View>
+      </QueryClientProvider>
     );
   }
 
   // Mobile / tablet: bottom floating tab bar
   return (
-    <View style={{ flex: 1, overflow: 'hidden' }}>
-      <Tabs
-        initialRouteName="index"
-        screenOptions={{ headerShown: false }}
-        tabBar={(props) => <CustomTabBar {...props} position="bottom" />}
-      >
-        <TabScreens />
-      </Tabs>
-    </View>
+    <QueryClientProvider client={queryClient}>
+      <View style={{ flex: 1, overflow: 'hidden' }}>
+        <Tabs
+          initialRouteName="index"
+          screenOptions={{ headerShown: false }}
+          tabBar={(props) => <CustomTabBar {...props} position="bottom" />}
+        >
+          <TabScreens />
+        </Tabs>
+      </View>
+    </QueryClientProvider>
   );
 }
 

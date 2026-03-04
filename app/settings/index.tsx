@@ -78,6 +78,7 @@ export default function AccountSettingsScreen() {
         { icon: 'lock-closed-outline',   label: 'Privacy & Security',   sub: 'Profile visibility, data sharing', color: colors.secondary, route: '/settings/privacy' },
         { icon: 'notifications-outline', label: 'Notifications',        sub: 'Push, email, event reminders',     color: colors.accent,    route: '/settings/notifications' },
         { icon: 'location-outline',      label: 'Location & City',      sub: 'Update your city and country',     color: colors.success,   route: '/settings/location' },
+        { icon: 'business-outline',      label: 'Local Council',        sub: 'Choose your council area',         color: colors.info,      route: '/council/select' },
       ],
     },
     {
@@ -103,9 +104,16 @@ export default function AccountSettingsScreen() {
         { icon: 'grid-outline',       label: 'Organizer Dashboard', sub: 'Manage your events and tickets',   color: colors.primary,   route: '/dashboard/organizer' },
         { icon: 'qr-code-outline',    label: 'Ticket Scanner',      sub: 'Scan attendee tickets at gate',    color: colors.secondary, route: '/scanner' },
         { icon: 'add-circle-outline', label: 'Submit Content',      sub: 'Events, businesses, listings',     color: colors.accent,    route: '/submit' },
-        ...(isAdmin ? [{ icon: 'people-outline', label: 'Admin Panel', sub: 'Manage users and roles', color: colors.error, route: '/admin/users' }] : []),
         ...(canTargetCampaigns ? [{ icon: 'megaphone-outline', label: 'Campaign Targeting', sub: 'Dry-run and send targeted push', color: colors.info, route: '/admin/notifications' }] : []),
         ...(canTargetCampaigns ? [{ icon: 'document-text-outline', label: 'Campaign Audit Logs', sub: 'Review admin send history', color: colors.warning, route: '/admin/audit-logs' }] : []),
+      ] as SettingItem[],
+    }] : []),
+    ...(isAdmin ? [{
+      title: 'Admin Tools',
+      items: [
+        { icon: 'business-outline', label: 'Council Management', sub: 'Council overview, claims, and operations', color: colors.primary, route: '/admin/council-management' },
+        { icon: 'shield-checkmark-outline', label: 'Council Claims', sub: 'Approve or reject council ownership claims', color: colors.warning, route: '/admin/council-claims' },
+        { icon: 'people-outline', label: 'Admin Panel', sub: 'Manage users and roles', color: colors.error, route: '/admin/users' },
       ] as SettingItem[],
     }] : []),
     {

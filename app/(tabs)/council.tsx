@@ -1,4 +1,3 @@
-import { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -10,15 +9,12 @@ import {
   Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import { useOnboarding } from '@/contexts/OnboardingContext';
-import { useAuth } from '@/lib/auth';
-import { api, type CouncilPreference } from '@/lib/api';
 import { useColors } from '@/hooks/useColors';
+import { useCouncil } from '@/hooks/useCouncil';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { AuthGuard } from '@/components/AuthGuard';
 import { Button } from '@/components/ui/Button';
-import { getPostcodesByPlace } from '@shared/location/australian-postcodes';
 
 const ALERT_LABELS: Record<string, string> = {
   emergency: 'Emergency',
@@ -32,82 +28,36 @@ const ALERT_LABELS: Record<string, string> = {
   development_application: 'Development Applications',
 };
 
-function buildCouncilParams(city?: string, country?: string) {
-  const fallbackPostcode = city ? getPostcodesByPlace(city)[0] : undefined;
-  return {
-    city: city || undefined,
-    country: country || 'Australia',
-    postcode: fallbackPostcode?.postcode,
-    suburb: fallbackPostcode?.place_name,
-    state: fallbackPostcode?.state_code,
-  };
+export default function CouncilTabScreen() {
+  return (
+    <AuthGuard
+      icon="business-outline"
+      title="Your Local Council"
+      message="Sign in to see council info, waste schedules, alerts, and community events for your area."
+    >
+      <CouncilContent />
+    </AuthGuard>
+  );
 }
 
-export default function CouncilTabScreen() {
+function CouncilContent() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const queryClient = useQueryClient();
-  const { state } = useOnboarding();
-  const { isAuthenticated } = useAuth();
-  const [localPrefs, setLocalPrefs] = useState<CouncilPreference[]>([]);
-
-  const councilParams = useMemo(
-    () => buildCouncilParams(state.city, state.country),
-    [state.city, state.country],
-  );
-
-  const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['/api/council/my', councilParams.city, councilParams.postcode],
-    queryFn: () => api.council.my(councilParams),
-  });
+  const {
+    data,
+    isLoading,
+    isError,
+    isAuthenticated,
+    refetch,
+    followMutation,
+    prefMutation,
+    reminderMutation,
+    effectivePrefs,
+    togglePref,
+  } = useCouncil();
 
   const councilPhone = data?.council.phone?.trim();
   const councilWebsiteUrl = data?.council.websiteUrl?.trim();
-  const councilId = data?.council.id;
-  const effectivePrefs = localPrefs.length > 0 ? localPrefs : (data?.preferences ?? []);
-
-  const reload = async () => {
-    await queryClient.invalidateQueries({ queryKey: ['/api/council/my'] });
-  };
-
-  const followMutation = useMutation({
-    mutationFn: async () => {
-      if (!councilId) throw new Error('Council not resolved');
-      if (data?.following) return api.council.unfollow(councilId);
-      return api.council.follow(councilId);
-    },
-    onSuccess: reload,
-  });
-
-  const prefMutation = useMutation({
-    mutationFn: async (preferences: CouncilPreference[]) => {
-      if (!councilId) throw new Error('Council not resolved');
-      return api.council.updatePreferences(councilId, preferences);
-    },
-    onSuccess: reload,
-  });
-
-  const reminderMutation = useMutation({
-    mutationFn: async (enabled: boolean) => {
-      if (!councilId) throw new Error('Council not resolved');
-      return api.council.updateWasteReminder(councilId, {
-        enabled,
-        reminderTime: data?.reminder?.reminderTime ?? '19:00',
-        postcode: data?.waste?.postcode,
-        suburb: data?.waste?.suburb,
-      });
-    },
-    onSuccess: reload,
-  });
-
-  const togglePref = (category: string) => {
-    const existing = effectivePrefs;
-    const next = existing.map((item) =>
-      item.category === category ? { ...item, enabled: !item.enabled } : item,
-    );
-    setLocalPrefs(next);
-    prefMutation.mutate(next);
-  };
 
   return (
     <ErrorBoundary>

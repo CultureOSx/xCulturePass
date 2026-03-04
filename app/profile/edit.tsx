@@ -6,6 +6,7 @@ import * as Haptics from 'expo-haptics';
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, getApiUrl, queryClient } from '@/lib/query-client';
+import { api } from '@/lib/api';
 import * as ImagePicker from 'expo-image-picker';
 import { manipulateAsync, SaveFormat } from '@/lib/image-manipulator';
 import { fetch } from 'expo/fetch';
@@ -45,8 +46,9 @@ export default function EditProfileScreen() {
   const { userId } = useAuth();
 
   const { data: user } = useQuery<UserData>({
-    queryKey: ['/api/users', userId],
+    queryKey: ['/api/users/me', userId],
     enabled: !!userId,
+    queryFn: () => api.users.me() as Promise<UserData>,
   });
 
   const [form, setForm] = useState({
@@ -79,18 +81,44 @@ export default function EditProfileScreen() {
 
   const uploadMutation = useMutation({
     mutationFn: async (uri: string): Promise<UploadedImage> => {
-      const processed = await manipulateAsync(
-        uri,
-        [
-          { rotate: avatarRotation },
-          ...(avatarScale === 'medium' ? [{ resize: { width: 1024 } }] : avatarScale === 'large' ? [{ resize: { width: 1600 } }] : []),
-        ],
-        { compress: 0.92, format: SaveFormat.JPEG },
-      );
-      const blobRes  = await fetch(processed.uri);
-      const blob     = await blobRes.blob();
+      const actions = [
+        { rotate: avatarRotation },
+        ...(avatarScale === 'medium' ? [{ resize: { width: 1024 } }] : avatarScale === 'large' ? [{ resize: { width: 1600 } }] : []),
+      ];
+
+      let uploadUri = uri;
+      try {
+        const jpegFormat =
+          SaveFormat && typeof SaveFormat === 'object' && 'JPEG' in SaveFormat
+            ? SaveFormat.JPEG
+            : undefined;
+
+        const processed = await manipulateAsync(
+          uri,
+          actions,
+          jpegFormat ? { compress: 0.92, format: jpegFormat } : { compress: 0.92 },
+        );
+        uploadUri = processed.uri;
+      } catch {
+        uploadUri = uri;
+      }
+
       const formData = new FormData();
-      formData.append('image', blob as unknown as Blob, 'profile.jpg');
+      const isDataUrl = uploadUri.startsWith('data:');
+
+      if (Platform.OS === 'web' || isDataUrl) {
+        const blobRes = await fetch(uploadUri);
+        const blob = await blobRes.blob();
+        formData.append('image', blob as unknown as Blob, 'profile.jpg');
+      } else {
+        const mimeType = uploadUri.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+        formData.append('image', {
+          uri: uploadUri,
+          name: 'profile.jpg',
+          type: mimeType,
+        } as unknown as Blob);
+      }
+
       const base      = getApiUrl();
       const uploadRes = await fetch(`${base}api/uploads/image`, { method: 'POST', body: formData });
       if (!uploadRes.ok) throw new Error('Upload failed');
@@ -104,6 +132,8 @@ export default function EditProfileScreen() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/users/me', userId] });
+      queryClient.invalidateQueries({ queryKey: ['api/auth/me'] });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert('Profile Updated', 'Your profile has been saved successfully.');
       router.back();
