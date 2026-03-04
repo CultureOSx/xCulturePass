@@ -1,4 +1,5 @@
 import React from 'react';
+import { QueryClientProvider } from '@tanstack/react-query';
 import {
   Platform,
   StyleSheet,
@@ -28,6 +29,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TabBarTokens, gradients, CultureTokens } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
 import { WebSidebar } from '@/components/web/WebSidebar';
+import { queryClient } from '@/lib/query-client';
 
 // ---------------------------------------------------------------------------
 // Tab definitions
@@ -314,32 +316,36 @@ export default function TabLayout() {
   // Desktop web: sidebar navigation on the left, content on the right (no tab bar)
   if (isDesktop) {
     return (
-      <View style={{ flex: 1, flexDirection: 'row', overflow: 'hidden' }}>
-        <WebSidebar />
-        <View style={{ flex: 1, overflow: 'hidden' }}>
-          <Tabs
-            initialRouteName="index"
-            screenOptions={{ headerShown: false }}
-            tabBar={() => null}
-          >
-            <TabScreens />
-          </Tabs>
+      <QueryClientProvider client={queryClient}>
+        <View style={{ flex: 1, flexDirection: 'row', overflow: 'hidden' }}>
+          <WebSidebar />
+          <View style={{ flex: 1, overflow: 'hidden' }}>
+            <Tabs
+              initialRouteName="index"
+              screenOptions={{ headerShown: false }}
+              tabBar={() => null}
+            >
+              <TabScreens />
+            </Tabs>
+          </View>
         </View>
-      </View>
+      </QueryClientProvider>
     );
   }
 
   // Mobile / tablet: bottom floating tab bar
   return (
-    <View style={{ flex: 1, overflow: 'hidden' }}>
-      <Tabs
-        initialRouteName="index"
-        screenOptions={{ headerShown: false }}
-        tabBar={(props) => <CustomTabBar {...props} position="bottom" />}
-      >
-        <TabScreens />
-      </Tabs>
-    </View>
+    <QueryClientProvider client={queryClient}>
+      <View style={{ flex: 1, overflow: 'hidden' }}>
+        <Tabs
+          initialRouteName="index"
+          screenOptions={{ headerShown: false }}
+          tabBar={(props) => <CustomTabBar {...props} position="bottom" />}
+        >
+          <TabScreens />
+        </Tabs>
+      </View>
+    </QueryClientProvider>
   );
 }
 
