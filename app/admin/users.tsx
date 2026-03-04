@@ -5,7 +5,6 @@ import {
   Pressable,
   StyleSheet,
   TextInput,
-  Platform,
   Alert,
   ActivityIndicator,
   Image,
@@ -122,7 +121,7 @@ function UserRow({ user, onAssignRole }: { user: AdminUser; onAssignRole: (u: Ad
 
 export default function AdminUsersScreen() {
   const insets = useSafeAreaInsets();
-  const webTop = Platform.OS === 'web' ? 0 : 0;
+  const webTop = 0;
   const colors = useColors();
   const { isAdmin, isLoading: roleLoading } = useRole();
   const [search, setSearch] = useState('');

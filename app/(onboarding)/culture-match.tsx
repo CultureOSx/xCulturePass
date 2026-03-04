@@ -78,7 +78,7 @@ export default function CultureMatchScreen() {
   const colors = useColors();
   const { state, setEthnicityText, setLanguages } = useOnboarding();
 
-  const [ethnicityInput, setEthnicityInputInput] = useState(state.ethnicityText);
+  const [ethnicityInput, setEthnicityInput] = useState(state.ethnicityText);
   const [languageInput, setLanguageInput] = useState('');
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>(state.languages);
   const [ethnicitySuggestions, setEthnicitySuggestions] = useState<string[]>([]);
@@ -190,7 +190,7 @@ export default function CultureMatchScreen() {
           <Text style={[s.label, { color: colors.text }]}>Ethnicity</Text>
           <TextInput
             value={ethnicityInput}
-            onChangeText={setEthnicityInputInput}
+            onChangeText={setEthnicityInput}
             placeholder="Type your ethnicity"
             placeholderTextColor={colors.textSecondary}
             style={[s.input, { color: colors.text, borderColor: colors.borderLight, backgroundColor: colors.backgroundSecondary }]}
@@ -206,7 +206,7 @@ export default function CultureMatchScreen() {
                   <Pressable
                     key={`eth-${item}`}
                     style={[s.suggestionChip, { backgroundColor: colors.primarySoft, borderColor: colors.primary }]}
-                    onPress={() => setEthnicityInputInput(item)}
+                    onPress={() => setEthnicityInput(item)}
                   >
                     <Text style={[s.suggestionText, { color: colors.primary }]}>{item}</Text>
                   </Pressable>

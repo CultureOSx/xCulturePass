@@ -33,7 +33,7 @@ const FEATURES = [
 
 export default function UpgradeScreen() {
   const insets = useSafeAreaInsets();
-  const webTop = Platform.OS === 'web' ? 0 : 0;
+  const webTop = 0;
   const colors = useColors();
   const pathname = usePathname();
   const { userId, isAuthenticated } = useAuth();

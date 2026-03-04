@@ -37,7 +37,7 @@
     "submit:android:production": "eas submit --platform android --profile production",
     "update:preview": "eas update --branch preview",
     "update:production": "eas update --branch production"
->>>>>>> 3c21a0e (fix: resolved council conflict with local version)
+
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.1",
