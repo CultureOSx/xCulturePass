@@ -111,6 +111,9 @@ type AppUser = {
   ethnicityText?: string;
   interestCategoryIds?: string[];
   culturePassId: string;
+  isVerified?: boolean;
+  createdAt: string;
+  updatedAt?: string;
 };
 
 type AppEvent = {
@@ -142,7 +145,6 @@ type AppEvent = {
   priceLabel?: string;
   category?: string;
   organizerId?: string;
-  organizer?: string;
   capacity?: number;
   attending?: number;
   isFeatured?: boolean;
@@ -151,7 +153,10 @@ type AppEvent = {
   tags?: string[];
   indigenousTags?: string[];
   languageTags?: string[];
-  cpid?: string;
+  culturePassId?: string;
+  isVerified?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 type AppProfile = {
@@ -167,11 +172,15 @@ type AppProfile = {
   country: string;
   description: string;
   imageUrl?: string;
+  avatarUrl?: string;
   website?: string;
-  members?: number;
-  followers?: number;
-  verified?: boolean;
+  membersCount?: number;
+  followersCount?: number;
+  isVerified?: boolean;
   ownerId?: string;
+  culturePassId?: string;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 type AppActivity = {

@@ -152,7 +152,7 @@ function TabItem({ tab, focused, color, activeColor, onPress, flex, isDesktopMen
         style={[
           tabItemStyles.label,
           {
-            color: focused ? activeColor : color,
+            color: Platform.OS === 'web' ? '#000' : (focused ? activeColor : color),
             fontFamily: focused ? 'Poppins_600SemiBold' : 'Poppins_500Medium',
             fontSize: isDesktopMenu ? 14 : TabBarTokens.labelSize,
           },
@@ -189,8 +189,9 @@ function CustomTabBar({ state, navigation, position = 'bottom' }: CustomTabBarPr
     return null;
   }
 
-  const inactiveColor = isDesktopMenu ? colors.textSecondary : (isDark ? 'rgba(232,244,255,0.62)' : 'rgba(0,22,40,0.62)');
-  const activeColor = isDesktopMenu ? colors.text : colors.textInverse;
+  const navColor = isWeb ? '#000' : undefined;
+  const inactiveColor = isDesktopMenu ? (navColor || colors.textSecondary) : (isDark ? 'rgba(232,244,255,0.62)' : 'rgba(0,22,40,0.62)');
+  const activeColor = isDesktopMenu ? (navColor || colors.text) : colors.textInverse;
   const bottomPad = Math.max(insets.bottom, isWeb ? 0 : 8);
   const topPad = Math.max(insets.top, isWeb ? 8 : 0);
 
@@ -220,9 +221,7 @@ function CustomTabBar({ state, navigation, position = 'bottom' }: CustomTabBarPr
           style={[
             StyleSheet.absoluteFill,
             {
-              backgroundColor: isDark
-                ? 'rgba(6,11,20,0.94)'
-                : 'rgba(255,255,255,0.98)',
+              backgroundColor: Platform.OS === 'web' ? '#2C2A72' : (isDark ? 'rgba(6,11,20,0.94)' : 'rgba(255,255,255,0.98)'),
             },
           ]}
         />
@@ -323,7 +322,7 @@ export default function TabLayout() {
           <Tabs
             initialRouteName="index"
             screenOptions={{ headerShown: false }}
-            tabBar={(props) => <CustomTabBar {...props} position="top" />}
+            tabBar={Platform.OS === 'web' ? undefined : (props) => <CustomTabBar {...props} position="top" />}
           >
             <TabScreens />
           </Tabs>

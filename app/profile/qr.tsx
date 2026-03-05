@@ -43,7 +43,7 @@ export default function QRScreen() {
   const insets      = useSafeAreaInsets();
   const topInset    = Platform.OS === 'web' ? 0 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
-  const colors      = useColors();
+  const colors = useColors(); // Ensure colors is defined before styles
   const [copied, setCopied] = useState(false);
 
   const { data: usersData } = useQuery<User[]>({ queryKey: ['/api/users'] });
@@ -91,107 +91,107 @@ export default function QRScreen() {
   };
 
   return (
-    <View style={[s.container, { paddingTop: topInset, backgroundColor: colors.background }]}>
-      <View style={s.header}>
-        <Pressable style={[s.backBtn, { backgroundColor: colors.surface }]} onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={22} color={colors.text} />
+    <View style={[styles.container, { paddingTop: topInset, backgroundColor: colors.background }]}> 
+      <View style={styles.header}> 
+        <Pressable style={[styles.backBtn, { backgroundColor: colors.surface }]} onPress={() => router.back()}> 
+          <Ionicons name="chevron-back" size={22} color={colors.text} /> 
         </Pressable>
-        <Text style={[s.headerTitle, { color: colors.text }]}>CulturePass Digital ID</Text>
-        <Pressable style={[s.headerAction, { backgroundColor: colors.primaryGlow }]} onPress={() => router.push('/scanner')}>
-          <Ionicons name="scan-outline" size={20} color={colors.primary} />
+        <Text style={[styles.headerTitle, { color: colors.text }]}>CulturePass Digital ID</Text> 
+        <Pressable style={[styles.headerAction, { backgroundColor: colors.primaryGlow }]} onPress={() => router.push('/scanner')}> 
+          <Ionicons name="scan-outline" size={20} color={colors.primary} /> 
         </Pressable>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[s.scrollContent, { paddingBottom: bottomInset + 40 }]}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomInset + 40 }]}> 
         {/* ID card */}
-        <View style={[s.cardOuter, { shadowColor: '#000' }]}>
-          <View style={[s.card, { backgroundColor: colors.surface }]}>
+        <View style={[styles.cardOuter, { shadowColor: '#000' }]}> 
+          <View style={[styles.card, { backgroundColor: colors.surface }]}> 
             {/* Dark header — intentionally always dark (card design) */}
-            <LinearGradient
-              colors={['#1A1A2E', '#16213E', '#0F3460']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={s.cardTop}
-            >
-              <View style={s.cardPattern}>
-                <View style={s.patternCircle1} />
-                <View style={s.patternCircle2} />
-              </View>
+            <LinearGradient 
+              colors={['#1A1A2E', '#16213E', '#0F3460']} 
+              start={{ x: 0, y: 0 }} 
+              end={{ x: 1, y: 1 }} 
+              style={styles.cardTop} 
+            > 
+              <View style={styles.cardPattern}> 
+                <View style={styles.patternCircle1} /> 
+                <View style={styles.patternCircle2} /> 
+              </View> 
 
-              <View style={s.cardHeaderRow}>
-                <View style={s.brandRow}>
-                  <View style={s.logoMark}>
+              <View style={styles.cardHeaderRow}> 
+                <View style={styles.brandRow}> 
+                  <View style={styles.logoMark}> 
                     <Ionicons name="globe" size={14} color={colors.textInverse} />
                   </View>
                   <View>
-                    <Text style={[s.brandName, { color: colors.textInverse }]}>CULTUREPASS</Text>
-                    <Text style={[s.brandSub, { color: colors.textInverse + '80' }]}>DIGITAL ID</Text>
+                    <Text style={[styles.brandName, { color: colors.textInverse }]}>CULTUREPASS</Text> 
+                    <Text style={[styles.brandSub, { color: colors.textInverse + '80' }]}>DIGITAL ID</Text> 
                   </View>
                 </View>
-                <View style={[s.tierBadge, { backgroundColor: tierConf.accent + '30' }]}>
+                <View style={[styles.tierBadge, { backgroundColor: tierConf.accent + '30' }]}> 
                   <Ionicons name={tierConf.icon as never} size={11} color={tierConf.accent} />
-                  <Text style={[s.tierText, { color: tierConf.accent }]}>{tierConf.label}</Text>
+                  <Text style={[styles.tierText, { color: tierConf.accent }]}>{tierConf.label}</Text> 
                 </View>
               </View>
 
-              <View style={s.userSection}>
-                <View style={s.avatarRing}>
-                  <View style={s.avatarInner}>
-                    <Text style={[s.avatarInitials, { color: colors.textInverse }]}>
+
+              <View style={styles.userSection}> 
+                <View style={styles.avatarRing}> 
+                  <View style={styles.avatarInner}> 
+                    <Text style={[styles.avatarInitials, { color: colors.textInverse }]}> 
                       {(displayName || 'U').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
                     </Text>
                   </View>
                 </View>
-                <View style={s.userDetails}>
-                  <Text style={[s.userName, { color: colors.textInverse }]} numberOfLines={1}>{displayName}</Text>
-                  <Text style={[s.userHandle, { color: colors.textInverse + '99' }]}>@{username}</Text>
+                <View style={styles.userDetails}> 
+                  <Text style={[styles.userName, { color: colors.textInverse }]} numberOfLines={1}>{displayName}</Text> 
+                  <Text style={[styles.userHandle, { color: colors.textInverse + '99' }]}>@{username}</Text> 
                 </View>
               </View>
 
-              <View style={s.metaRow}>
-                <View style={s.metaItem}>
-                  <Ionicons name="finger-print" size={12} color={colors.textInverse + '99'} />
-                  <Text style={[s.metaText, { color: colors.textInverse + '99' }]}>{cpid}</Text>
-                </View>
-                <View style={[s.metaDot, { backgroundColor: colors.textInverse + '4D' }]} />
-                <View style={s.metaItem}>
-                  <Ionicons name="calendar-outline" size={12} color={colors.textInverse + '99'} />
-                  <Text style={[s.metaText, { color: colors.textInverse + '99' }]}>{memberSince}</Text>
-                </View>
+              <View style={styles.metaRow}> 
+                <View style={styles.metaItem}> 
+                  <Text style={[styles.metaText, { color: colors.textInverse + '99' }]}>{cpid}</Text> 
+                </View> 
+                <View style={[styles.metaDot, { backgroundColor: colors.textInverse + '4D' }]} /> 
+                <View style={styles.metaItem}> 
+                  <Ionicons name="calendar-outline" size={12} color={colors.textInverse + '99'} /> 
+                  <Text style={[styles.metaText, { color: colors.textInverse + '99' }]}>{memberSince}</Text> 
+                </View> 
               </View>
             </LinearGradient>
 
-            {/* QR section */}
-            <View style={[s.qrSection, { backgroundColor: colors.surface }]}>
-              <View style={s.qrContainer}>
-                {[s.cornerTL, s.cornerTR, s.cornerBL, s.cornerBR].map((cs, i) => (
-                  <View key={i} style={[cs, { borderColor: '#1A1A2E' }]} />
-                ))}
-                <View style={s.qrInner}>
-                  <QRCode value={qrValue} size={QR_SIZE} color="#1A1A2E" backgroundColor="#FFFFFF" ecl="H" />
-                </View>
-              </View>
-              <Text style={[s.scanLabel, { color: colors.textSecondary }]}>Scan to verify identity</Text>
-            </View>
+            {/* QR section */} 
+            <View style={[styles.qrSection, { backgroundColor: colors.surface }]}> 
+              <View style={styles.qrContainer}> 
+                {[styles.cornerTL, styles.cornerTR, styles.cornerBL, styles.cornerBR].map((cs, i) => ( 
+                  <View key={i} style={[cs, { borderColor: '#1A1A2E' }]} /> 
+                ))} 
+                <View style={styles.qrInner}> 
+                  <QRCode value={qrValue} size={QR_SIZE} color="#1A1A2E" backgroundColor="#FFFFFF" ecl="H" /> 
+                </View> 
+              </View> 
+              <Text style={[styles.scanLabel, { color: colors.textSecondary }]}>Scan to verify identity</Text> 
+            </View> 
 
-            {/* Card bottom */}
-            <View style={s.cardBottom}>
-              <View style={[s.bottomDivider, { backgroundColor: colors.borderLight }]} />
-              <View style={s.bottomRow}>
-                <View style={s.verifiedRow}>
-                  <Ionicons name="shield-checkmark" size={15} color={colors.success} />
-                  <Text style={[s.verifiedText, { color: colors.success }]}>Verified Member</Text>
-                </View>
-                <View style={s.chipRow}>
-                  <View style={[s.nfcChip, { backgroundColor: colors.borderLight, borderColor: colors.border }]}>
-                    <Ionicons name="wifi" size={10} color={colors.textInverse + '66'} style={{ transform: [{ rotate: '90deg' }] }} />
-                  </View>
-                  <View style={[s.hologram, { backgroundColor: colors.primaryGlow }]}>
-                    <Ionicons name="finger-print" size={16} color={colors.primary + '35'} />
-                  </View>
-                </View>
-              </View>
-            </View>
+            {/* Card bottom */} 
+            <View style={styles.cardBottom}> 
+              <View style={[styles.bottomDivider, { backgroundColor: colors.borderLight }]} /> 
+              <View style={styles.bottomRow}> 
+                <View style={styles.verifiedRow}> 
+                  <Ionicons name="shield-checkmark" size={15} color={colors.success} /> 
+                  <Text style={[styles.verifiedText, { color: colors.success }]}>Verified Member</Text> 
+                </View> 
+                <View style={styles.chipRow}> 
+                  <View style={[styles.nfcChip, { backgroundColor: colors.borderLight, borderColor: colors.border }]}> 
+                    <Ionicons name="wifi" size={10} color={colors.textInverse + '66'} style={{ transform: [{ rotate: '90deg' }] }} /> 
+                  </View> 
+                  <View style={[styles.hologram, { backgroundColor: colors.primaryGlow }]}> 
+                    <Ionicons name="finger-print" size={16} color={colors.primary + '35'} /> 
+                  </View> 
+                </View> 
+              </View> 
+            </View> 
           </View>
         </View>
 
@@ -274,7 +274,7 @@ const s = StyleSheet.create({
   cornerTR:    { position: 'absolute', top: 0, right: 0, width: CORNER_SIZE, height: CORNER_SIZE, borderTopWidth: CORNER_WIDTH, borderRightWidth: CORNER_WIDTH, borderTopRightRadius: 5 },
   cornerBL:    { position: 'absolute', bottom: 0, left: 0, width: CORNER_SIZE, height: CORNER_SIZE, borderBottomWidth: CORNER_WIDTH, borderLeftWidth: CORNER_WIDTH, borderBottomLeftRadius: 5 },
   cornerBR:    { position: 'absolute', bottom: 0, right: 0, width: CORNER_SIZE, height: CORNER_SIZE, borderBottomWidth: CORNER_WIDTH, borderRightWidth: CORNER_WIDTH, borderBottomRightRadius: 5 },
-  qrInner:     { backgroundColor: '#FFFFFF', padding: 10, borderRadius: 6 },
+  qrInner:     { padding: 10, borderRadius: 6 },
   scanLabel:   { fontFamily: 'Poppins_500Medium', fontSize: 12, letterSpacing: 0.5 },
 
   cardBottom:  { paddingHorizontal: 22, paddingBottom: 18 },

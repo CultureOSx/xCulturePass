@@ -16,8 +16,10 @@ export type AgeSuitability = 'all' | 'family' | '18+' | '21+';
 export type PriceTier = 'free' | 'budget' | 'mid' | 'premium';
 
 export interface EventData {
+    lgaCode?: string;
+    councilId?: string;
   id: string;
-  cpid?: string;
+  culturePassId?: string;
   title: string;
   description: string;
   date: string;
@@ -28,7 +30,6 @@ export interface EventData {
   priceLabel?: string;
   category?: string;
   communityTag?: string;
-  organizer?: string;
   organizerId?: string;
   imageColor?: string;
   imageUrl?: string;
@@ -42,7 +43,6 @@ export interface EventData {
   tags?: string[];
   indigenousTags?: string[];
   languageTags?: string[];
-  culturePassId?: string;
   cultureTag?: string[];
   geoHash?: string;
   eventType?: EventType;
@@ -52,6 +52,8 @@ export interface EventData {
   externalTicketUrl?: string | null;
   deletedAt?: string | null;
   distanceKm?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface DiscoveryResult {

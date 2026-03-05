@@ -26,28 +26,16 @@ export default function CouncilDashboardScreen() {
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const { isAdmin, isOrganizer, isLoading: roleLoading } = useRole();
-<<<<<<< HEAD
-  const { data: councilData, isLoading, refetch } = useCouncil();
-  const council = councilData?.council;
-  const activeAlerts = (councilData?.alerts ?? []).filter((alert) => alert.status === 'active');
-  const openGrants = (councilData?.grants ?? []).filter((grant) => grant.status === 'open');
-  const facilities = councilData?.facilities ?? [];
-  const links = councilData?.links ?? [];
-  const waste = councilData?.waste ?? null;
-  const following = councilData?.following ?? false;
-=======
-  const {
-    council,
-    activeAlerts,
-    openGrants,
-    facilities,
-    links,
-    waste,
-    following,
-    isLoading,
-    refetch,
-  } = useCouncil();
->>>>>>> 54b1145 (feat: add council ecosystem design, admin views, and support data)
+  const councilHook = useCouncil();
+  const council = councilHook.data?.council;
+  const activeAlerts = councilHook.data?.activeAlerts ?? [];
+  const openGrants = councilHook.data?.openGrants ?? [];
+  const facilities = councilHook.data?.facilities ?? [];
+  const links = councilHook.data?.links ?? [];
+  const waste = councilHook.data?.waste ?? [];
+  const following = councilHook.data?.following ?? false;
+  const isLoading = councilHook.isLoading;
+  const refetch = councilHook.refetch;
 
   const myClaimsQuery = useQuery({
     queryKey: ['/api/council/claims/me', council?.id],
@@ -184,7 +172,7 @@ export default function CouncilDashboardScreen() {
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Alerts (Manage)</Text>
             {activeAlerts.length === 0 ? (
               <Text style={[styles.muted, { color: colors.textSecondary }]}>No active alerts.</Text>
-            ) : activeAlerts.map((alert) => (
+            ) : activeAlerts.map((alert: any) => (
               <View key={alert.id} style={[styles.item, { borderColor: colors.borderLight }]}>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.itemTitle, { color: colors.text }]}>{alert.title}</Text>
@@ -207,7 +195,7 @@ export default function CouncilDashboardScreen() {
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Grants (Manage)</Text>
             {openGrants.length === 0 ? (
               <Text style={[styles.muted, { color: colors.textSecondary }]}>No open grants.</Text>
-            ) : openGrants.map((grant) => (
+            ) : openGrants.map((grant: any) => (
               <View key={grant.id} style={[styles.item, { borderColor: colors.borderLight }]}>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.itemTitle, { color: colors.text }]}>{grant.title}</Text>

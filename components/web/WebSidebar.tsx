@@ -62,6 +62,7 @@ const BOTTOM_NAV: NavItem[] = [
 // ---------------------------------------------------------------------------
 export function WebSidebar() {
   const pathname = usePathname();
+  const colors = useColors();
   const scheme = useColorScheme();
   const isDark = scheme === 'dark';
   const { user, logout, isAuthenticated, userId } = useAuth();
@@ -107,12 +108,12 @@ export function WebSidebar() {
     }
   })();
 
-  const bg = isDark ? '#060B14' : '#FFFFFF';
-  const border = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)';
+  const bg = Platform.OS === 'web' ? '#FF3B30' : colors.surface;
+  const border = colors.border;
 
   if (collapsed) {
     return (
-      <View style={[styles.sidebarCollapsed, { backgroundColor: bg, borderRightColor: border }]}>
+      <View style={[styles.sidebarCollapsed, { backgroundColor: bg, borderRightColor: border }]}> 
         {/* Logo icon */}
         <View style={styles.collapsedLogo}>
           <View style={styles.logoIcon}>
@@ -159,7 +160,7 @@ export function WebSidebar() {
   }
 
   return (
-    <View style={[styles.sidebar, { backgroundColor: bg, borderRightColor: border }]}>
+    <View style={[styles.sidebar, { backgroundColor: bg, borderRightColor: border }]}> 
       {/* Logo */}
       <View style={styles.logo}>
         <View style={styles.logoIcon}>
@@ -167,7 +168,7 @@ export function WebSidebar() {
           <Ionicons name="globe-outline" size={18} color="#fff" />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.logoText, { color: isDark ? '#E8F4FF' : '#001628' }]}>CulturePass</Text>
+          <Text style={[styles.logoText, { color: '#000' }]}>CulturePass</Text>
           <Text style={[styles.logoUrl, { color: isDark ? 'rgba(232,244,255,0.35)' : 'rgba(0,22,40,0.35)' }]}>culturepass.app</Text>
         </View>
         <Pressable onPress={() => setCollapsed(true)} hitSlop={8}>
@@ -287,13 +288,14 @@ function SidebarItem({ item, active, isDark, onPress }: {
   onPress: () => void;
 }) {
   const isCommunity = item.label === 'Community';
-  const iconColor = active ? Colors.primary : (isDark ? 'rgba(232,244,255,0.56)' : 'rgba(0,22,40,0.56)');
+  const colors = useColors();
+  const iconColor = active ? colors.primary : colors.textSecondary;
 
   return (
     <Pressable
       style={[
         itemStyles.item,
-        active && [itemStyles.itemActive, { backgroundColor: isDark ? 'rgba(44,42,114,0.15)' : 'rgba(44,42,114,0.07)' }],
+        active && [itemStyles.itemActive, { backgroundColor: colors.primarySoft }],
       ]}
       onPress={onPress}
       accessibilityRole="menuitem"
@@ -320,7 +322,7 @@ function SidebarItem({ item, active, isDark, onPress }: {
       <Text
         style={[
           itemStyles.label,
-          { color: active ? Colors.primary : (isDark ? 'rgba(232,244,255,0.8)' : 'rgba(0,22,40,0.8)') },
+          { color: active ? colors.primary : colors.text },
           active && itemStyles.labelActive,
         ]}
         numberOfLines={1}

@@ -19,7 +19,7 @@ import { useAuth } from '@/lib/auth';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useQuery } from '@tanstack/react-query';
-import type { EventData, Community } from '@shared/schema';
+import type { PaginatedEventsResponse, EventData, Community } from '@/shared/schema';
 import { useMemo, useCallback, useState, } from 'react';
 import Animated, {
   useSharedValue,
@@ -161,6 +161,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const colors = useColors();
+  const styles = getStyles(colors);
   const { width, isDesktop, isTablet } = useLayout();
   const scheme = useColorScheme();
   const isDark = scheme === 'dark';
@@ -169,11 +170,25 @@ export default function HomeScreen() {
   const pathname = usePathname();
   const { data: councilData } = useCouncil();
   const council = councilData?.council;
-  const activeAlerts = (councilData?.alerts ?? []).filter((alert) => alert.status === 'active');
-  const isCouncilVerified = council?.verificationStatus === 'verified';
-  const lgaCode = council?.lgaCode;
+    const { data: eventsResponse } = useQuery<PaginatedEventsResponse>({
+      queryKey: ['/api/events'],
+      queryFn: () => api.events.list({ pageSize: 100 }),
+    });
+    const allEvents: EventData[] = eventsResponse?.events ?? [];
+    const activeAlerts = (councilData?.alerts ?? []).filter((alert: { status: string }) => alert.status === 'active');
+    const isCouncilVerified = council?.verificationStatus === 'verified';
+    const lgaCode = council?.lgaCode;
 
   // Scroll-reactive header
+  // Council event filtering
+  const councilEvents = useMemo(() => {
+    if (!council || !allEvents.length) return [];
+    // Filter events where event.lgaCode matches council.lgaCode or event.councilId matches council.id
+    return allEvents.filter((e: EventData) =>
+      (e.lgaCode && council.lgaCode && e.lgaCode === council.lgaCode) ||
+      (e.councilId && council.id && e.councilId === council.id)
+    );
+  }, [council, allEvents]);
   const scrollY = useSharedValue(0);
   const scrollHandler = useAnimatedScrollHandler((event) => {
     scrollY.value = event.contentOffset.y;
@@ -261,8 +276,8 @@ export default function HomeScreen() {
     if (!selectedCityCoordinates) return [] as EventData[];
 
     return allEvents
-      .filter((event) => Boolean(event.venue && event.city))
-      .map((event) => {
+      .filter((event: EventData) => Boolean(event.venue && event.city))
+      .map((event: EventData) => {
         const eventCoordinates = cityToCoordinates(event.city);
         if (!eventCoordinates) return null;
 
@@ -276,8 +291,8 @@ export default function HomeScreen() {
           ),
         };
       })
-      .filter((entry): entry is { event: EventData; distanceKm: number } => Boolean(entry))
-      .sort((a, b) => a.distanceKm - b.distanceKm)
+      .filter((entry: any): entry is { event: EventData; distanceKm: number } => Boolean(entry))
+      .sort((a: { distanceKm: number }, b: { distanceKm: number }) => a.distanceKm - b.distanceKm)
       .slice(0, 12)
         .map((entry) => ({ ...entry.event, distanceKm: entry.distanceKm }));
   }, [allEvents, selectedCityCoordinates]);
@@ -611,7 +626,7 @@ export default function HomeScreen() {
 
   return (
     <ErrorBoundary>
-    <View style={[styles.container, { paddingTop: topInset }]}>
+    <View style={[styles.container, { paddingTop: topInset }]}> 
       <View style={styles.topBar}>
         {/* Scroll-reactive frosted glass background (iOS only) */}
         {Platform.OS === 'ios' && (
@@ -761,8 +776,42 @@ export default function HomeScreen() {
         {!discoverLoading && !featuredEvent && popularEvents.length === 0 && allActivities.length === 0 && allCommunities.length === 0 && spotlights.length === 0 && (
           <View style={[styles.emptyStateCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}> 
             <Ionicons name="compass-outline" size={42} color={colors.textTertiary} />
-            <Text style={[styles.emptyStateTitle, { color: colors.text }]}>No items in Discover yet.</Text>
-            <Text style={[styles.emptyStateSub, { color: colors.textSecondary }]}>Try changing your city or pull to refresh.</Text>
+            <Text style={[styles.emptyStateTitle, { color: colors.text }]}>No events or activities found.</Text>
+            <Text style={[styles.emptyStateSub, { color: colors.textSecondary }]}>Try changing your city, check council events, or pull to refresh.</Text>
+            {/* Placeholder grid for empty state */}
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 14, marginTop: 18, justifyContent: 'center' }}>
+              {[...Array(4)].map((_, i) => (
+                <View key={i} style={{ width: 180, height: 120, backgroundColor: colors.surfaceSecondary, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.borderLight }}>
+                  <Ionicons name="calendar-outline" size={32} color={colors.textTertiary} />
+                  <Text style={{ color: colors.textSecondary, fontSize: 13, marginTop: 8 }}>Event coming soon</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Council Events Rail */}
+        {councilEvents.length > 0 && (
+          <View style={{ marginBottom: 32 }}>
+            <View style={{ paddingHorizontal: 16 }}>
+              <SectionHeader
+                title="Council Events"
+                subtitle={council?.name ? `Events from ${council.name}` : 'Local government events'}
+                onSeeAll={() => router.push('/(tabs)/council')}
+              />
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 20, gap: 14 }}
+              decelerationRate="fast"
+              snapToInterval={254}
+              snapToAlignment="start"
+            >
+              {councilEvents.slice(0, 10).map((event, i) => (
+                <EventCard key={event.id} event={event} index={i} />
+              ))}
+            </ScrollView>
           </View>
         )}
 
@@ -1042,7 +1091,8 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+// Move useColors inside a component to avoid top-level hook violation
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -1459,7 +1509,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: '#0081C8',
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },

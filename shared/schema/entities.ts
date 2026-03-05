@@ -12,9 +12,13 @@ export interface Organizer {
   id: string;
   name: string;
   reputationScore: number;
-  verifiedAt?: string | null;
+  isVerified?: boolean;
   contactEmail?: string;
   userId?: string;
+  culturePassId?: string;
+  avatarUrl?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Artist {
@@ -30,9 +34,11 @@ export interface Artist {
   isVerified?: boolean;
   followersCount?: number;
   culturePassId?: string;
+  avatarUrl?: string;
   ownerId?: string;
   status?: ContentStatus;
   createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Venue {
@@ -41,8 +47,8 @@ export interface Venue {
   address?: string;
   city?: string;
   country?: string;
-  lat?: number;
-  lng?: number;
+  latitude?: number;
+  longitude?: number;
   geoHash?: string;
   capacity?: number;
   imageUrl?: string;
@@ -50,7 +56,10 @@ export interface Venue {
   phone?: string;
   isVerified?: boolean;
   culturePassId?: string;
+  avatarUrl?: string;
   status?: ContentStatus;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Sponsor {
@@ -64,8 +73,11 @@ export interface Sponsor {
   ownerId?: string;
   tier?: 'bronze' | 'silver' | 'gold' | 'platinum';
   isVerified?: boolean;
+  culturePassId?: string;
+  avatarUrl?: string;
   status?: ContentStatus;
   createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Council {

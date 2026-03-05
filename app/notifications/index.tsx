@@ -78,6 +78,16 @@ export default function NotificationsScreen() {
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
+  // Fallback for web navigation: show a simple message if no notifications
+  if (Platform.OS === 'web' && notifications.length === 0 && !isLoading) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40 }}>
+        <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#2C2A72' }}>Notifications</Text>
+        <Text style={{ marginTop: 12, color: '#636366' }}>Your notifications will appear here.</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={[s.container, { paddingTop: insets.top + webTop, backgroundColor: colors.background }]}>
       {/* Header */}

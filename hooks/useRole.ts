@@ -1,3 +1,15 @@
+/**
+ * useRole — Role and permission hook for CulturePassAU.
+ *
+ * Returns role flags and loading state for the current user.
+ *
+ * @returns {
+ *   isAdmin: boolean,
+ *   isOrganizer: boolean,
+ *   isLoading: boolean,
+ *   hasMinRole: (role: string) => boolean,
+ * }
+ */
 import { useAuth } from '@/lib/auth';
 import type { UserRole } from '@/shared/schema';
 

@@ -1,30 +1,41 @@
 type User @table {
   displayName: String!
   email: String!
-  createdAt: Timestamp!
-  photoUrl: String
+  createdAt: String!
+  updatedAt: String
+  avatarUrl: String
   bio: String
   culturalBackground: String
+  isVerified: Boolean
+  culturePassId: String
 }
 
 type Community @table {
   name: String!
   description: String!
-  createdAt: Timestamp!
-  photoUrl: String
+  createdAt: String!
+  updatedAt: String
+  avatarUrl: String
   culturalFocus: String
+  isVerified: Boolean
+  membersCount: Int
+  culturePassId: String
 }
 
 type Event @table {
   title: String!
   description: String!
-  eventDate: Date!
+  eventDate: String!
   location: String!
-  createdAt: Timestamp!
+  createdAt: String!
+  updatedAt: String
   community: Community
-  photoUrl: String
+  avatarUrl: String
   startTime: String
   endTime: String
+  isVerified: Boolean
+  culturePassId: String
+  organizerId: String
 }
 
 type Business @table {
@@ -32,15 +43,19 @@ type Business @table {
   category: String!
   description: String!
   address: String!
-  createdAt: Timestamp!
-  photoUrl: String
+  createdAt: String!
+  updatedAt: String
+  avatarUrl: String
   website: String
   phoneNumber: String
   culturalSpecialty: String
+  isVerified: Boolean
+  culturePassId: String
+  ownerId: String
 }
 
-type CommunityMembership @table(key: ["user", "community"]) {
-  user: User!
-  community: Community!
-  joinedAt: Timestamp!
+type CommunityMembership @table(key: ["userId", "communityId"]) {
+  userId: String!
+  communityId: String!
+  joinedAt: String!
 }

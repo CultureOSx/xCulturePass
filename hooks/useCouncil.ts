@@ -19,12 +19,25 @@ function buildCouncilParams(city?: string, country?: string) {
 }
 
 /**
- * Centralised council data hook.
+ * useCouncil — Centralised council data hook for CulturePassAU.
  *
  * Fetches the user's matched council dashboard, alert preferences,
  * follow/unfollow state, and waste reminder mutations.
- * The query is only enabled when the user is authenticated **and** a city
- * has been resolved (via onboarding or GPS detection).
+ *
+ * @returns {
+ *   data: CouncilDashboard | undefined,
+ *   isLoading: boolean,
+ *   isError: boolean,
+ *   isAuthenticated: boolean,
+ *   refetch: () => Promise<any>,
+ *   councilId: string | undefined,
+ *   effectivePrefs: CouncilPreference[],
+ *   followMutation: UseMutationResult<any, unknown, void, unknown>,
+ *   prefMutation: UseMutationResult<any, unknown, CouncilPreference[], unknown>,
+ *   reminderMutation: UseMutationResult<any, unknown, boolean, unknown>,
+ *   togglePref: (category: string) => void,
+ *   reload: () => Promise<void>,
+ * }
  */
 export function useCouncil() {
   const queryClient = useQueryClient();
@@ -39,7 +52,7 @@ export function useCouncil() {
 
   const queryKey = ['/api/council/my', councilParams.city, councilParams.postcode] as const;
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery<CouncilDashboard>({
     queryKey,
     queryFn: () => api.council.my(councilParams),
     enabled: isAuthenticated && !!state.city,

@@ -146,7 +146,7 @@ function WebCityList({ cityGroups, selectedCity, onSelectCity, onEventPress }: {
   );
 }
 
-export default function EventsMapScreen() {
+export default function MapScreen() {
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;

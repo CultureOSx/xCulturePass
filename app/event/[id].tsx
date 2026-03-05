@@ -27,7 +27,7 @@ import { confirmAndReport } from "@/lib/reporting";
 import { api } from "@/lib/api";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useAuth } from "@/lib/auth";
-import { styles, modalStyles } from "./styles/EventDetailStyles";
+import { getStyles, getModalStyles } from "./styles/EventDetailStyles";
 import { useColors } from '@/hooks/useColors';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { calculateDistance, getPostcodesByPlace } from '@shared/location/australian-postcodes';
@@ -69,6 +69,9 @@ export default function EventDetailScreen() {
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === "web" ? 0 : insets.top;
   const bottomInset = Platform.OS === "web" ? 34 : insets.bottom;
+  const colors = useColors();
+  const styles = getStyles(colors);
+  const modalStyles = getModalStyles(colors);
   const { data: event, isLoading } = useQuery({
     queryKey: ["/api/events", id],
     queryFn: () => api.events.get(String(id)),
@@ -88,7 +91,7 @@ export default function EventDetailScreen() {
             },
           ]}
         >
-          <ActivityIndicator size="large" color={Colors.primary} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </ErrorBoundary>
     );
@@ -122,25 +125,28 @@ export default function EventDetailScreen() {
         event={event}
         topInset={topInset}
         bottomInset={bottomInset}
+        styles={styles}
+        modalStyles={modalStyles}
+        colors={colors}
       />
     </ErrorBoundary>
   );
 }
 
-interface EventDetailProps {
-  event: SampleEvent;
-  topInset: number;
-  bottomInset: number;
-}
-
-function EventDetail({ event, topInset, bottomInset }: EventDetailProps) {
+export function EventDetail({
+  event,
+  topInset,
+  bottomInset,
+  styles,
+  modalStyles,
+  colors,
+}) {
   const { isEventSaved, toggleSaveEvent } = useSaved();
   const { state } = useOnboarding();
   const { userId } = useAuth();
   const saved = isEventSaved(event.id);
   const pathname = usePathname();
 
-  const colors = useColors();
   const [gpsCoords, setGpsCoords] = useState<{ latitude: number; longitude: number } | null>(null);
 
   useEffect(() => {

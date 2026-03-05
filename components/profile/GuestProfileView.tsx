@@ -30,12 +30,12 @@ export function GuestProfileView({ topInset }: { topInset: number }) {
         <Text style={[gs.headerTitle, { color: colors.textInverse }]}>Profile</Text>
       </View>
       <ScrollView contentContainerStyle={[gs.content, isDesktop && gs.desktopContent]} showsVerticalScrollIndicator={false}>
-        <View style={[gs.contentCard, isDesktop && gs.desktopCard, { backgroundColor: colors.surface + 'B8', borderColor: colors.border + '66' }]}>
+        <View style={[gs.contentCard, isDesktop && gs.desktopCard, { backgroundColor: colors.surfaceElevated ?? (Platform.OS === 'web' ? '#FFF8F0' : '#2C2A72'), borderColor: colors.border + '66' }]}> {/* Max contrast card */}
         <View style={[gs.iconWrap, { backgroundColor: colors.textInverse + '24', borderColor: colors.textInverse + '47' }]}>
           <Ionicons name="person-circle-outline" size={64} color={colors.textInverse + 'E6'} />
         </View>
-        <Text style={[gs.title, { color: colors.textInverse }]}>Your Cultural Passport</Text>
-        <Text style={[gs.subtitle, { color: colors.textInverse + 'B3' }]}>
+        <Text style={[gs.title, { color: colors.text }]}>Your Cultural Passport</Text>
+        <Text style={[gs.subtitle, { color: colors.textSecondary }]}>
           Sign in to access your profile, tickets, saved events, wallet, and connect with communities across Australia.
         </Text>
         <View style={gs.featureList}>
@@ -49,16 +49,16 @@ export function GuestProfileView({ topInset }: { topInset: number }) {
               <View style={[gs.featureIcon, { backgroundColor: colors.warning + '1F' }]}>
                 <Ionicons name={f.icon} size={18} color={colors.warning} />
               </View>
-              <Text style={[gs.featureText, { color: colors.textInverse + 'D9' }]}>{f.text}</Text>
+              <Text style={[gs.featureText, { color: colors.text }]}>{f.text}</Text>
             </View>
           ))}
         </View>
-        <Pressable style={[gs.primaryBtn, { backgroundColor: colors.textInverse }]} onPress={() => router.push({ pathname: '/(onboarding)/signup', params: { redirectTo: pathname } } as any)}>
-          <Text style={[gs.primaryBtnText, { color: ctaTextColor }]}>Create Free Account</Text>
-          <Ionicons name="arrow-forward" size={18} color={ctaTextColor} />
+        <Pressable style={[gs.primaryBtn, { backgroundColor: '#FFFFFF' }]} onPress={() => router.push('/(onboarding)/signup')}>
+          <Text style={[gs.primaryBtnText, { color: colors.primary }]}>Create Free Account</Text>
+          <Ionicons name="arrow-forward" size={18} color={colors.primary} />
         </Pressable>
-        <Pressable style={[gs.secondaryBtn, { borderColor: colors.textInverse + '40', backgroundColor: colors.textInverse + '14' }]} onPress={() => router.push({ pathname: '/(onboarding)/login', params: { redirectTo: pathname } } as any)}>
-          <Text style={[gs.secondaryBtnText, { color: colors.textInverse }]}>I already have an account</Text>
+        <Pressable style={[gs.secondaryBtn, { borderColor: colors.primary, backgroundColor: '#FFFFFF' }]} onPress={() => router.push('/(onboarding)/login')}>
+          <Text style={[gs.secondaryBtnText, { color: colors.primary }]}>I already have an account</Text>
         </Pressable>
         </View>
         <View style={{ height: 40 }} />

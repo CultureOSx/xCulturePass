@@ -274,3 +274,10 @@ export const ZIndex = {
   toast:      500,
   tooltip:    600,
 } as const;
+
+export const BorderTokens = {
+  black: '#000000',
+  white: '#FFFFFF',
+  widthBold: 3,
+  widthNormal: 1.5,
+};

@@ -136,16 +136,16 @@ export default function SignUpScreen() {
 
   const formContent = (
     <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scrollContent}>
-        <View style={[styles.formCard, isDesktop && styles.formCardDesktop, { borderColor: colors.textInverse + '26', backgroundColor: colors.background + 'AD' }]}> 
+        <View style={{ backgroundColor: '#FFFFFF', borderRadius: 24, padding: 32, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 16, elevation: 4, alignItems: 'center', width: 400, alignSelf: 'center', marginTop: 60 }}>
           <View style={styles.logoRow}>
             <View style={[styles.logoCircle, { backgroundColor: colors.textInverse + '33' }]}><Ionicons name="globe-outline" size={34} color={Colors.primary} /></View>
             <Text style={[styles.brandLabel, { color: colors.textInverse + '99' }]}>culturepass.app</Text>
           </View>
-          <Text style={[styles.title, { color: colors.textInverse }]}>Create Account</Text>
-          <Text style={[styles.benefitsRow, { color: colors.textInverse + '8C' }]}>Free events · Community access · Exclusive perks</Text>
-          <Text style={[styles.subtitle, { color: colors.textInverse + 'D9' }]}>Join thousands of community members celebrating culture together.</Text>
+          <Text style={[styles.title, { color: colors.primary, fontSize: 28, fontWeight: '700', marginBottom: 6 }]}>Create Account</Text>
+          <Text style={[styles.benefitsRow, { color: colors.textSecondary, fontSize: 16 }]}>🎉 Free events · Community access · Exclusive perks</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary, fontSize: 15 }]}>Join thousands of community members celebrating culture together.</Text>
 
-          {error && <Text style={styles.errorText}>{error}</Text>}
+          {error && <Text style={[styles.errorText, { color: colors.error, fontWeight: '600', fontSize: 15, marginBottom: 8 }]}>{error}</Text>}
 
           <View style={styles.form}>
             <Input
@@ -209,14 +209,15 @@ export default function SignUpScreen() {
             loading={loading}
             disabled={!isValid || loading}
             onPress={handleSignUp}
-            style={styles.submitBtn}
+            style={[styles.submitBtn, { marginTop: 10, borderRadius: 12 }]}
+            accessibilityLabel="Create your CulturePass account"
           >
             Create Account
           </Button>
 
           <View style={styles.socialDivider}>
             <View style={[styles.divLine, { backgroundColor: colors.textInverse + '59' }]} />
-            <Text style={[styles.divText, { color: colors.textInverse + 'D9' }]}>or sign up with</Text>
+            <Text style={[styles.divText, { color: colors.textInverse + 'D9', fontWeight: '600' }]}>or sign up with</Text>
             <View style={[styles.divLine, { backgroundColor: colors.textInverse + '59' }]} />
           </View>
 

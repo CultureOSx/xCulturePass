@@ -231,7 +231,7 @@ export default function ProfileScreen() {
   if (userLoading) {
     return (
       <ErrorBoundary>
-        <View style={[s.container, { paddingTop: topInset, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' }]}> 
+        <View style={[s.container, { paddingTop: topInset, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }]}> 
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={[s.loadingText, { color: colors.textSecondary }]}>Loading Profile tab...</Text>
         </View>
@@ -249,7 +249,7 @@ export default function ProfileScreen() {
 
   return (
     <ErrorBoundary>
-      <View style={[s.container, { paddingTop: topInset, backgroundColor: colors.background }]}>
+      <View style={[s.container, { paddingTop: topInset, backgroundColor: colors.surface }]}>
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 110 }}
@@ -280,15 +280,24 @@ export default function ProfileScreen() {
               </Pressable>
             </View>
 
-            {/* Avatar */}
+            {/* Avatar with edit button */}
             <View style={s.avatarContainer}>
-              {user?.avatarUrl ? (
-                <Image source={{ uri: user.avatarUrl }} style={s.avatarImage} contentFit="cover" />
-              ) : (
-                <LinearGradient colors={gradients.primary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.avatarFallback}>
-                  <Text style={[s.avatarInitials, { color: heroTextColor }]}>{initials}</Text>
-                </LinearGradient>
-              )}
+              <View style={{ position: 'relative' }}>
+                {user?.avatarUrl ? (
+                  <Image source={{ uri: user.avatarUrl }} style={s.avatarImage} contentFit="cover" />
+                ) : (
+                  <LinearGradient colors={gradients.primary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.avatarFallback}>
+                    <Text style={[s.avatarInitials, { color: heroTextColor }]}>{initials}</Text>
+                  </LinearGradient>
+                )}
+                <Pressable
+                  style={{ position: 'absolute', bottom: 4, right: 4, backgroundColor: colors.surface, borderRadius: 16, padding: 4, elevation: 2 }}
+                  onPress={() => router.push('/profile/edit')}
+                  accessibilityLabel="Edit avatar"
+                >
+                  <Ionicons name="camera-outline" size={16} color={colors.primary} />
+                </Pressable>
+              </View>
               <View style={[s.tierIcon, { backgroundColor: tierStyle.bg, borderColor: colors.textInverse + '99' }]}> 
                 <Ionicons name={tierStyle.icon as never} size={12} color={tierStyle.text} />
               </View>
@@ -299,6 +308,9 @@ export default function ProfileScreen() {
               <View style={s.nameRow}>
                 <Text style={[s.name, { color: heroTextColor }]}>{displayName}</Text>
                 {user?.isVerified && <Ionicons name="checkmark-circle" size={18} color={colors.warning} />}
+                <Pressable style={{ marginLeft: 8 }} onPress={handleShare} accessibilityLabel="Share profile">
+                  <Ionicons name="share-social-outline" size={18} color={colors.info} />
+                </Pressable>
               </View>
               {user?.username ? <Text style={[s.username, { color: heroSubTextColor }]}>@{user.username}</Text> : null}
 
@@ -326,13 +338,14 @@ export default function ProfileScreen() {
               ) : null}
 
               {/* Profile completeness bar */}
+              {/* Animated completeness bar */}
               <View style={[s.completenessBox, { backgroundColor: colors.surface + 'B3' }]}> 
                 <View style={s.completenessHeader}>
                   <Text style={[s.completenessLabel, { color: heroTextColor }]}>Profile completeness</Text>
                   <Text style={[s.completenessPercent, { color: completenessColor }]}>{profileCompleteness}%</Text>
                 </View>
                 <View style={[s.completenessTrack, { backgroundColor: colors.textInverse + '42' }]}> 
-                  <View style={[s.completenessBar, { width: `${profileCompleteness}%` as never, backgroundColor: completenessColor }]} />
+                  <View style={[s.completenessBar, { width: `${profileCompleteness}%`, backgroundColor: completenessColor }]} />
                 </View>
               </View>
 
@@ -527,10 +540,19 @@ export default function ProfileScreen() {
               <MenuItem icon="bookmark-outline" label="Saved Items"      color={colors.warning}      badge={savedEvents.length + joinedCommunities.length}                       onPress={() => router.push('/saved')}            colors={colors} />
               <MenuItem icon="people-outline"   label="My Contacts"      color={colors.secondary} badge={contacts.length}                                                  onPress={() => router.push('/contacts' as never)} colors={colors} />
               <MenuItem icon="scan-outline"     label="Scanner"          color={colors.primary}                                                                             onPress={() => router.push('/scanner')}          colors={colors} />
-              {isOrganizer && (
+              {isOrganizer && userId && (
                 <MenuItem icon="grid-outline"   label="Organizer Dashboard" color={colors.secondary}  onPress={() => router.push('/dashboard/organizer' as never)} colors={colors} />
               )}
               <MenuItem icon="gift-outline"     label="Perks & Benefits" color={colors.accent}  showDivider={false}                                                         onPress={() => router.push('/perks')}            colors={colors} />
+            </View>
+            {/* Membership expiry and recent activity */}
+            {membership && typeof (membership as any).expiresAt === 'string' && (
+                <Text style={{ color: colors.textSecondary, fontSize: 13 }}>Membership expires: {formatDate((membership as any).expiresAt)}</Text>
+            )}
+            <View style={{ marginTop: 10 }}>
+              <Text style={{ color: colors.text, fontWeight: '600', fontSize: 15, marginBottom: 4 }}>Recent Tickets & Wallet</Text>
+              {/* Placeholder for recent tickets/wallet transactions */}
+              <Text style={{ color: colors.textSecondary, fontSize: 13 }}>No recent transactions found.</Text>
             </View>
           </View>
 
