@@ -1,6 +1,16 @@
 import { StyleSheet } from 'react-native';
 import { Colors, CultureTokens, Spacing } from '@/constants/theme';
 
+const CP = {
+  teal:    CultureTokens.teal,
+  purple:  CultureTokens.indigo,
+  text:    Colors.text,
+  muted:   Colors.textTertiary,
+  surface: Colors.surface,
+  bg:      Colors.background,
+  dark:    Colors.dark.background,
+};
+
 export const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   centered:  { flex: 1, justifyContent: 'center', alignItems: 'center' },
