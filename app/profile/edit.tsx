@@ -79,6 +79,20 @@ export default function EditProfileScreen() {
     }
   }, [user]);
 
+  function buildValidatedImageUrl(imageUri: string): string {
+    try {
+      const url = new URL(imageUri);
+      
+      if (!['data:', 'blob:', 'file:'].includes(url.protocol)) {
+        throw new Error('Invalid protocol');
+      }
+      
+      return url.href;
+    } catch {
+      throw new Error('Invalid URL');
+    }
+  }
+
   const uploadMutation = useMutation({
     mutationFn: async (uri: string): Promise<UploadedImage> => {
       const actions = [
@@ -107,11 +121,8 @@ export default function EditProfileScreen() {
       const isDataUrl = uploadUri.startsWith('data:');
 
       if (Platform.OS === 'web' || isDataUrl) {
-        // Validate URI to prevent SSRF attacks
-        if (!isDataUrl && !uploadUri.startsWith('blob:') && !uploadUri.startsWith('file:')) {
-          throw new Error('Invalid URI');
-        }
-        const blobRes = await fetch(uploadUri);
+        const validatedUri = buildValidatedImageUrl(uploadUri);
+        const blobRes = await fetch(validatedUri);
         const blob = await blobRes.blob();
         formData.append('image', blob as unknown as Blob, 'profile.jpg');
       } else {
