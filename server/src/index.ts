@@ -1,4 +1,5 @@
 import express from 'express';
+import helmet from 'helmet';
 import cors from 'cors';
 import * as admin from 'firebase-admin';
 import dotenv from 'dotenv';
@@ -28,6 +29,7 @@ if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
 }
 
 const app = express();
+app.use(helmet());
 app.use(cors((req, callback) => {
   const origin = req.header('Origin');
 
