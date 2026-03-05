@@ -513,6 +513,7 @@ const users: AppUser[] = [
     location: 'Sydney, Australia',
     culturePassId: 'CP-U1',
     socialLinks: { instagram: 'ramanarc' },
+    createdAt: '2025-01-01T00:00:00.000Z',
   },
 ];
 
@@ -522,11 +523,11 @@ const events: AppEvent[] = [
 ];
 
 const profiles: AppProfile[] = [
-  { id: 'c1', name: 'Sydney Startup Circle', entityType: 'community', category: 'Tech', city: 'Sydney', country: 'Australia', description: 'Founders and builders community.', members: 850, verified: true },
-  { id: 'b1', name: 'RamanArc Studios', entityType: 'business', category: 'Studio', city: 'Sydney', country: 'Australia', description: 'Digital experiences for culture + community.', followers: 450, verified: true },
-  { id: 'v1', name: 'Parramatta Library', entityType: 'venue', category: 'Library', city: 'Sydney', country: 'Australia', description: 'Council library and community hub.', verified: true },
-  { id: 'v2', name: 'Melbourne Aquatic Centre', entityType: 'venue', category: 'Aquatic Centre', city: 'Melbourne', country: 'Australia', description: 'Public aquatic centre with swim programs.', verified: true },
-  { id: 'v3', name: 'Brisbane Community Hall', entityType: 'venue', category: 'Community Centre', city: 'Brisbane', country: 'Australia', description: 'Community events and youth programs.', verified: true },
+  { id: 'c1', name: 'Sydney Startup Circle', entityType: 'community', category: 'Tech', city: 'Sydney', country: 'Australia', description: 'Founders and builders community.', membersCount: 850, isVerified: true },
+  { id: 'b1', name: 'RamanArc Studios', entityType: 'business', category: 'Studio', city: 'Sydney', country: 'Australia', description: 'Digital experiences for culture + community.', followersCount: 450, isVerified: true },
+  { id: 'v1', name: 'Parramatta Library', entityType: 'venue', category: 'Library', city: 'Sydney', country: 'Australia', description: 'Council library and community hub.', isVerified: true },
+  { id: 'v2', name: 'Melbourne Aquatic Centre', entityType: 'venue', category: 'Aquatic Centre', city: 'Melbourne', country: 'Australia', description: 'Public aquatic centre with swim programs.', isVerified: true },
+  { id: 'v3', name: 'Brisbane Community Hall', entityType: 'venue', category: 'Community Centre', city: 'Brisbane', country: 'Australia', description: 'Community events and youth programs.', isVerified: true },
 ];
 
 const councils: AppCouncil[] = [
@@ -1203,7 +1204,6 @@ const fallbackEvents: FirestoreEvent[] = events.map((event) => ({
   imageUrl: event.imageUrl,
   imageColor: event.imageColor,
   category: event.category ?? event.communityTag ?? 'Culture',
-  organizer: event.organizer,
   organizerId: event.organizerId,
   organizerReputationScore: event.organizerReputationScore,
   capacity: event.capacity,
@@ -1735,7 +1735,7 @@ function getSearchCorpus(): SearchableItem[] {
       id: profile.id,
       type: 'community',
       title: profile.name,
-      subtitle: `${profile.category} · ${profile.members ?? 0} members`,
+      subtitle: `${profile.category} · ${profile.membersCount ?? 0} members`,
       description: profile.description,
       city: profile.city,
       country: profile.country,
@@ -2113,7 +2113,6 @@ app.post('/api/events', requireAuth, requireRole('organizer', 'admin'), moderati
       imageUrl: b.imageUrl ? String(b.imageUrl) : undefined,
       priceCents: b.priceCents ? Number(b.priceCents) : 0,
       organizerId: req.user!.id,
-      organizer: req.user!.username,
       isFree: b.isFree ?? false,
       isFeatured: b.isFeatured ?? false,
     };
