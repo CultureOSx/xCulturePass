@@ -107,6 +107,10 @@ export default function EditProfileScreen() {
       const isDataUrl = uploadUri.startsWith('data:');
 
       if (Platform.OS === 'web' || isDataUrl) {
+        // Validate URI to prevent SSRF attacks
+        if (!isDataUrl && !uploadUri.startsWith('blob:') && !uploadUri.startsWith('file:')) {
+          throw new Error('Invalid URI');
+        }
         const blobRes = await fetch(uploadUri);
         const blob = await blobRes.blob();
         formData.append('image', blob as unknown as Blob, 'profile.jpg');
