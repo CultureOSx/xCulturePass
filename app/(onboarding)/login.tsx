@@ -41,7 +41,8 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const isValid = email.trim().length > 0 && password.length >= 6;
 
-  const postAuthRoute = () => {
+  const { completeOnboarding } = useOnboarding();
+  const postAuthRoute = async () => {
     // If a redirect target was provided (e.g. ?redirectTo=/event/abc), go there.
     const redirectToRaw = (searchParams?.redirectTo as string) || (searchParams?.redirect as string) || null;
     const redirectTo = redirectToRaw && isInternalRoute(redirectToRaw) ? redirectToRaw : null;
@@ -53,6 +54,12 @@ export default function LoginScreen() {
 
     // If onboarding incomplete send to onboarding location step
     if (!onboardingState.isComplete) {
+      // Fallback: If user profile is complete, complete onboarding
+      if (email && password) {
+        await completeOnboarding();
+        router.replace('/(tabs)');
+        return;
+      }
       router.push('/(onboarding)/location');
       return;
     }
@@ -162,88 +169,89 @@ export default function LoginScreen() {
 
   const formContent = (
     <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scrollContent}>
-      <View style={[styles.formCard, isDesktop && styles.formCardDesktop, { borderColor: colors.textInverse + '26', backgroundColor: colors.background + 'AD' }]}> 
-      <View style={styles.logoRow}>
-        <View style={[styles.logoCircle, { backgroundColor: colors.textInverse + '33' }]}><Ionicons name="globe-outline" size={34} color={Colors.primary} /></View>
-        <Text style={[styles.brandLabel, { color: colors.textInverse + '99' }]}>culturepass.app</Text>
-      </View>
+      <View style={{ backgroundColor: '#FFFFFF', borderRadius: 24, padding: 32, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 16, elevation: 4, alignItems: 'center', width: 400, alignSelf: 'center', marginTop: 60 }}>
+        <View style={styles.logoRow}>
+          <View style={[styles.logoCircle, { backgroundColor: colors.textInverse + '33' }]}><Ionicons name="globe-outline" size={34} color={Colors.primary} /></View>
+          <Text style={[styles.brandLabel, { color: colors.textInverse + '99' }]}>culturepass.app</Text>
+        </View>
 
-      <Text style={[styles.title, { color: colors.textInverse }]}>Welcome back</Text>
-      <Text style={[styles.subtitle, { color: colors.textInverse + 'D9' }]}>Sign in to continue your cultural journey.</Text>
+        <Text style={[styles.title, { color: colors.primary, fontSize: 28, fontWeight: '700', marginBottom: 6 }]}>Welcome back</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary, fontSize: 15 }]}>Sign in to continue your cultural journey.</Text>
 
-      {error && <Text style={styles.errorText}>{error}</Text>}
+        {error && <Text style={[styles.errorText, { color: colors.error, fontWeight: '600', fontSize: 15, marginBottom: 8 }]}>{error}</Text>}
 
-      <View style={styles.form}>
-        <Input
-          label="Email Address"
-          placeholder="Enter your email address"
-          leftIcon="mail-outline"
-          value={email}
-          onChangeText={(value) => {
-            setEmail(value);
-            if (error) setError('');
-          }}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
-
-        <View>
-          <View style={styles.passwordHeader}>
-            <Text style={[styles.label, { color: colors.textInverse }]}>Password</Text>
-            <Pressable onPress={() => router.push('/(onboarding)/forgot-password')}>
-              <Text style={[styles.forgotText, { color: colors.warning }]}>Forgot Password?</Text>
-            </Pressable>
-          </View>
+        <View style={styles.form}>
           <Input
-            placeholder="Enter your password"
-            leftIcon="lock-closed-outline"
-            value={password}
+            label="Email Address"
+            placeholder="Enter your email address"
+            leftIcon="mail-outline"
+            value={email}
             onChangeText={(value) => {
-              setPassword(value);
+              setEmail(value);
               if (error) setError('');
             }}
-            secureTextEntry
-            passwordToggle
+            autoCapitalize="none"
+            keyboardType="email-address"
           />
+
+          <View>
+            <View style={styles.passwordHeader}>
+              <Text style={[styles.label, { color: colors.textInverse }]}>Password</Text>
+              <Pressable onPress={() => router.push('/(onboarding)/forgot-password')}>
+                <Text style={[styles.forgotText, { color: colors.warning }]}>Forgot Password?</Text>
+              </Pressable>
+            </View>
+            <Input
+              placeholder="Enter your password"
+              leftIcon="lock-closed-outline"
+              value={password}
+              onChangeText={(value) => {
+                setPassword(value);
+                if (error) setError('');
+              }}
+              secureTextEntry
+              passwordToggle
+            />
+          </View>
         </View>
-      </View>
 
-      <Checkbox
-        checked={rememberMe}
-        onToggle={setRememberMe}
-        label="Remember me"
-      />
+        <Checkbox
+          checked={rememberMe}
+          onToggle={setRememberMe}
+          label="Remember me"
+        />
 
-      <Button
-        variant="primary"
-        size="lg"
-        fullWidth
-        rightIcon="arrow-forward"
-        loading={loading}
-        disabled={!isValid || loading}
-        onPress={handleLogin}
-        style={styles.submitBtn}
-      >
-        Sign In
-      </Button>
+        <Button
+          variant="primary"
+          size="lg"
+          fullWidth
+          rightIcon="arrow-forward"
+          loading={loading}
+          disabled={!isValid || loading}
+          onPress={handleLogin}
+          style={[styles.submitBtn, { marginTop: 10, borderRadius: 12 }]}
+          accessibilityLabel="Sign in to your CulturePass account"
+        >
+          Sign In
+        </Button>
 
-      <View style={styles.socialDivider}>
-        <View style={[styles.divLine, { backgroundColor: colors.textInverse + '59' }]} />
-        <Text style={[styles.divText, { color: colors.textInverse + 'D9' }]}>or</Text>
-        <View style={[styles.divLine, { backgroundColor: colors.textInverse + '59' }]} />
-      </View>
+        <View style={styles.socialDivider}>
+          <View style={[styles.divLine, { backgroundColor: colors.textInverse + '59' }]} />
+          <Text style={[styles.divText, { color: colors.textInverse + 'D9' }]}>or</Text>
+          <View style={[styles.divLine, { backgroundColor: colors.textInverse + '59' }]} />
+        </View>
 
-      <View style={styles.socialRow}>
-        <SocialButton provider="google" onPress={handleGoogleSignIn} disabled={loading} />
-        {Platform.OS === 'ios'
-          ? <SocialButton provider="apple" onPress={handleAppleSignIn} disabled={loading} />
-          : <SocialButton provider="apple" comingSoon disabled={loading} />
-        }
-      </View>
+        <View style={styles.socialRow}>
+          <SocialButton provider="google" onPress={handleGoogleSignIn} disabled={loading} />
+          {Platform.OS === 'ios'
+            ? <SocialButton provider="apple" onPress={handleAppleSignIn} disabled={loading} />
+            : <SocialButton provider="apple" comingSoon disabled={loading} />
+          }
+        </View>
 
-      <Pressable style={styles.switchRow} onPress={() => router.replace('/(onboarding)/signup')}>
-        <Text style={[styles.switchText, { color: colors.textInverse + 'D9' }]}>Don&apos;t have an account? <Text style={[styles.switchLink, { color: colors.warning }]}>Sign Up</Text></Text>
-      </Pressable>
+        <Pressable style={styles.switchRow} onPress={() => router.replace('/(onboarding)/signup')}>
+          <Text style={[styles.switchText, { color: colors.textInverse + 'D9' }]}>Don&apos;t have an account? <Text style={[styles.switchLink, { color: colors.warning }]}>Sign Up</Text></Text>
+        </Pressable>
       </View>
     </ScrollView>
   );

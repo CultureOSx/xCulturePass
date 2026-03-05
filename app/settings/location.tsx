@@ -1,4 +1,4 @@
-import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -11,7 +11,7 @@ export default function SettingsLocationScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
   const { state } = useOnboarding();
-  const webTop = Platform.OS === 'web' ? 0 : 0;
+  const webTop = 0;
 
   return (
     <View style={[s.container, { paddingTop: insets.top + webTop, backgroundColor: colors.background }]}>

@@ -56,7 +56,7 @@ type DerivedLocation = {
 
 export default function SubmitScreen() {
   const insets = useSafeAreaInsets();
-  const webTop    = Platform.OS === 'web' ? 0 : 0;
+  const webTop    = 0;
   const webBottom = Platform.OS === 'web' ? 34 : 0;
   const colors    = useColors();
   const [activeTab, setActiveTab] = useState<SubmitType>('event');

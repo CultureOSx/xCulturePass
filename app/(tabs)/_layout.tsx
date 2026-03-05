@@ -27,6 +27,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TabBarTokens, gradients, CultureTokens } from '@/constants/theme';
 import { useColors } from '@/hooks/useColors';
+import { useRole } from '@/hooks/useRole';
 import { WebSidebar } from '@/components/web/WebSidebar';
 import { queryClient } from '@/lib/query-client';
 
@@ -151,7 +152,7 @@ function TabItem({ tab, focused, color, activeColor, onPress, flex, isDesktopMen
         style={[
           tabItemStyles.label,
           {
-            color: focused ? activeColor : color,
+            color: Platform.OS === 'web' ? '#000' : (focused ? activeColor : color),
             fontFamily: focused ? 'Poppins_600SemiBold' : 'Poppins_500Medium',
             fontSize: isDesktopMenu ? 14 : TabBarTokens.labelSize,
           },
@@ -188,8 +189,9 @@ function CustomTabBar({ state, navigation, position = 'bottom' }: CustomTabBarPr
     return null;
   }
 
-  const inactiveColor = isDesktopMenu ? colors.textSecondary : (isDark ? 'rgba(232,244,255,0.62)' : 'rgba(0,22,40,0.62)');
-  const activeColor = isDesktopMenu ? colors.text : colors.textInverse;
+  const navColor = isWeb ? '#000' : undefined;
+  const inactiveColor = isDesktopMenu ? (navColor || colors.textSecondary) : (isDark ? 'rgba(232,244,255,0.62)' : 'rgba(0,22,40,0.62)');
+  const activeColor = isDesktopMenu ? (navColor || colors.text) : colors.textInverse;
   const bottomPad = Math.max(insets.bottom, isWeb ? 0 : 8);
   const topPad = Math.max(insets.top, isWeb ? 8 : 0);
 
@@ -219,9 +221,7 @@ function CustomTabBar({ state, navigation, position = 'bottom' }: CustomTabBarPr
           style={[
             StyleSheet.absoluteFill,
             {
-              backgroundColor: isDark
-                ? 'rgba(6,11,20,0.94)'
-                : 'rgba(255,255,255,0.98)',
+              backgroundColor: Platform.OS === 'web' ? '#2C2A72' : (isDark ? 'rgba(6,11,20,0.94)' : 'rgba(255,255,255,0.98)'),
             },
           ]}
         />
@@ -279,6 +279,8 @@ function CustomTabBar({ state, navigation, position = 'bottom' }: CustomTabBarPr
 // Tab screens definition (shared between desktop + mobile)
 // ---------------------------------------------------------------------------
 function TabScreens() {
+  const { isOrganizer } = useRole();
+
   return (
     <>
       <Tabs.Screen name="index"       options={{ title: 'Discover' }} />
@@ -289,7 +291,7 @@ function TabScreens() {
       <Tabs.Screen name="council"    options={{ href: null }} />
       <Tabs.Screen name="explore"    options={{ href: null }} />
       <Tabs.Screen name="directory"  options={{ href: null }} />
-      <Tabs.Screen name="dashboard"  options={{ href: null }} />
+      <Tabs.Screen name="dashboard"  options={{ href: isOrganizer ? undefined : null }} />
     </>
   );
 }
@@ -312,21 +314,18 @@ export default function TabLayout() {
     }
   }, [isWeb, pathname]);
 
-  // Desktop web: sidebar navigation on the left, content on the right (no tab bar)
+  // Desktop web: no sidebar, use top tab navigation for web-optimized parity
   if (isDesktop) {
     return (
       <QueryClientProvider client={queryClient}>
-        <View style={{ flex: 1, flexDirection: 'row', overflow: 'hidden' }}>
-          <WebSidebar />
-          <View style={{ flex: 1, overflow: 'hidden' }}>
-            <Tabs
-              initialRouteName="index"
-              screenOptions={{ headerShown: false }}
-              tabBar={() => null}
-            >
-              <TabScreens />
-            </Tabs>
-          </View>
+        <View style={{ flex: 1, overflow: 'hidden' }}>
+          <Tabs
+            initialRouteName="index"
+            screenOptions={{ headerShown: false }}
+            tabBar={Platform.OS === 'web' ? undefined : (props) => <CustomTabBar {...props} position="top" />}
+          >
+            <TabScreens />
+          </Tabs>
         </View>
       </QueryClientProvider>
     );

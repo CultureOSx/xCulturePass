@@ -64,12 +64,7 @@ export function Avatar({
     .join('')
     .toUpperCase() || '?';
 
-  const fontSize =
-    size === 'xs' ? 10 :
-    size === 'sm' ? 12 :
-    size === 'md' ? 14 :
-    size === 'lg' ? 20 :
-    size === 'xl' ? 26 : 32;
+  const fontSize = AvatarTokens.fontSize[size] ?? 14;
 
   const badgeSize = Math.max(12, Math.round(dim * 0.28));
   const badgeOffset = Math.round(badgeSize * -0.1);
@@ -85,7 +80,11 @@ export function Avatar({
   };
 
   return (
-    <View style={[{ width: dim, height: dim, position: 'relative' }, style]}>
+    <View
+      style={[{ width: dim, height: dim, position: 'relative' }, style]}
+      accessibilityRole="image"
+      accessibilityLabel={name ? `Avatar for ${name}` : 'Avatar'}
+    >
       {uri ? (
         <Image
           source={{ uri }}
@@ -100,7 +99,7 @@ export function Avatar({
           end={{ x: 1, y: 1 }}
           style={{ width: dim, height: dim, borderRadius: AvatarTokens.radius, alignItems: 'center', justifyContent: 'center' }}
         >
-          <Text style={{ fontFamily: 'Poppins_700Bold', fontSize, color: '#fff', letterSpacing: 0.5 }}>
+          <Text style={{ fontFamily: 'Poppins_700Bold', fontSize, color: colors.textInverse, letterSpacing: 0.5 }}>
             {initials}
           </Text>
         </LinearGradient>

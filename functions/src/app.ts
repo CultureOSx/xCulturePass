@@ -111,6 +111,9 @@ type AppUser = {
   ethnicityText?: string;
   interestCategoryIds?: string[];
   culturePassId: string;
+  isVerified?: boolean;
+  createdAt: string;
+  updatedAt?: string;
 };
 
 type AppEvent = {
@@ -142,7 +145,6 @@ type AppEvent = {
   priceLabel?: string;
   category?: string;
   organizerId?: string;
-  organizer?: string;
   capacity?: number;
   attending?: number;
   isFeatured?: boolean;
@@ -151,7 +153,10 @@ type AppEvent = {
   tags?: string[];
   indigenousTags?: string[];
   languageTags?: string[];
-  cpid?: string;
+  culturePassId?: string;
+  isVerified?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 type AppProfile = {
@@ -167,11 +172,15 @@ type AppProfile = {
   country: string;
   description: string;
   imageUrl?: string;
+  avatarUrl?: string;
   website?: string;
-  members?: number;
-  followers?: number;
-  verified?: boolean;
+  membersCount?: number;
+  followersCount?: number;
+  isVerified?: boolean;
   ownerId?: string;
+  culturePassId?: string;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 type AppActivity = {
@@ -476,7 +485,13 @@ const targetedNotificationsLimiter = rateLimit({
   max: 12,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.user?.id ? `user:${req.user.id}` : `ip:${req.ip}`,
+  keyGenerator: (req) => {
+    if (req.user?.id) return `user:${req.user.id}`;
+    const ip = req.ip ?? 'unknown';
+    // Normalize IPv6-mapped IPv4 (e.g. ::ffff:127.0.0.1 → 127.0.0.1)
+    const normalizedIp = ip.startsWith('::ffff:') ? ip.slice(7) : ip;
+    return `ip:${normalizedIp}`;
+  },
   message: { error: 'Too many targeted notification requests' },
 });
 
@@ -1687,8 +1702,8 @@ function parseSearchQuery(req: Request): SearchQuery {
     tags,
     startDate: String(req.query.startDate ?? '').trim() || undefined,
     endDate: String(req.query.endDate ?? '').trim() || undefined,
-    page: Math.max(1, Number(req.query.page ?? 1)),
-    pageSize: Math.min(50, Math.max(1, Number(req.query.pageSize ?? 20))),
+    page: Math.max(1, Number(req.query.page ?? 1) || 1),
+    pageSize: Math.min(50, Math.max(1, Number(req.query.pageSize ?? 20) || 20)),
   };
 }
 
@@ -1833,7 +1848,7 @@ app.get('/api/rollout/config', (req, res) => {
 // Users
 // ---------------------------------------------------------------------------
 
-app.get('/api/users', async (_req, res) => {
+app.get('/api/users', requireAuth, async (_req, res) => {
   if (hasFirestoreProject) {
     try {
       const snap = await db.collection('users').limit(100).get();
@@ -1981,7 +1996,7 @@ app.post('/api/admin/seed', async (req, res) => {
     return res.json({ seeded: count, events: SEED_EVENTS.length, communities: SEED_COMMUNITIES.length, locationSeeded: locationResult.seeded, ok: true });
   } catch (err) {
     console.error('[admin/seed]:', err);
-    return res.status(500).json({ error: 'Seed failed', detail: String(err) });
+    return res.status(500).json({ error: 'Seed failed' });
   }
 });
 
@@ -5196,7 +5211,7 @@ app.put('/api/admin/reports/:id/review', requireAuth, requireRole('admin'), asyn
 });
 
 app.get('/api/admin/audit-logs', requireAuth, requireRole('admin', 'moderator', 'platformAdmin', 'cityAdmin'), async (req, res) => {
-  const limit = Math.min(Math.max(Number(req.query['limit'] ?? 50), 1), 200);
+  const limit = Math.min(Math.max(Number(req.query['limit'] ?? 50) || 50, 1), 200);
   const action = String(req.query['action'] ?? '').trim();
   const actorIdQuery = String(req.query['actorId'] ?? '').trim();
   const from = String(req.query['from'] ?? '').trim();
@@ -5231,7 +5246,7 @@ app.get('/api/admin/audit-logs', requireAuth, requireRole('admin', 'moderator', 
 });
 
 app.get('/api/admin/audit-logs.csv', requireAuth, requireRole('admin', 'moderator', 'platformAdmin', 'cityAdmin'), async (req, res) => {
-  const limit = Math.min(Math.max(Number(req.query['limit'] ?? 200), 1), 1000);
+  const limit = Math.min(Math.max(Number(req.query['limit'] ?? 200) || 200, 1), 1000);
   const action = String(req.query['action'] ?? '').trim();
   const actorIdQuery = String(req.query['actorId'] ?? '').trim();
   const from = String(req.query['from'] ?? '').trim();
@@ -5298,8 +5313,8 @@ const VALID_ROLES = ['user', 'organizer', 'business', 'sponsor', 'cityAdmin', 'm
 type ValidRole = typeof VALID_ROLES[number];
 
 app.get('/api/admin/users', requireAuth, requireRole('admin', 'platformAdmin'), async (req, res) => {
-  const limit = Math.min(Number(req.query['limit'] ?? 20), 100);
-  const page = Math.max(Number(req.query['page'] ?? 0), 0);
+  const limit = Math.min(Number(req.query['limit'] ?? 20) || 20, 100);
+  const page = Math.max(Number(req.query['page'] ?? 0) || 0, 0);
   try {
     const snap = await db.collection('users')
       .orderBy('createdAt', 'desc')

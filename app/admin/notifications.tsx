@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -60,7 +59,7 @@ function parseCsv(value: string): string[] {
 
 export default function AdminNotificationsScreen() {
   const insets = useSafeAreaInsets();
-  const webTop = Platform.OS === 'web' ? 0 : 0;
+  const webTop = 0;
   const colors = useColors();
   const { user } = useAuth();
   const { hasMinRole, isLoading: roleLoading } = useRole();

@@ -1,4 +1,5 @@
-import { View, Text, Pressable, StyleSheet, ScrollView, Platform, Alert, Share, RefreshControl, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView, Platform, Alert, Share, RefreshControl, ActivityIndicator } from 'react-native';
+import type { ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,6 +14,7 @@ import { useAuth } from '@/lib/auth';
 import { useColors } from '@/hooks/useColors';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useCouncil } from '@/hooks/useCouncil';
+import { useLayout } from '@/hooks/useLayout';
 
 interface Perk {
   id: string;
@@ -58,11 +60,19 @@ const filterItems: FilterItem[] = CATEGORIES.map(cat => ({ id: cat.id, label: ca
 
 export default function PerksTabScreen() {
   const insets   = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
-  const isDesktopWeb = Platform.OS === 'web' && width >= 1024;
+  const { width, isDesktop, isTablet } = useLayout();
+  const isDesktopWeb = Platform.OS === 'web' && isDesktop;
   const colors   = useColors();
+  const webTopInset = Platform.OS === 'web' ? (isDesktopWeb ? 72 : 0) : insets.top;
+  const shellMaxWidth = Platform.OS === 'web'
+    ? (isDesktopWeb ? 1280 : isTablet ? 1040 : width)
+    : width;
+  const shellStyle: ViewStyle | undefined = Platform.OS === 'web'
+    ? { maxWidth: shellMaxWidth, alignSelf: 'center' }
+    : undefined;
   const { userId } = useAuth();
-  const { openGrants } = useCouncil();
+  const { data: councilData } = useCouncil();
+  const openGrants = (councilData?.grants ?? []).filter((grant) => grant.status === 'open');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [refreshing, setRefreshing] = useState(false);
   // FIX: Track which perk ID is being redeemed so only that card shows pending
@@ -167,10 +177,10 @@ export default function PerksTabScreen() {
 
   return (
     <ErrorBoundary>
-      <View style={[s.container, { paddingTop: insets.top, backgroundColor: colors.background }]}>
+      <View style={[s.container, { paddingTop: webTopInset, backgroundColor: colors.background }]}> 
 
         {/* Header */}
-        <View style={[s.headerRow, isDesktopWeb && s.webSection]}>
+        <View style={[s.headerRow, shellStyle]}>
           <View style={{ flex: 1 }}>
             <Text style={[s.headerTitle, { color: colors.text }]}>Perks</Text>
             <Text style={[s.headerSub, { color: colors.textSecondary }]}>{activePerkCount} available for you</Text>
@@ -188,35 +198,42 @@ export default function PerksTabScreen() {
 
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 110 + (Platform.OS === 'web' ? 34 : insets.bottom) }}
+          contentContainerStyle={{
+            paddingBottom: 110 + (Platform.OS === 'web' ? 34 : insets.bottom),
+            paddingHorizontal: Platform.OS === 'web' ? (isDesktopWeb ? 24 : 16) : 0,
+          }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
         >
           {/* Hero banner */}
           <LinearGradient
-            colors={[colors.primary, colors.secondary]}
+            colors={[colors.primary, '#FF8C42', '#FF5E5B']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={[s.heroBanner, isDesktopWeb && s.webSection]}
+            style={[s.heroBanner, shellStyle, { borderRadius: 24, shadowColor: '#FF8C42', shadowOpacity: 0.18, shadowRadius: 18, elevation: 6 }]}
           >
             <View style={s.heroOrb} />
             <View style={s.heroIconWrap}>
-              <Ionicons name="gift" size={28} color={colors.textInverse} />
+              <Ionicons name="sparkles" size={34} color="#FFC857" />
             </View>
-            <Text style={[s.heroTitle, { color: colors.textInverse }]}>Exclusive Perks</Text>
-            <Text style={s.heroSub}>{activePerkCount} perks available for you</Text>
-            <View style={s.heroStats}>
-              <HeroStat label="Total"     value={String(perks.length)} />
-              <View style={s.heroStatDivider} />
-              <HeroStat label="Available" value={String(activePerkCount)} />
-              <View style={s.heroStatDivider} />
-              <HeroStat label="Your Tier" value={membership?.tier?.toUpperCase() ?? 'FREE'} />
+            <Text style={[s.heroTitle, { color: '#fff', fontSize: 28, fontWeight: '700', letterSpacing: 2 }]}>CulturePass Perks</Text>
+            <Text style={[s.heroSub, { color: '#fff', fontSize: 16, fontWeight: '500', marginBottom: 10 }]}>Unlock exclusive rewards, discounts, and experiences</Text>
+            <View style={[s.heroStats, { gap: 12 }]}> 
+              <View style={{ backgroundColor: '#FF8C42', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 6 }}>
+                <Text style={{ color: '#2C2A72', fontWeight: '700', fontSize: 15 }}>Total: {perks.length}</Text>
+              </View>
+              <View style={{ backgroundColor: '#2EC4B6', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 6 }}>
+                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Available: {activePerkCount}</Text>
+              </View>
+              <View style={{ backgroundColor: '#FF5E5B', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 6 }}>
+                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Tier: {membership?.tier?.toUpperCase() ?? 'FREE'}</Text>
+              </View>
             </View>
           </LinearGradient>
 
           {/* Upgrade nudge for free users */}
           {!isPlusMember && (
             <Pressable
-              style={[s.upgradeBanner, isDesktopWeb && s.webSection, { backgroundColor: colors.surface, borderColor: colors.primary + '30' }]}
+              style={[s.upgradeBanner, shellStyle, { backgroundColor: colors.surface, borderColor: colors.primary + '30' }]}
               onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/membership/upgrade' as never); }}
             >
               <View style={[s.upgradeBannerIcon, { backgroundColor: colors.primaryGlow }]}>
@@ -241,7 +258,7 @@ export default function PerksTabScreen() {
           />
 
           {openGrants.length > 0 && (
-            <View style={[s.upgradeBanner, isDesktopWeb && s.webSection, { backgroundColor: colors.surface, borderColor: colors.info + '30' }]}>
+            <View style={[s.upgradeBanner, shellStyle, { backgroundColor: colors.surface, borderColor: colors.info + '30' }]}> 
               <View style={[s.upgradeBannerIcon, { backgroundColor: colors.info + '1A' }]}> 
                 <Ionicons name="library-outline" size={18} color={colors.info} />
               </View>
@@ -258,7 +275,7 @@ export default function PerksTabScreen() {
           )}
 
           {/* Section title */}
-          <View style={[s.sectionHeader, isDesktopWeb && s.webSection]}>
+          <View style={[s.sectionHeader, shellStyle]}>
             <Text style={[s.sectionTitle, { color: colors.text }]}>
               {selectedCategory === 'All'
                 ? 'All Perks'
@@ -272,7 +289,7 @@ export default function PerksTabScreen() {
           </View>
 
           {/* Perk list */}
-          <View style={[s.list, isDesktopWeb && s.webSection]}>
+          <View style={[s.list, shellStyle]}>
             {isLoading ? (
               <View style={s.empty}>
                 <ActivityIndicator size="large" color={colors.primary} />
@@ -365,68 +382,76 @@ function PerkCard({
       onPress={() => router.push(`/perks/${perk.id}`)}
       style={({ pressed }) => [
         s.perkCard,
-        { backgroundColor: colors.surface, borderColor: cardBorderColor, opacity: pressed ? 0.92 : 1 },
+        {
+          backgroundColor: 'rgba(44,42,114,0.92)',
+          borderColor: typeColor,
+          opacity: pressed ? 0.92 : 1,
+          shadowColor: typeColor,
+          shadowOpacity: 0.18,
+          shadowRadius: 12,
+          elevation: 4,
+        },
       ]}
     >
       {/* Top row: icon + info + value badge */}
       <View style={s.perkTop}>
-        <View style={[s.perkBadge, { backgroundColor: typeColor + '18' }]}>
-          <Ionicons name={typeInfo.icon as never} size={22} color={typeColor} />
+        <View style={[s.perkBadge, { backgroundColor: typeColor }]}> 
+          <Ionicons name={typeInfo.icon as never} size={24} color="#fff" />
         </View>
 
         <View style={s.perkInfo}>
-          <Text style={[s.perkTitle, { color: colors.text }]} numberOfLines={2}>{perk.title}</Text>
+          <Text style={[s.perkTitle, { color: '#fff', fontSize: 17, fontWeight: '700' }]} numberOfLines={2}>{perk.title}</Text>
           <View style={s.providerRow}>
-            <Ionicons name="business-outline" size={12} color={colors.textSecondary} />
-            <Text style={[s.perkProvider, { color: colors.textSecondary }]}>
+            <Ionicons name="business-outline" size={13} color="#FFC857" />
+            <Text style={[s.perkProvider, { color: '#FFC857', fontWeight: '600' }]}> 
               {perk.providerName ?? 'CulturePass'}
             </Text>
           </View>
         </View>
 
         <View style={s.perkValueWrap}>
-          <View style={[s.perkValue, { backgroundColor: typeColor + '18' }]}>
-            <Text style={[s.perkValueText, { color: typeColor }]}>{formattedValue}</Text>
+          <View style={[s.perkValue, { backgroundColor: '#FF8C42' }]}> 
+            <Text style={[s.perkValueText, { color: '#2C2A72', fontWeight: '700' }]}>{formattedValue}</Text>
           </View>
-          <Pressable hitSlop={8} onPress={onShare} style={[s.shareBtn, { backgroundColor: colors.backgroundSecondary }]}>
-            <Ionicons name="share-outline" size={15} color={colors.textSecondary} />
+          <Pressable hitSlop={8} onPress={onShare} style={[s.shareBtn, { backgroundColor: '#2EC4B6' }]}> 
+            <Ionicons name="share-outline" size={17} color="#fff" />
           </Pressable>
         </View>
       </View>
 
       {/* Description */}
       {perk.description && (
-        <Text style={[s.perkDesc, { color: colors.textSecondary }]} numberOfLines={2}>{perk.description}</Text>
+        <Text style={[s.perkDesc, { color: '#fff', opacity: 0.85, fontSize: 14 }]} numberOfLines={2}>{perk.description}</Text>
       )}
 
       {/* Meta tags */}
       <View style={s.perkMeta}>
         {perk.isMembershipRequired && (
-          <View style={[s.metaTag, { backgroundColor: colors.primaryGlow, borderColor: colors.primary + '30' }]}>
-            <Ionicons name="star" size={11} color={colors.primary} />
-            <Text style={[s.metaTagText, { color: colors.primary }]}>CulturePass+ Only</Text>
+          <View style={[s.metaTag, { backgroundColor: '#FFC857', borderColor: '#FFC857' }]}> 
+            <Ionicons name="star" size={12} color="#2C2A72" />
+            <Text style={[s.metaTagText, { color: '#2C2A72', fontWeight: '700' }]}>CulturePass+ Only</Text>
           </View>
         )}
         {!!perk.usageLimit && (
-          <View style={[s.metaTag, { backgroundColor: colors.backgroundSecondary, borderColor: cardBorderColor }]}>
-            <Ionicons name="people" size={11} color={colors.textSecondary} />
-            <Text style={[s.metaTagText, { color: colors.textSecondary }]}>
+          <View style={[s.metaTag, { backgroundColor: '#2EC4B6', borderColor: '#2EC4B6' }]}> 
+            <Ionicons name="people" size={12} color="#fff" />
+            <Text style={[s.metaTagText, { color: '#fff', fontWeight: '700' }]}> 
               {perk.usageLimit - (perk.usedCount ?? 0)} left
             </Text>
           </View>
         )}
         {perk.endDate && (
-          <View style={[s.metaTag, { backgroundColor: colors.backgroundSecondary, borderColor: cardBorderColor }]}>
-            <Ionicons name="calendar" size={11} color={colors.textSecondary} />
-            <Text style={[s.metaTagText, { color: colors.textSecondary }]}>
+          <View style={[s.metaTag, { backgroundColor: '#FF5E5B', borderColor: '#FF5E5B' }]}> 
+            <Ionicons name="calendar" size={12} color="#fff" />
+            <Text style={[s.metaTagText, { color: '#fff', fontWeight: '700' }]}> 
               Ends {new Date(perk.endDate).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
             </Text>
           </View>
         )}
         {!!perk.perUserLimit && (
-          <View style={[s.metaTag, { backgroundColor: colors.backgroundSecondary, borderColor: cardBorderColor }]}>
-            <Ionicons name="person" size={11} color={colors.textSecondary} />
-            <Text style={[s.metaTagText, { color: colors.textSecondary }]}>Max {perk.perUserLimit}/user</Text>
+          <View style={[s.metaTag, { backgroundColor: '#2C2A72', borderColor: '#2C2A72' }]}> 
+            <Ionicons name="person" size={12} color="#FFC857" />
+            <Text style={[s.metaTagText, { color: '#FFC857', fontWeight: '700' }]}>Max {perk.perUserLimit}/user</Text>
           </View>
         )}
       </View>
@@ -544,5 +569,4 @@ const s = StyleSheet.create({
 
   redeemBtn:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 12, paddingVertical: 14 },
   redeemBtnText:{ fontSize: 15, fontFamily: 'Poppins_600SemiBold' },
-  webSection:   { maxWidth: 1024, width: '100%', alignSelf: 'center' },
 });

@@ -9,6 +9,7 @@ interface OnboardingState {
   ethnicityText: string;
   languages: string[];
   interests: string[];
+  subscriptionTier: 'free' | 'plus' | 'elite' | 'sydney-local';
 }
 
 interface OnboardingContextValue {
@@ -20,6 +21,7 @@ interface OnboardingContextValue {
   setEthnicityText: (ethnicityText: string) => void;
   setLanguages: (languages: string[]) => void;
   setInterests: (interests: string[]) => void;
+  setSubscriptionTier: (tier: OnboardingState['subscriptionTier']) => void;
   completeOnboarding: () => Promise<void>;
   resetOnboarding: () => Promise<void>;
   updateLocation: (country: string, city: string) => Promise<void>;
@@ -35,6 +37,7 @@ const defaultState: OnboardingState = {
   ethnicityText: '',
   languages: [],
   interests: [],
+  subscriptionTier: 'free',
 };
 
 const defaultContextValue: OnboardingContextValue = {
@@ -96,6 +99,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     setEthnicityText:  (ethnicityText: string) => persistUpdate({ ethnicityText }),
     setLanguages:      (languages: string[]) => persistUpdate({ languages }),
     setInterests:      (interests: string[]) => persistUpdate({ interests }),
+    setSubscriptionTier: (subscriptionTier: OnboardingState['subscriptionTier']) => persistUpdate({ subscriptionTier }),
     completeOnboarding: () => persistUpdate({ isComplete: true }),
     resetOnboarding: async () => {
       setState(defaultState);

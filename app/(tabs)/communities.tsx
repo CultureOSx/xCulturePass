@@ -2,6 +2,7 @@ import {
   View, Text, Pressable, StyleSheet, Platform,
   TextInput, RefreshControl, FlatList, ScrollView, ActivityIndicator,
 } from 'react-native';
+import type { ViewStyle } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,6 +18,7 @@ import { FilterChipRow } from '@/components/FilterChip';
 import { EntityTypeColors } from '@/constants/theme';
 import { useCouncil } from '@/hooks/useCouncil';
 import { useAuth } from '@/lib/auth';
+import { useLayout } from '@/hooks/useLayout';
 
 const isWeb = Platform.OS === 'web';
 
@@ -163,15 +165,24 @@ function CommunityCard({ profile }: { profile: Profile }) {
 export default function CommunitiesScreen() {
   const insets  = useSafeAreaInsets();
   const colors  = useColors();
-  const topInset    = isWeb ? 0 : insets.top;
+  const { width, isDesktop, isTablet } = useLayout();
+  const topInset    = isWeb ? (isDesktop ? 72 : 0) : insets.top;
   const bottomInset = isWeb ? 34 : insets.bottom;
+  const shellMaxWidth = isWeb
+    ? (isDesktop ? 1280 : isTablet ? 1040 : width)
+    : width;
+  const shellStyle: ViewStyle | undefined = isWeb
+    ? { maxWidth: shellMaxWidth, width: '100%', alignSelf: 'center' as const }
+    : undefined;
 
   const [search,        setSearch]        = useState('');
   const [selectedType,  setSelectedType]  = useState('all');
   const [searchFocused, setSearchFocused] = useState(false);
 
   const { data: allProfiles, isLoading } = useQuery<Profile[]>({ queryKey: ['/api/profiles'] });
-  const { council, facilities } = useCouncil();
+  const { data: councilData } = useCouncil();
+  const council = councilData?.council;
+  const facilities = councilData?.facilities ?? [];
   const { isAuthenticated } = useAuth();
 
   const filteredProfiles = useMemo(() => {
@@ -245,8 +256,10 @@ export default function CommunitiesScreen() {
   if (isLoading) {
     return (
       <View style={[s.container, { paddingTop: topInset, backgroundColor: colors.background }]}>
-        <View style={[s.header, { borderBottomColor: colors.divider }]}>
-          <Text style={[s.title, { color: colors.text }]}>Community</Text>
+        <View style={[shellStyle, s.shellHorizontal]}>
+          <View style={[s.header, { borderBottomColor: colors.divider }]}> 
+            <Text style={[s.title, { color: colors.text }]}>Community</Text>
+          </View>
         </View>
         <View style={s.loadingWrap}>
           <ActivityIndicator size="large" color={colors.primary} />
@@ -259,87 +272,95 @@ export default function CommunitiesScreen() {
   return (
     <View style={[s.container, { paddingTop: topInset, backgroundColor: colors.background }]}>
       {/* Header */}
-      <View style={[s.header, { borderBottomColor: colors.divider }]}>
-        <View style={{ flex: 1 }}>
-          <Text style={[s.title, { color: colors.text }]}>Community</Text>
-          <Text style={[s.subtitle, { color: colors.textSecondary }]}>
-            {typeCounts.all ?? 0} communities &amp; organisations
-          </Text>
+      <View style={[shellStyle, s.shellHorizontal]}>
+        <View style={[s.header, { borderBottomColor: colors.divider }]}> 
+          <View style={{ flex: 1 }}>
+            <Text style={[s.title, { color: colors.text }]}>Community</Text>
+            <Text style={[s.subtitle, { color: colors.textSecondary }]}> 
+              {typeCounts.all ?? 0} communities &amp; organisations
+            </Text>
+          </View>
+          <Pressable
+            style={[s.headerBtn, { backgroundColor: colors.primary + '12', borderColor: colors.primary + '30' }]}
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/submit' as never); }}
+            accessibilityRole="button"
+            accessibilityLabel="Submit listing"
+          >
+            <Ionicons name="add" size={20} color={colors.primary} />
+          </Pressable>
         </View>
+      </View>
+
+      <View style={[shellStyle, s.shellHorizontal]}> 
         <Pressable
-          style={[s.headerBtn, { backgroundColor: colors.primary + '12', borderColor: colors.primary + '30' }]}
-          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/submit' as never); }}
+          style={[s.councilBar, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            if (isAuthenticated) {
+              router.push('/(tabs)/council');
+              return;
+            }
+            router.push({ pathname: '/council/select', params: { next: '/(tabs)/council' } });
+          }}
           accessibilityRole="button"
-          accessibilityLabel="Submit listing"
+          accessibilityLabel={isAuthenticated ? 'Open My Council' : 'Choose My Council'}
+          accessibilityHint={isAuthenticated ? 'Opens your local council overview' : 'Opens council selection before council overview'}
         >
-          <Ionicons name="add" size={20} color={colors.primary} />
+          <View style={[s.councilIcon, { backgroundColor: colors.primary + '18' }]}> 
+            <Ionicons name="business" size={16} color={colors.primary} />
+          </View>
+          <View style={s.councilTextWrap}>
+            <Text style={[s.councilTitle, { color: colors.text }]}>My Council</Text>
+            <Text style={[s.councilSub, { color: colors.textSecondary }]}> 
+              {council ? `${council.name} • ${facilities.length} local facilities` : 'Alerts, waste days, grants & links'}
+            </Text>
+            {!isAuthenticated ? (
+              <Text style={[s.councilHint, { color: colors.textTertiary }]}>Choose your council first</Text>
+            ) : null}
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
         </Pressable>
       </View>
 
-      <Pressable
-        style={[s.councilBar, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          if (isAuthenticated) {
-            router.push('/(tabs)/council');
-            return;
-          }
-          router.push({ pathname: '/council/select', params: { next: '/(tabs)/council' } });
-        }}
-        accessibilityRole="button"
-        accessibilityLabel={isAuthenticated ? 'Open My Council' : 'Choose My Council'}
-        accessibilityHint={isAuthenticated ? 'Opens your local council overview' : 'Opens council selection before council overview'}
-      >
-        <View style={[s.councilIcon, { backgroundColor: colors.primary + '18' }]}>
-          <Ionicons name="business" size={16} color={colors.primary} />
-        </View>
-        <View style={s.councilTextWrap}>
-          <Text style={[s.councilTitle, { color: colors.text }]}>My Council</Text>
-          <Text style={[s.councilSub, { color: colors.textSecondary }]}>
-            {council ? `${council.name} • ${facilities.length} local facilities` : 'Alerts, waste days, grants & links'}
-          </Text>
-          {!isAuthenticated ? (
-            <Text style={[s.councilHint, { color: colors.textTertiary }]}>Choose your council first</Text>
-          ) : null}
-        </View>
-        <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
-      </Pressable>
-
       {/* Search */}
-      <View style={[
-        s.searchBar,
-        { backgroundColor: colors.surface, borderColor: searchFocused ? colors.primary : colors.borderLight },
-      ]}>
-        <Ionicons name="search" size={18} color={searchFocused ? colors.primary : colors.textTertiary} />
-        <TextInput
-          style={[s.searchInput, { color: colors.text }]}
-          placeholder="Search communities, venues, artists…"
-          placeholderTextColor={colors.textTertiary}
-          value={search}
-          onChangeText={setSearch}
-          onFocus={() => setSearchFocused(true)}
-          onBlur={() => setSearchFocused(false)}
-          returnKeyType="search"
-        />
-        {search.length > 0 && (
-          <Pressable onPress={() => setSearch('')} hitSlop={8}>
-            <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
-          </Pressable>
-        )}
+      <View style={[shellStyle, s.shellHorizontal]}> 
+        <View style={[
+          s.searchBar,
+          { backgroundColor: colors.surface, borderColor: searchFocused ? colors.primary : colors.borderLight },
+        ]}>
+          <Ionicons name="search" size={18} color={searchFocused ? colors.primary : colors.textTertiary} />
+          <TextInput
+            style={[s.searchInput, { color: colors.text }]}
+            placeholder="Search communities, venues, artists…"
+            placeholderTextColor={colors.textTertiary}
+            value={search}
+            onChangeText={setSearch}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setSearchFocused(false)}
+            returnKeyType="search"
+          />
+          {search.length > 0 && (
+            <Pressable onPress={() => setSearch('')} hitSlop={8}>
+              <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
+            </Pressable>
+          )}
+        </View>
       </View>
 
       {/* Filters */}
-      <FilterChipRow
-        items={CATEGORIES.map((cat) => ({
-          id: cat.id,
-          label: cat.label,
-          icon: cat.icon.replace('-outline', ''),
-          color: cat.id === 'all' ? colors.primary : (TYPE_META[cat.id]?.color ?? colors.primary),
-          count: typeCounts[cat.id] ?? 0,
-        }))}
-        selectedId={selectedType}
-        onSelect={handleSelectType}
-      />
+      <View style={[shellStyle, s.shellHorizontal]}> 
+        <FilterChipRow
+          items={CATEGORIES.map((cat) => ({
+            id: cat.id,
+            label: cat.label,
+            icon: cat.icon.replace('-outline', ''),
+            color: cat.id === 'all' ? colors.primary : (TYPE_META[cat.id]?.color ?? colors.primary),
+            count: typeCounts[cat.id] ?? 0,
+          }))}
+          selectedId={selectedType}
+          onSelect={handleSelectType}
+        />
+      </View>
 
       {/* List */}
       <FlatList
@@ -347,10 +368,11 @@ export default function CommunitiesScreen() {
         keyExtractor={keyExtractor}
         renderItem={renderItem}
         ListHeaderComponent={ListHeader}
+        style={shellStyle}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />
         }
-        contentContainerStyle={{ paddingBottom: bottomInset + 100, paddingHorizontal: 16 }}
+        contentContainerStyle={{ paddingBottom: bottomInset + 100, paddingHorizontal: isWeb ? 20 : 16 }}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={s.emptyWrap}>
@@ -383,6 +405,7 @@ export default function CommunitiesScreen() {
 // ---------------------------------------------------------------------------
 const s = StyleSheet.create({
   container: { flex: 1 },
+  shellHorizontal: { paddingHorizontal: 16 },
   loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   loadingText: { marginTop: 10, fontSize: 14, fontFamily: 'Poppins_500Medium' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 10, borderBottomWidth: StyleSheet.hairlineWidth },

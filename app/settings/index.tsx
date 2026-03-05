@@ -23,7 +23,7 @@ interface SettingSection { title: string; items: SettingItem[] }
 
 export default function AccountSettingsScreen() {
   const insets  = useSafeAreaInsets();
-  const webTop  = Platform.OS === 'web' ? 0 : 0;
+  const webTop  = 0;
   const { width } = useWindowDimensions();
   const isDesktopWeb = Platform.OS === 'web' && width >= 1024;
   const colors  = useColors();

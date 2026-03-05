@@ -1,3 +1,4 @@
+import { useColors } from '@/hooks/useColors';
 import React from 'react';
 import {
   View,
@@ -74,6 +75,8 @@ const STACK = [
 ] as const;
 
 export default function Get2KnowPage() {
+  const colors = useColors();
+  const styles = getStyles(colors);
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
@@ -272,6 +275,8 @@ function Section({
   centered?: boolean;
   children: React.ReactNode;
 }) {
+  const colors = useColors();
+  const styles = getStyles(colors);
   return (
     <View style={[surface ? styles.surfaceSection : undefined, { marginTop: spacing }]}> 
       <View style={[styles.container, { paddingHorizontal: sidePad }]}> 
@@ -283,10 +288,11 @@ function Section({
   );
 }
 
-const styles = StyleSheet.create({
+// Move useColors inside a component to avoid top-level hook violation
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.background,
   },
   container: {
     width: '100%',
@@ -346,7 +352,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: '#EAEAEA',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     maxWidth: 560,
   },
   qrHeader: {
@@ -454,7 +460,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     borderColor: '#EAEAEA',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     gap: 10,
   },
   cardTitle: {
@@ -480,7 +486,7 @@ const styles = StyleSheet.create({
     flex: 1,
     borderWidth: 1,
     borderColor: '#EAEAEA',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 20,
     gap: 10,
@@ -528,7 +534,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     borderColor: '#EAEAEA',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     gap: 12,
   },
   softPanel: {
@@ -548,7 +554,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#EAEAEA',
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     padding: 20,
     gap: 12,
   },

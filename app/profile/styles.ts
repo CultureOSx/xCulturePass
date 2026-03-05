@@ -1,26 +1,25 @@
 import { StyleSheet } from 'react-native';
-import { CP } from './constants';
-import { Colors } from '@/constants/theme';
+import { Colors, CultureTokens, Spacing } from '@/constants/theme';
 
 export const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: CP.bg },
+  container: { flex: 1, backgroundColor: Colors.background },
   centered:  { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
-  errorText:      { fontSize: 16, fontFamily: 'Poppins_500Medium', color: CP.muted },
-  backButton:     { marginTop: 16, paddingHorizontal: 24, paddingVertical: 11, borderRadius: 14, backgroundColor: CP.purple },
-  backButtonText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#FFF' },
+  errorText:      { fontSize: 16, fontFamily: 'Poppins_500Medium', color: Colors.textSecondary },
+  backButton:     { marginTop: Spacing.md, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md, borderRadius: 14, backgroundColor: CultureTokens.indigo },
+  backButtonText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: Colors.textInverse },
 
   hero: { paddingBottom: 30, overflow: 'hidden' },
 
   arcOuter: {
     position: 'absolute', top: -90, right: -90,
     width: 240, height: 240, borderRadius: 120,
-    borderWidth: 30, borderColor: CP.teal + '10',
+    borderWidth: 30, borderColor: Colors.teal + '1A',
   },
   arcInner: {
     position: 'absolute', top: -44, right: -44,
     width: 140, height: 140, borderRadius: 70,
-    borderWidth: 20, borderColor: CP.purple + '10',
+    borderWidth: 20, borderColor: CultureTokens.indigo + '1A',
   },
 
   heroRingsWm: {
@@ -38,65 +37,65 @@ export const styles = StyleSheet.create({
   },
   navBtn: {
     width: 40, height: 40, borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.09)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: Colors.surfaceSecondary,
+    borderWidth: 1, borderColor: Colors.borderLight,
     alignItems: 'center', justifyContent: 'center',
   },
 
   heroCenter: {
     alignItems: 'center',
-    paddingHorizontal: 24,
-    marginBottom: 30,
+    paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.xl,
   },
 
   avatarGlow: {
     position: 'absolute', top: -20,
     width: 160, height: 160, borderRadius: 80,
-    backgroundColor: CP.teal + '0A',
-    shadowColor: CP.teal,
+    backgroundColor: Colors.teal + '1A',
+    shadowColor: Colors.teal,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.25, shadowRadius: 40,
   },
   avatarGradientRing: {
     width: 104, height: 104, borderRadius: 52,
-    padding: 3, marginBottom: 18,
-    shadowColor: CP.teal,
+    padding: Spacing.xs, marginBottom: Spacing.lg,
+    shadowColor: Colors.teal,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.5, shadowRadius: 18,
     elevation: 12,
   },
   avatarInner: {
     flex: 1, borderRadius: 50,
-    backgroundColor: CP.darkMid,
+    backgroundColor: Colors.surface,
     alignItems: 'center', justifyContent: 'center',
   },
   avatarText: {
     fontFamily: 'Poppins_700Bold',
-    fontSize: 33, color: CP.teal, letterSpacing: 1,
+    fontSize: 33, color: Colors.teal, letterSpacing: 1,
   },
   verifiedBadge: {
     position: 'absolute',
     top: 74,
     alignSelf: 'center',
-    marginLeft: 38,
+    marginLeft: Spacing.lg,
     width: 24, height: 24, borderRadius: 12,
-    backgroundColor: CP.teal,
-    borderWidth: 3, borderColor: CP.dark,
+    backgroundColor: Colors.teal,
+    borderWidth: 3, borderColor: Colors.background,
     alignItems: 'center', justifyContent: 'center',
-    shadowColor: CP.teal,
+    shadowColor: Colors.teal,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.7, shadowRadius: 5,
   },
 
   heroName: {
     fontFamily: 'Poppins_700Bold',
-    fontSize: 26, color: '#FFF',
+    fontSize: 26, color: Colors.text,
     textAlign: 'center', letterSpacing: -0.4,
   },
   heroHandle: {
     fontFamily: 'Poppins_400Regular',
-    fontSize: 15, color: CP.muted,
-    marginTop: 3, marginBottom: 16,
+    fontSize: 15, color: Colors.textSecondary,
+    marginTop: Spacing.xs, marginBottom: Spacing.lg,
   },
 
   heroPills: {

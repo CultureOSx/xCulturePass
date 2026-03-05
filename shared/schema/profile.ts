@@ -10,7 +10,6 @@ export interface Profile {
   imageUrl?: string;
   coverImageUrl?: string;
   avatarUrl?: string;
-  posterUrl?: string;
   images?: string[];
   city?: string;
   country?: string;
@@ -19,14 +18,12 @@ export interface Profile {
   longitude?: number;
   tags?: string[];
   isVerified?: boolean;
-  verified?: boolean;
   followersCount?: number;
   likesCount?: number;
   membersCount?: number;
   reviewsCount?: number;
   rating?: number;
   category?: string;
-  cpid?: string;
   culturePassId?: string;
   bio?: string;
   address?: string;

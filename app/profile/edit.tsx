@@ -40,7 +40,7 @@ type UploadedImage = {
 
 export default function EditProfileScreen() {
   const insets     = useSafeAreaInsets();
-  const webTop     = Platform.OS === 'web' ? 0 : 0;
+  const webTop     = 0;
   const webBottom  = Platform.OS === 'web' ? 34 : 0;
   const colors     = useColors();
   const { userId } = useAuth();
@@ -81,18 +81,44 @@ export default function EditProfileScreen() {
 
   const uploadMutation = useMutation({
     mutationFn: async (uri: string): Promise<UploadedImage> => {
-      const processed = await manipulateAsync(
-        uri,
-        [
-          { rotate: avatarRotation },
-          ...(avatarScale === 'medium' ? [{ resize: { width: 1024 } }] : avatarScale === 'large' ? [{ resize: { width: 1600 } }] : []),
-        ],
-        { compress: 0.92, format: SaveFormat.JPEG },
-      );
-      const blobRes  = await fetch(processed.uri);
-      const blob     = await blobRes.blob();
+      const actions = [
+        { rotate: avatarRotation },
+        ...(avatarScale === 'medium' ? [{ resize: { width: 1024 } }] : avatarScale === 'large' ? [{ resize: { width: 1600 } }] : []),
+      ];
+
+      let uploadUri = uri;
+      try {
+        const jpegFormat =
+          SaveFormat && typeof SaveFormat === 'object' && 'JPEG' in SaveFormat
+            ? SaveFormat.JPEG
+            : undefined;
+
+        const processed = await manipulateAsync(
+          uri,
+          actions,
+          jpegFormat ? { compress: 0.92, format: jpegFormat } : { compress: 0.92 },
+        );
+        uploadUri = processed.uri;
+      } catch {
+        uploadUri = uri;
+      }
+
       const formData = new FormData();
-      formData.append('image', blob as unknown as Blob, 'profile.jpg');
+      const isDataUrl = uploadUri.startsWith('data:');
+
+      if (Platform.OS === 'web' || isDataUrl) {
+        const blobRes = await fetch(uploadUri);
+        const blob = await blobRes.blob();
+        formData.append('image', blob as unknown as Blob, 'profile.jpg');
+      } else {
+        const mimeType = uploadUri.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+        formData.append('image', {
+          uri: uploadUri,
+          name: 'profile.jpg',
+          type: mimeType,
+        } as unknown as Blob);
+      }
+
       const base      = getApiUrl();
       const uploadRes = await fetch(`${base}api/uploads/image`, { method: 'POST', body: formData });
       if (!uploadRes.ok) throw new Error('Upload failed');

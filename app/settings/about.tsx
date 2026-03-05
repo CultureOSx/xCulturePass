@@ -22,7 +22,7 @@ const SOCIAL_LINKS = [
 
 export default function AboutScreen() {
   const insets = useSafeAreaInsets();
-  const webTop = Platform.OS === 'web' ? 0 : 0;
+  const webTop = 0;
   const colors = useColors();
 
   const resolveColor = (key: 'accent' | 'secondary' | 'warning' | 'info' | 'primary'): string => {

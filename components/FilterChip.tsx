@@ -121,11 +121,16 @@ export function FilterChipRow({ items, selectedId, onSelect, size = 'medium' }: 
 const styles = StyleSheet.create({
   rowContainer: {
     marginBottom: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   row: {
     paddingHorizontal: 20,
     gap: 8,
     paddingVertical: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexGrow: 1,
   },
   chip: {
     flexDirection: 'row',

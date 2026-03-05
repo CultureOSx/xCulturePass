@@ -24,6 +24,7 @@ import {
 import { SavedProvider } from "@/contexts/SavedContext";
 import { ContactsProvider } from "@/contexts/ContactsContext";
 import { Colors } from "@/constants/theme";
+import { useColors } from "@/hooks/useColors";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 import {
@@ -51,6 +52,7 @@ function DataSync() {
     setCountry,
     setInterests,
     setCommunities,
+    setSubscriptionTier,
     state,
     resetOnboarding,
   } = useOnboarding();
@@ -62,39 +64,51 @@ function DataSync() {
   usePushNotifications();
 
   useEffect(() => {
-    if (user) {
-      prevUserIdRef.current = user.id;
-      // Sync user's stored city/country into onboarding state so Discover
-      // page location filters work automatically after login.
-      const city = user.city;
-      const country = user.country;
-      const interests = user.interests ?? [];
-      const communities = user.communities ?? [];
-      if (city && city !== state.city) setCity(city);
-      if (country && country !== state.country) setCountry(country);
-      if (JSON.stringify(interests) !== JSON.stringify(state.interests)) {
-        setInterests(interests);
+    async function syncOnboarding() {
+      if (user) {
+        prevUserIdRef.current = user.id;
+        // Sync user's stored city/country into onboarding state so Discover
+        // page location filters work automatically after login.
+        const city = user.city;
+        const country = user.country;
+        const interests = user.interests ?? [];
+        const communities = user.communities ?? [];
+        const tier = user.subscriptionTier ?? 'free';
+        if (city && city !== state.city) setCity(city);
+        if (country && country !== state.country) setCountry(country);
+        if (JSON.stringify(interests) !== JSON.stringify(state.interests)) {
+          setInterests(interests);
+        }
+        if (JSON.stringify(communities) !== JSON.stringify(state.communities)) {
+          setCommunities(communities);
+        }
+        if (tier !== state.subscriptionTier) {
+          setSubscriptionTier(tier);
+        }
+        // Fallback: If user profile is complete but onboarding is not, complete onboarding
+        if (!state.isComplete && city && country && interests.length > 0) {
+          await import('@/contexts/OnboardingContext').then(ctx => ctx.completeOnboarding?.());
+        }
+      } else if (prevUserIdRef.current !== null) {
+        // User was authenticated and has now signed out — clear onboarding state.
+        prevUserIdRef.current = null;
+        resetOnboarding();
       }
-      if (JSON.stringify(communities) !== JSON.stringify(state.communities)) {
-        setCommunities(communities);
-      }
-    } else if (prevUserIdRef.current !== null) {
-      // User was authenticated and has now signed out — clear onboarding state.
-      prevUserIdRef.current = null;
-      resetOnboarding();
     }
+    syncOnboarding();
+    // Only re-run when the auth user's identity or profile fields change.
+    // The setter functions (setCity, setCommunities, etc.) and resetOnboarding
+    // are stable refs from OnboardingContext and don't need to be in the dep array.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    resetOnboarding,
-    setCity,
-    setCommunities,
-    setCountry,
-    setInterests,
-    state.city,
-    state.communities,
-    state.country,
-    state.interests,
-    user,
-  ]);
+    user?.id,
+    user?.city,
+    user?.country,
+    user?.interests,
+    user?.communities,
+    user?.subscriptionTier,
+    state.isComplete,
+  ]);  
 
   return null;
 }
@@ -192,15 +206,38 @@ function RootLayoutNav() {
 // Responsive web shell — centres content on wide screens, phone frame on small
 // ---------------------------------------------------------------------------
 function WebShell({ children }: { children: React.ReactNode }) {
+  const colors = useColors();
   return (
     <View
       style={[
         webStyles.outerContainer,
         {
-          backgroundColor: Colors.light.background,
+          backgroundColor: colors.background,
         },
       ]}
     >
+      {/* Top bar wrapper for web, uses surface for contrast, shadow, and border */}
+      {Platform.OS === 'web' ? (
+        <View style={{ width: '100%' }}>
+          {require('@/components/web/WebTopBar').WebTopBar()}
+        </View>
+      ) : (
+        <View style={{
+          width: "100%",
+          backgroundColor: colors.surface,
+          borderBottomWidth: 2,
+          borderBottomColor: colors.border,
+          padding: 16,
+          shadowColor: colors.primary,
+          shadowOpacity: 0.10,
+          shadowRadius: 10,
+          elevation: 3,
+          borderTopLeftRadius: 16,
+          borderTopRightRadius: 16,
+        }}>
+          {/* Native top bar content here */}
+        </View>
+      )}
       <View style={{ flex: 1, width: "100%" }}>{children}</View>
     </View>
   );

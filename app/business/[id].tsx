@@ -8,7 +8,6 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { useCouncil } from '@/hooks/useCouncil';
 
 export default function BusinessDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -22,11 +21,14 @@ export default function BusinessDetailScreen() {
     queryFn: () => api.businesses.get(id as string),
     enabled: !!id,
   });
-  const { council, isCouncilVerified, lgaCode } = useCouncil({
-    city: business?.city,
-    country: business?.country,
+  const { data: councilData } = useQuery({
+    queryKey: ['/api/council/my', business?.city, business?.country],
+    queryFn: () => api.council.my({ city: business?.city, country: business?.country }),
     enabled: !!business,
   });
+  const council = councilData?.council;
+  const isCouncilVerified = council?.verificationStatus === 'verified';
+  const lgaCode = council?.lgaCode;
 
   if (isLoading) {
     return (

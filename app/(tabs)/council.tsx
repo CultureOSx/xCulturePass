@@ -1,20 +1,15 @@
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Linking,
-  Switch,
-  ActivityIndicator,
-  Platform,
-} from 'react-native';
+import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/lib/api';
+import { Button } from '@/components/ui/Button';
+import { Pressable, TextInput, ActivityIndicator, Linking, View, Text, StyleSheet, ScrollView, Switch, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '@/hooks/useColors';
 import { useCouncil } from '@/hooks/useCouncil';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AuthGuard } from '@/components/AuthGuard';
-import { Button } from '@/components/ui/Button';
+import { useAuth } from '@/lib/auth';
 
 const ALERT_LABELS: Record<string, string> = {
   emergency: 'Emergency',
@@ -29,14 +24,233 @@ const ALERT_LABELS: Record<string, string> = {
 };
 
 export default function CouncilTabScreen() {
+  return <CouncilDirectoryScreen />;
+}
+
+function CouncilDirectoryScreen() {
+  const { user, isAuthenticated } = useAuth();
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const { data, isLoading } = useQuery<any>({
+    queryKey: ['/api/council/list', search, page],
+    queryFn: () => api.council.list({ q: search, sortBy: 'name', sortDir: 'asc', verificationStatus: 'verified', page, pageSize: 30 }),
+  });
+  const councils = data?.councils ?? [];
+  const hasNextPage = data?.hasNextPage ?? false;
+
   return (
-    <AuthGuard
-      icon="business-outline"
-      title="Your Local Council"
-      message="Sign in to see council info, waste schedules, alerts, and community events for your area."
+    <ScrollView style={{ flex: 1, backgroundColor: '#F4F4F8' }} contentContainerStyle={{ padding: 32, gap: 24 }}>
+      <Text style={{ fontSize: 28, fontWeight: '700', color: '#2C2A72', marginBottom: 12 }}>Council Directory</Text>
+      <TextInput
+        value={search}
+        onChangeText={text => { setSearch(text); setPage(1); }}
+        placeholder="Search councils by name or suburb..."
+        style={{ backgroundColor: '#fff', borderRadius: 10, padding: 12, fontSize: 16, marginBottom: 18, borderWidth: 1, borderColor: '#E0E0E0' }}
+      />
+      {isLoading ? <ActivityIndicator size="large" color="#2C2A72" /> : null}
+      {councils.map((council: any) => (
+        <CouncilCard key={council.id} council={council} isAuthenticated={isAuthenticated} />
+      ))}
+      {hasNextPage && (
+        <Button onPress={() => setPage(page + 1)} style={{ marginTop: 18 }}>Load More</Button>
+      )}
+      {page > 1 && (
+        <Button onPress={() => setPage(page - 1)} style={{ marginTop: 8 }}>Previous Page</Button>
+      )}
+    </ScrollView>
+  );
+}
+
+function CouncilCard({ council, isAuthenticated }: { council: any; isAuthenticated: boolean }) {
+  const [showDetails, setShowDetails] = useState(false);
+  const [claiming, setClaiming] = useState(false);
+  const [claimEmail, setClaimEmail] = useState('');
+  const [claimRole, setClaimRole] = useState('');
+  const [claimNote, setClaimNote] = useState('');
+  const [claimStatus, setClaimStatus] = useState('');
+  const handleFollow = async () => {
+    if (!isAuthenticated) return alert('Sign in to follow councils.');
+    await api.council.follow(council.id);
+    alert('Followed!');
+  };
+  const handleClaim = async () => {
+    setClaiming(true);
+    try {
+      const res = await api.council.claim(council.id, { workEmail: claimEmail, roleTitle: claimRole, note: claimNote });
+      setClaimStatus('Claim submitted!');
+    } catch (e) {
+      setClaimStatus('Error submitting claim.');
+    }
+    setClaiming(false);
+  };
+  return (
+    <Pressable
+      onPress={() => {
+        // Expo Router navigation to dynamic detail page
+        if (Platform.OS === 'web') {
+          window.location.href = `/council/${council.id}`;
+        } else {
+          // @ts-ignore
+          require('expo-router').router.push({ pathname: '/council/[id]', params: { id: council.id } });
+        }
+      }}
+      style={{ backgroundColor: '#fff', borderRadius: 18, padding: 28, shadowColor: '#2C2A72', shadowOpacity: 0.12, shadowRadius: 12, marginBottom: 16, elevation: 2 }}
+      accessibilityRole="button"
+      accessibilityLabel={`View details for ${council.name} council`}
     >
-      <CouncilContent />
-    </AuthGuard>
+      {/* ...existing code... */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <Ionicons name="business" size={28} color="#2C2A72" style={{ marginRight: 8 }} />
+          <Text style={{ fontSize: 24, fontWeight: '700', color: '#2C2A72' }}>{council.name}</Text>
+          <View style={{ marginLeft: 8, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, backgroundColor: council.verificationStatus === 'verified' ? '#FF8C42' : '#E0E0E0' }}>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: council.verificationStatus === 'verified' ? '#fff' : '#636366' }}>{council.verificationStatus === 'verified' ? 'Verified' : 'Unverified'}</Text>
+          </View>
+        </View>
+        <Button onPress={handleFollow} disabled={!isAuthenticated} style={{ minWidth: 100 }}>{isAuthenticated ? 'Follow' : 'Sign in to follow'}</Button>
+      </View>
+      <Text style={{ color: '#636366', marginBottom: 4, fontSize: 15 }}>{council.state} · {council.suburb} · {council.country}</Text>
+      <Text style={{ color: '#636366', marginBottom: 8, fontSize: 15 }}>{council.description}</Text>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 8 }}>
+        {council.websiteUrl ? (
+          <Pressable onPress={() => Linking.openURL(council.websiteUrl || '')}>
+            <Text style={{ color: '#FF8C42', textDecorationLine: 'underline', fontSize: 14 }}>🌐 Website</Text>
+          </Pressable>
+        ) : null}
+        {council.email ? (
+          <Pressable onPress={() => Linking.openURL(`mailto:${council.email}`)}>
+            <Text style={{ color: '#2C2A72', textDecorationLine: 'underline', fontSize: 14 }}>✉️ Email</Text>
+          </Pressable>
+        ) : null}
+        {council.phone ? (
+          <Pressable onPress={() => Linking.openURL(`tel:${council.phone}`)}>
+            <Text style={{ color: '#2C2A72', textDecorationLine: 'underline', fontSize: 14 }}>📞 {council.phone}</Text>
+          </Pressable>
+        ) : null}
+        <Text style={{ color: '#636366', fontSize: 14 }}>LGA: {council.lgaCode}</Text>
+        <Text style={{ color: '#636366', fontSize: 14 }}>Postcode: {council.postcode}</Text>
+      </View>
+      <Button onPress={() => setShowDetails((v: boolean) => !v)} style={{ marginBottom: 8, marginTop: 4 }}>{showDetails ? 'Hide Details' : 'Show Details'}</Button>
+      {showDetails && (
+        <View style={{ marginTop: 12 }}>
+          <Text style={{ fontWeight: '600', color: '#2C2A72', marginBottom: 4, fontSize: 16 }}>Events & Info</Text>
+          <CouncilEvents councilId={council.id} />
+          <CouncilAlerts councilId={council.id} />
+          <CouncilFacilities councilId={council.id} />
+          <CouncilGrants councilId={council.id} />
+          <CouncilLinks councilId={council.id} />
+          <Button onPress={() => setClaiming(true)} style={{ marginTop: 12 }}>{claiming ? 'Submitting...' : 'Claim Council'}</Button>
+          {claiming && (
+            <View style={{ marginTop: 8 }}>
+              <TextInput value={claimEmail} onChangeText={setClaimEmail} placeholder="Work Email" style={{ backgroundColor: '#F4F4F8', borderRadius: 8, padding: 8, marginBottom: 6 }} />
+              <TextInput value={claimRole} onChangeText={setClaimRole} placeholder="Role Title" style={{ backgroundColor: '#F4F4F8', borderRadius: 8, padding: 8, marginBottom: 6 }} />
+              <TextInput value={claimNote} onChangeText={setClaimNote} placeholder="Note (optional)" style={{ backgroundColor: '#F4F4F8', borderRadius: 8, padding: 8, marginBottom: 6 }} />
+              <Button onPress={handleClaim}>Submit Claim</Button>
+              {claimStatus ? <Text style={{ color: '#2C2A72', marginTop: 6 }}>{claimStatus}</Text> : null}
+            </View>
+          )}
+        </View>
+      )}
+    </Pressable>
+  );
+}
+
+function CouncilEvents({ councilId }: { councilId: string }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['/api/council/events', councilId],
+    queryFn: () => api.council.events(councilId),
+  });
+  if (isLoading) return <ActivityIndicator size="small" color="#2C2A72" />;
+  if (!data || data.length === 0) return <Text style={{ color: '#636366' }}>No events found.</Text>;
+  return (
+    <View style={{ marginTop: 8 }}>
+      {data.map((event: any) => (
+        <View key={event.id} style={{ backgroundColor: '#F4F4F8', borderRadius: 8, padding: 10, marginBottom: 6 }}>
+          <Text style={{ fontWeight: '600', color: '#2C2A72' }}>{event.title}</Text>
+          <Text style={{ color: '#636366' }}>{event.date} · {event.city}</Text>
+          <Text style={{ color: '#636366' }}>{event.description}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function CouncilAlerts({ councilId }: { councilId: string }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['/api/council/alerts', councilId],
+    queryFn: () => api.council.alerts(councilId),
+  });
+  if (isLoading) return <ActivityIndicator size="small" color="#2C2A72" />;
+  if (!data || data.length === 0) return <Text style={{ color: '#636366' }}>No alerts found.</Text>;
+  return (
+    <View style={{ marginTop: 8 }}>
+      <Text style={{ fontWeight: '600', color: '#2C2A72', marginBottom: 4 }}>Alerts</Text>
+      {data.map((alert: any) => (
+        <View key={alert.id} style={{ backgroundColor: '#FFF8E1', borderRadius: 8, padding: 10, marginBottom: 6 }}>
+          <Text style={{ fontWeight: '600', color: '#FF8C42' }}>{alert.title}</Text>
+          <Text style={{ color: '#636366' }}>{alert.category} · {alert.severity}</Text>
+          <Text style={{ color: '#636366' }}>{alert.description}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function CouncilFacilities({ councilId }: { councilId: string }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['/api/council/facilities', councilId],
+    queryFn: () => api.council.facilities(councilId),
+  });
+  if (isLoading) return <ActivityIndicator size="small" color="#2C2A72" />;
+  if (!data || data.length === 0) return <Text style={{ color: '#636366' }}>No facilities found.</Text>;
+  return (
+    <View style={{ marginTop: 8 }}>
+      <Text style={{ fontWeight: '600', color: '#2C2A72', marginBottom: 4 }}>Facilities</Text>
+      {data.map((facility: any) => (
+        <View key={facility.id} style={{ backgroundColor: '#E0F7FA', borderRadius: 8, padding: 10, marginBottom: 6 }}>
+          <Text style={{ fontWeight: '600', color: '#2C2A72' }}>{facility.name}</Text>
+          <Text style={{ color: '#636366' }}>{facility.category}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function CouncilGrants({ councilId }: { councilId: string }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['/api/council/grants', councilId],
+    queryFn: () => api.council.grants(councilId),
+  });
+  if (isLoading) return <ActivityIndicator size="small" color="#2C2A72" />;
+  if (!data || data.length === 0) return <Text style={{ color: '#636366' }}>No grants found.</Text>;
+  return (
+    <View style={{ marginTop: 8 }}>
+      <Text style={{ fontWeight: '600', color: '#2C2A72', marginBottom: 4 }}>Grants</Text>
+      {data.map((grant: any) => (
+        <View key={grant.id} style={{ backgroundColor: '#FFFDE7', borderRadius: 8, padding: 10, marginBottom: 6 }}>
+          <Text style={{ fontWeight: '600', color: '#FFC857' }}>{grant.title}</Text>
+          <Text style={{ color: '#636366' }}>{grant.category}</Text>
+          <Text style={{ color: '#636366' }}>{grant.description}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function CouncilLinks({ councilId }: { councilId: string }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['/api/council/links', councilId],
+    queryFn: () => api.council.links(councilId),
+  });
+  if (isLoading) return <ActivityIndicator size="small" color="#2C2A72" />;
+  if (!data || data.length === 0) return <Text style={{ color: '#636366' }}>No links found.</Text>;
+  return (
+    <View style={{ marginTop: 8 }}>
+      <Text style={{ fontWeight: '600', color: '#2C2A72', marginBottom: 4 }}>Links</Text>
+      {data.map((link: any) => (
+        <Text key={link.id} style={{ color: '#3498DB', marginBottom: 4 }} onPress={() => Linking.openURL(link.url)}>{link.title}</Text>
+      ))}
+    </View>
   );
 }
 
@@ -136,7 +350,7 @@ function CouncilContent() {
             <Section title="Council Alerts" colors={colors}>
               {effectivePrefs.length > 0 ? (
                 <View style={styles.prefGrid}>
-                  {effectivePrefs.map((pref) => (
+                  {effectivePrefs.map((pref: any) => (
                     <Button
                       key={pref.category}
                       size="sm"
@@ -151,7 +365,7 @@ function CouncilContent() {
               ) : (
                 <Text style={[styles.sectionHint, { color: colors.text }]}>No alert preferences available.</Text>
               )}
-              {data.alerts.map((alert) => (
+              {data.alerts.map((alert: any) => (
                 <View key={alert.id} style={[styles.alertCard, { borderColor: colors.borderLight, backgroundColor: colors.card }]}> 
                   <Text style={[styles.alertTitle, { color: colors.text }]}>{alert.title}</Text>
                   <Text style={[styles.alertBody, { color: colors.text }]}>{alert.description}</Text>
@@ -162,7 +376,7 @@ function CouncilContent() {
             </Section>
 
             <Section title="Council Events & Activities" colors={colors}>
-              {data.events.map((event) => (
+              {data.events.map((event: any) => (
                 <View key={event.id} style={[styles.listItem, { borderColor: colors.borderLight }]}> 
                   <Text style={[styles.listTitle, { color: colors.text }]}>{event.title}</Text>
                   <Text style={[styles.listSub, { color: colors.text }]}>{event.city} • {event.date} • {event.time}</Text>
@@ -172,7 +386,7 @@ function CouncilContent() {
             </Section>
 
             <Section title="Council Facilities" colors={colors}>
-              {data.facilities.map((facility) => (
+              {data.facilities.map((facility: any) => (
                 <View key={String(facility.id)} style={[styles.listItem, { borderColor: colors.borderLight }]}> 
                   <Text style={[styles.listTitle, { color: colors.text }]}>{String(facility.name ?? 'Facility')}</Text>
                   <Text style={[styles.listSub, { color: colors.text }]}>{String(facility.category ?? 'Community Facility')} • {String(facility.city ?? '')}</Text>
@@ -182,7 +396,7 @@ function CouncilContent() {
             </Section>
 
             <Section title="Grants" colors={colors}>
-              {data.grants.map((grant) => (
+              {data.grants.map((grant: any) => (
                 <View key={grant.id} style={[styles.listItem, { borderColor: colors.borderLight }]}> 
                   <Text style={[styles.listTitle, { color: colors.text }]}>{grant.title}</Text>
                   <Text style={[styles.listSub, { color: colors.text }]}>{grant.category} • {grant.status.toUpperCase()}</Text>
@@ -195,7 +409,7 @@ function CouncilContent() {
             </Section>
 
             <Section title="What's On & Links" colors={colors}>
-              {data.links.map((link) => (
+              {data.links.map((link: any) => (
                 <Button key={link.id} variant="outline" onPress={() => Linking.openURL(link.url)}>
                   {link.title}
                 </Button>

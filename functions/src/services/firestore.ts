@@ -69,9 +69,7 @@ export interface FirestoreUser {
     isActive?: boolean;
   };
   socialLinks?: Record<string, string>;
-  /** Stripe Customer ID — persisted on first subscription checkout */
   stripeCustomerId?: string;
-  /** Active Stripe Subscription ID — used for cancellation */
   stripeSubscriptionId?: string;
   createdAt: string;
   updatedAt: string;
@@ -371,6 +369,7 @@ export interface FirestoreProfile {
   entityType: 'community' | 'business' | 'venue' | 'artist' | 'organisation';
   description?: string;
   imageUrl?: string;
+  avatarUrl?: string;
   city?: string;
   state?: string;
   postcode?: number;
@@ -380,7 +379,9 @@ export interface FirestoreProfile {
   website?: string;
   rating?: number;
   ownerId?: string;
-  verified?: boolean;
+  isVerified?: boolean;
+  membersCount?: number;
+  culturePassId?: string;
   createdAt: string;
   updatedAt: string;
 }

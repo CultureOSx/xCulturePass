@@ -41,7 +41,8 @@ export interface User {
   followersCount?: number;
   followingCount?: number;
   likesCount?: number;
-  createdAt: string | null;
+  createdAt: string;
+  updatedAt?: string;
   website?: string;
   phone?: string;
   membership?: Membership;
