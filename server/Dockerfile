@@ -16,4 +16,6 @@ COPY . .
 RUN npm run build || true
 
 EXPOSE 8080
+RUN chown -R 1000:1000 /usr/src/app
+USER 1000
 CMD ["node", "lib/index.js"]
