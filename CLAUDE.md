@@ -7,7 +7,7 @@ Project guide for AI agents and engineers. Read this before touching code.
 ## Project Overview
 
 Cross-platform lifestyle/community platform for cultural diaspora communities (AU, NZ, UAE, UK, CA).
-**Stack**: Expo 54 + React Native 0.84 + Expo Router 5 + Firebase (Auth + Firestore + Cloud Functions + Storage).
+**Stack**: Expo 54.0.33 + React 19.1.0 + React Native 0.81.5 + Expo Router 5 + Firebase 11 (Auth + Firestore + Cloud Functions + Storage).
 **Current date context**: Refer to `currentDate` in system prompt for today's date.
 
 ---
@@ -15,48 +15,83 @@ Cross-platform lifestyle/community platform for cultural diaspora communities (A
 ## Architecture
 
 ```
-app/                    Expo Router screens (96 routes)
-  (onboarding)/         Login, signup, location, interests, culture-match
-  (tabs)/               5-tab layout: Discover, Calendar, Community, Perks, Profile
+app/                    Expo Router screens (104 files, 33 directories)
+  (onboarding)/         Login, signup, location, interests, culture-match, communities
+  (tabs)/               6-tab layout: Discover, Calendar, Community, Council, Perks, Profile
+                        + directory.tsx, dashboard.tsx inside tabs group
   event/[id].tsx        Event detail
+  council/[id].tsx      Council detail
+  council/claim.tsx     Council claim flow
+  council/select.tsx    Council selection
   profile/, tickets/    User profile, ticket management
-  admin/, dashboard/    Admin + organizer panels
+  admin/, dashboard/    Admin + organizer panels (dashboard/council.tsx, dashboard/organizer.tsx)
+  payment/              Payment flows
+  search/, saved/       Search results, saved items
+  settings/             User settings
+  membership/           Subscription management
 
 components/
-  ui/                   Button, Card, Badge, Input, Avatar, Checkbox, Skeleton, SocialButton
-  Discover/             EventCard, WebHeroCarousel, WebRailSection, SpotlightCard, CityCard
-  web/WebSidebar.tsx    Left sidebar navigation (desktop web, 240px)
-  perks/, scanner/      Feature-specific component bundles
+  ui/                   Button, Card, Badge, Input, Avatar, Checkbox, Skeleton, SocialButton,
+                        BackButton, PasswordStrengthIndicator, InlinePopoverSelect
+  Discover/             EventCard, WebHeroCarousel, WebRailSection, WebEventRailCard,
+                        SpotlightCard, CommunityCard, CityCard, CategoryCard, SectionHeader
+  web/                  WebSidebar.tsx (240px desktop sidebar), WebTopBar.tsx
+  tabs/                 TabScreenShell.tsx, TabSectionShell.tsx
+  calendar/             Filter, MonthGrid, event cards, map toggle (5 files)
+  perks/                PerkCouponModal, PerkDetails, PerkHero, etc. (10 files)
+  scanner/              Ticket result card, Scanner styles, utils, types (4 files)
+  profile/              GuestProfileView, MenuItem
+  user/                 UserProfileHero, Details, Identity, Tier, About, Social, utils (7 files)
+  AuthGuard.tsx         Wraps protected screens — redirects to login if unauthenticated
   ErrorBoundary.tsx     Wrap every screen with async data in this
+  BrowsePage.tsx        Browse/discovery page shell
+  NativeMapView.tsx     Platform-specific map (.native.tsx / .web.tsx variants)
+  FilterChip.tsx        Filter chip component
+  FilterModal.tsx       Filter modal
 
 constants/
-  theme.ts              SINGLE IMPORT POINT — re-exports colors, spacing, typography, elevation
+  theme.ts              SINGLE IMPORT POINT — re-exports all tokens
   colors.ts             CultureTokens, light/dark themes, shadows, glass, gradients, neon
   typography.ts         Poppins scale + desktop overrides
   spacing.ts            4-point grid, Breakpoints, Layout
+  elevation.ts          ButtonTokens, CardTokens, InputTokens, AvatarTokens, TabBarTokens
+  animations.ts         Animation durations and easing
+  locations.ts          City/country list with coordinates
+  onboardingInterests.ts Interest categories + tags for onboarding
 
 hooks/
   useColors.ts          Theme-aware color access (dark = default on native, light = web)
   useLayout.ts          Responsive layout values: isDesktop, numColumns, hPad, sidebarWidth, columnWidth()
   useRole.ts            Role checking: isOrganizer, isAdmin, hasMinRole()
   useProfile.ts         User profile loading with React Query
+  useCouncil.ts         Council data and permissions (claim validation, council state)
+  useLocationFilter.ts  Location filtering logic
+  useLocations.ts       Location list management
+  useNearestCity.ts     Geolocation → nearest supported city
+  usePushNotifications.ts  FCM token registration + notification handlers
 
 lib/
-  api.ts                Typed API client — ONLY way to call the backend
+  api.ts                Typed API client — ONLY way to call the backend (885 lines, 150+ endpoints)
   auth.tsx              Firebase Auth provider + useAuth() hook
   firebase.ts           Firebase SDK init (platform-aware: AsyncStorage on native, localStorage on web)
   query-client.ts       TanStack React Query setup + apiRequest()
+  config.ts             App configuration
+  feature-flags.ts      Feature flag rollout system
+  reporting.ts          Error reporting (Sentry integration)
+  navigation.ts         Navigation utilities
+  image-manipulator.ts  Platform-specific image processing (.native.ts / .web.ts variants)
 
 contexts/
   OnboardingContext     city, country, interests, isComplete — synced from auth user on login
   SavedContext          saved events, joined communities (local + API)
   ContactsContext       user contacts directory
 
-shared/schema.ts        Shared TypeScript types (EventData, User, Ticket, Profile…)
-shared/schema/          Individual schema files per domain (event.ts, user.ts, ticket.ts…)
+shared/schema.ts        Shared TypeScript types — master re-export
+shared/schema/          Domain schemas: event, user, ticket, profile, notification, perk,
+                        wallet, social, media, moderation, common, entities
 
 functions/src/
-  app.ts                90+ Express API routes
+  app.ts                150+ Express API routes (6500+ lines)
   admin.ts              Firebase Admin SDK singleton
   middleware/auth.ts    Firebase ID token verification + role guards
   middleware/moderation.ts  Content moderation (bad words, suspicious links)
@@ -65,6 +100,19 @@ functions/src/
     search.ts           Weighted full-text + trigram search
     cache.ts            In-memory TTL cache (60s default)
     rollout.ts          Feature flag phased rollout
+    locations.ts        Location and city management
+  data/
+    AllCouncilsList.csv Council organization seed data (32KB)
+    seed-events.json    Sample events
+    seed-communities.json Sample communities
+
+server/                 Supplementary Docker service (image processing, job queue)
+  src/index.ts          Express server entry
+  src/routes/jobs.ts    Job processing
+  src/routes/processImage.ts  Image processing with Sharp
+  Dockerfile            Docker image config
+
+dataconnect/            Firebase DataConnect (GraphQL schema — exploratory)
 ```
 
 ---
@@ -201,6 +249,16 @@ import { neon } from '@/constants/theme';
 neon.blue, neon.purple, neon.teal  // focused/active states only
 ```
 
+### Animations
+```typescript
+import { animations } from '@/constants/theme';
+
+animations.duration.fast    // 150ms
+animations.duration.normal  // 300ms
+animations.duration.slow    // 500ms
+animations.easing.default   // standard easing curve
+```
+
 **Full token docs**: `docs/DESIGN_TOKENS.md`
 
 ---
@@ -257,9 +315,40 @@ router.push({ pathname: '/profile/[id]', params: { id: profile.id } });
 ```
 
 ### Route Guards
-- `AuthGuard` component wraps protected screens
+- `AuthGuard` component wraps protected screens — import from `components/AuthGuard`
 - `useRole()` provides `isOrganizer`, `isAdmin`, `hasMinRole(role)`
 - Redirects to `/(onboarding)/login?redirectTo=/protected-route` on 401
+
+---
+
+## Council Ecosystem
+
+The Council feature is a governance/community leadership layer on top of the existing community system.
+
+### Routes
+- `app/(tabs)/council.tsx` — Council listing tab
+- `app/council/[id].tsx` — Council detail page
+- `app/council/claim.tsx` — Claim a council seat
+- `app/council/select.tsx` — Council selection screen
+- `app/dashboard/council.tsx` — Organizer council management
+- `app/dashboard/organizer.tsx` — Organizer dashboard
+
+### Hook
+```typescript
+import { useCouncil } from '@/hooks/useCouncil';
+
+const { council, isLoading, canClaim, claimCouncil } = useCouncil(councilId);
+```
+`useCouncil` manages council data fetching, claim validation, and permission checks.
+
+### Data
+- `functions/src/data/AllCouncilsList.csv` — Seed data (32KB, ~1000 council orgs)
+- Councils are stored in Firestore under a `councils/` collection
+- Council claims go through the `api.councils.*` endpoints in `lib/api.ts`
+
+### Access Control
+- Claiming a council requires auth + matching criteria validated server-side
+- `dashboard/council.tsx` restricted to organizer/admin roles via `AuthGuard` + `useRole()`
 
 ---
 
@@ -486,6 +575,15 @@ npm run lint
 
 Set `EXPO_PUBLIC_API_URL=http://localhost:5001/YOUR_PROJECT/us-central1/api/` when using the emulator.
 
+### Supplementary Server (Image Processing)
+```bash
+# Docker-based Node.js server in server/
+cd server && npm install
+docker build -t culturepass-server .
+docker run -p 3001:3001 culturepass-server
+```
+Used for Sharp-based image processing and background job queue. Not required for main app development.
+
 ---
 
 ## Building & Deploying
@@ -572,12 +670,16 @@ See `firestore.rules`:
 - [x] Google Sign-In wired on iOS/Android (native Google SDK + Firebase credential)
 - [x] Apple Sign-In wired on iOS (expo-apple-authentication + Firebase OAuthProvider)
 - [x] Social sign-in on signup screen (Google + Apple)
+- [x] Council ecosystem — routes, hook, claim flow, dashboard, seed data
+- [x] AuthGuard component implemented across protected screens
+- [x] Push notifications hook (`usePushNotifications.ts`) — FCM token registration + handlers
+- [x] Express security headers + SSRF mitigations in Cloud Functions
 - [ ] Migrate remaining in-memory Maps (wallets, notifications, perks, tickets) → Firestore
-- [ ] Push notifications (FCM token registration + notification handler)
 - [ ] Offline mutation queue (AsyncStorage → sync on reconnect)
 - [ ] Geolocation filtering (geoHash stored, not queried yet)
 - [ ] Analytics (PostHog / Firebase Analytics)
-- [ ] Error monitoring (Sentry)
+- [ ] Error monitoring (Sentry — `lib/reporting.ts` wired but not fully configured)
 - [ ] Deep link testing (Universal Links on iOS, App Links on Android)
 - [ ] App Store screenshots and metadata
 - [ ] WCAG accessibility audit
+- [ ] Firebase DataConnect migration (GraphQL schema in `dataconnect/` — exploratory)
