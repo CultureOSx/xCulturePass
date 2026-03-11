@@ -37,7 +37,7 @@ export interface EventData {
   attending?: number;
   isFeatured?: boolean;
   isFree?: boolean;
-  tiers?: Array<{ name: string; priceCents: number; available: number }>;
+  tiers?: { name: string; priceCents: number; available: number }[];
   country: string;
   city: string;
   tags?: string[];

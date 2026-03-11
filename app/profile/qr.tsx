@@ -196,37 +196,37 @@ export default function QRScreen() {
         </View>
 
         {/* CPID row */}
-        <View style={s.cpidSection}>
-          <Text style={[s.cpidLabel, { color: colors.textSecondary }]}>CULTUREPASS ID</Text>
-          <Pressable onPress={handleCopy} style={[s.cpidRow, { backgroundColor: colors.surface }]}>
-            <Text style={[s.cpidValue, { color: colors.text }]}>{cpid}</Text>
-            <View style={[s.cpidCopyBtn, { backgroundColor: copied ? colors.success : colors.primaryGlow }]}>
+        <View style={styles.cpidSection}>
+          <Text style={[styles.cpidLabel, { color: colors.textSecondary }]}>CULTUREPASS ID</Text>
+          <Pressable onPress={handleCopy} style={[styles.cpidRow, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.cpidValue, { color: colors.text }]}>{cpid}</Text>
+            <View style={[styles.cpidCopyBtn, { backgroundColor: copied ? colors.success : colors.primaryGlow }]}>
               <Ionicons name={copied ? 'checkmark' : 'copy-outline'} size={16} color={copied ? colors.textInverse : colors.primary} />
             </View>
           </Pressable>
         </View>
 
         {/* Action grid */}
-        <View style={s.actionsGrid}>
+        <View style={styles.actionsGrid}>
           {[
             { icon: 'share-outline', title: 'Share', desc: 'Send your ID', bg: colors.primaryGlow,      color: colors.primary,    onPress: handleShare },
             { icon: 'copy-outline',  title: 'Copy',  desc: 'Copy CPID',   bg: colors.secondary + '15', color: colors.secondary,  onPress: handleCopy  },
             { icon: 'scan-outline',  title: 'Scan',  desc: 'Scan others', bg: colors.accent + '15',    color: colors.accent,     onPress: () => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/scanner'); } },
           ].map(btn => (
-            <Pressable key={btn.title} style={[s.actionCard, { backgroundColor: colors.surface }]} onPress={btn.onPress}>
-              <View style={[s.actionIcon, { backgroundColor: btn.bg }]}>
+            <Pressable key={btn.title} style={[styles.actionCard, { backgroundColor: colors.surface }]} onPress={btn.onPress}>
+              <View style={[styles.actionIcon, { backgroundColor: btn.bg }]}>
                 <Ionicons name={btn.icon as never} size={22} color={btn.color} />
               </View>
-              <Text style={[s.actionTitle, { color: colors.text }]}>{btn.title}</Text>
-              <Text style={[s.actionDesc, { color: colors.text }]}>{btn.desc}</Text>
+              <Text style={[styles.actionTitle, { color: colors.text }]}>{btn.title}</Text>
+              <Text style={[styles.actionDesc, { color: colors.text }]}>{btn.desc}</Text>
             </Pressable>
           ))}
         </View>
 
         {/* Info card */}
-        <View style={[s.infoCard, { backgroundColor: colors.surface }]}>
+        <View style={[styles.infoCard, { backgroundColor: colors.surface }]}>
           <Ionicons name="information-circle-outline" size={18} color={colors.primary} style={{ marginTop: 1 }} />
-          <Text style={[s.infoText, { color: colors.text }]}> 
+          <Text style={[styles.infoText, { color: colors.text }]}> 
             Your CulturePass Digital ID is a unique identifier that can be scanned at events, venues, and partner locations for quick check-in and verification.
           </Text>
         </View>
@@ -235,7 +235,7 @@ export default function QRScreen() {
   );
 }
 
-const s = StyleSheet.create({
+const styles = StyleSheet.create({
   container:    { flex: 1 },
   header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
   backBtn:      { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },

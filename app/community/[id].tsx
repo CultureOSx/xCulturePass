@@ -48,6 +48,7 @@ export default function CommunityDetailScreen() {
   const topInset    = Platform.OS === 'web' ? 0 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
   const colors      = useColors();
+  const s = React.useMemo(() => getStyles(colors), [colors]);
 
   const { data: dbCommunity, isLoading } = useQuery<Community>({
     queryKey: ['/api/communities', id],
@@ -89,6 +90,7 @@ function DbCommunityView({ community, topInset, bottomInset, colors }: DbViewPro
   const joined      = isCommunityJoined(community.id);
   const queryClient = useQueryClient();
   const color       = COMMUNITY_TYPE_COLORS[community.communityType ?? ''] || colors.primary;
+  const s = React.useMemo(() => getStyles(colors), [colors]);
 
   const joinMutation = useMutation({
     mutationFn: () => api.communities.join(String(community.id)),
@@ -132,7 +134,7 @@ function DbCommunityView({ community, topInset, bottomInset, colors }: DbViewPro
   );
 
   return (
-    <View style={[s.container, { backgroundColor: colors.background }]}>
+    <View style={s.container}>
       <View style={[s.hero, { height: 240 + topInset }]}>
         <LinearGradient
           colors={[color, color + 'CC']}
@@ -222,7 +224,7 @@ function DbCommunityView({ community, topInset, bottomInset, colors }: DbViewPro
               {relatedEvents.slice(0, 5).map((event: EventData) => (
                 <Pressable
                   key={event.id}
-                  style={[s.eventCard, { backgroundColor: colors.surface }]}
+                  style={s.eventCard}
                   onPress={() => router.push({ pathname: '/event/[id]', params: { id: event.id } })}
                 >
                   <Image source={{ uri: event.imageUrl }} style={s.eventImage} />
@@ -301,8 +303,8 @@ function getRelatedTagsForDb(community: Community): string[] {
   return tags;
 }
 
-const s = StyleSheet.create({
-  container:      { flex: 1 },
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+  container:      { flex: 1, backgroundColor: colors.background },
   errorText:      { fontSize: 16, fontFamily: 'Poppins_500Medium' },
   backLink:       { fontSize: 15, fontFamily: 'Poppins_600SemiBold', marginTop: 12 },
   hero:           { overflow: 'hidden' },
@@ -312,7 +314,7 @@ const s = StyleSheet.create({
   heroIconWrap:   { width: 58, height: 58, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
   heroTitle:      { fontSize: 26, fontFamily: 'Poppins_700Bold', lineHeight: 32 },
   statsRow:       { flexDirection: 'row', paddingHorizontal: 20, gap: 10, marginTop: 20, marginBottom: 8 },
-  statCard:       { flex: 1, borderRadius: 20, padding: 16, alignItems: 'center', gap: 4 },
+  statCard:       { flex: 1, borderRadius: 20, padding: 16, alignItems: 'center', gap: 4, backgroundColor: colors.surface },
   statIconBg:     { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 2 },
   statNum:        { fontSize: 20, fontFamily: 'Poppins_700Bold' },
   statLabel:      { fontSize: 11, fontFamily: 'Poppins_500Medium' },
@@ -321,7 +323,7 @@ const s = StyleSheet.create({
   sectionDivider: { paddingHorizontal: 20, marginTop: 24, alignItems: 'center' },
   accentBar:      { width: 40, height: 3, borderRadius: 2 },
   description:    { fontSize: 14, fontFamily: 'Poppins_400Regular', lineHeight: 22 },
-  eventCard:      { flexDirection: 'row', alignItems: 'center', borderRadius: 20, padding: 14, marginBottom: 10, gap: 12 },
+  eventCard:      { flexDirection: 'row', alignItems: 'center', borderRadius: 20, padding: 14, marginBottom: 10, gap: 12, backgroundColor: colors.surface },
   eventImage:     { width: 48, height: 48, borderRadius: 14 },
   eventInfo:      { flex: 1, gap: 2 },
   eventTitle:     { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },

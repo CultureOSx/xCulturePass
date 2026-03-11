@@ -168,7 +168,7 @@ export const interestCategories: InterestCategory[] = [
   },
 ];
 
-const iconByInterestEntries: Array<[string, string]> = [
+const iconByInterestEntries: [string, string][] = [
   ['Cultural Festivals', 'sparkles'],
   ['Indian Events', 'globe'],
   ['South Asian Events', 'earth'],

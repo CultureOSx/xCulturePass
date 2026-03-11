@@ -156,7 +156,7 @@ export interface CouncilData {
   logoUrl?: string;
   bannerUrl?: string;
   socialLinks?: Partial<Record<'facebook' | 'instagram' | 'linkedin' | 'youtube', string>>;
-  emergencyNumbers?: Array<{ label: string; phone: string }>;
+  emergencyNumbers?: { label: string; phone: string }[];
 }
 
 export interface CouncilWasteSchedule {
@@ -512,7 +512,7 @@ const notifications = {
     limit?: number;
     metadata?: Record<string, unknown>;
   }) =>
-    request<{ dryRun: boolean; targetedCount: number; audiencePreview: Array<{ userId: string; city: string; country: string }>; idempotentReplay?: boolean; approvalToken?: string; approvalExpiresAt?: string }>(
+    request<{ dryRun: boolean; targetedCount: number; audiencePreview: { userId: string; city: string; country: string }[]; idempotentReplay?: boolean; approvalToken?: string; approvalExpiresAt?: string }>(
       'POST', 'api/notifications/targeted', payload,
     ),
 };

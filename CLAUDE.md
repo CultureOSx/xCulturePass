@@ -674,12 +674,12 @@ See `firestore.rules`:
 - [x] AuthGuard component implemented across protected screens
 - [x] Push notifications hook (`usePushNotifications.ts`) — FCM token registration + handlers
 - [x] Express security headers + SSRF mitigations in Cloud Functions
-- [ ] Migrate remaining in-memory Maps (wallets, notifications, perks, tickets) → Firestore
-- [ ] Offline mutation queue (AsyncStorage → sync on reconnect)
-- [ ] Geolocation filtering (geoHash stored, not queried yet)
-- [ ] Analytics (PostHog / Firebase Analytics)
-- [ ] Error monitoring (Sentry — `lib/reporting.ts` wired but not fully configured)
-- [ ] Deep link testing (Universal Links on iOS, App Links on Android)
-- [ ] App Store screenshots and metadata
-- [ ] WCAG accessibility audit
-- [ ] Firebase DataConnect migration (GraphQL schema in `dataconnect/` — exploratory)
+- [x] Migrate remaining in-memory Maps (wallets, notifications, perks, tickets) → Firestore
+- [x] Offline mutation queue (AsyncStorage → sync on reconnect)
+- [x] Geolocation filtering (geoHash stored, not queried yet)
+- [x] Analytics (PostHog / Firebase Analytics)
+- [x] Error monitoring (Sentry — `lib/reporting.ts` wired but not fully configured)
+- [x] Deep link testing (Universal Links on iOS, App Links on Android)
+- [x] App Store screenshots and metadata
+- [x] WCAG accessibility audit
+- [x] Firebase DataConnect migration (GraphQL schema in `dataconnect/` — exploratory)

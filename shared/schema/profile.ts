@@ -44,7 +44,7 @@ export interface Profile {
   deals?: string[];
   deliveryAvailable?: boolean;
   reservationAvailable?: boolean;
-  reviews?: Array<{ id: string; userId: string; rating: number; comment?: string; createdAt?: string }>;
+  reviews?: { id: string; userId: string; rating: number; comment?: string; createdAt?: string }[];
   services?: string[];
 
   isIndigenousOwned?: boolean;
@@ -58,7 +58,7 @@ export interface Profile {
   language?: string;
   imdbScore?: number;
   posterColor?: string;
-  showtimes?: Array<{ time: string; cinema?: string; date?: string; price?: number }>;
+  showtimes?: { time: string; cinema?: string; date?: string; price?: number }[];
 
   isPopular?: boolean;
   ageGroup?: string;

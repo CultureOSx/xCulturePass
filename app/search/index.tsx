@@ -1,4 +1,4 @@
-import { View, Text, Pressable, StyleSheet, TextInput, ScrollView, Platform, Image } from 'react-native';
+import { View, Text, Pressable, StyleSheet, TextInput, ScrollView, Platform, Image, useWindowDimensions } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,6 +10,9 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
 import { api, type ActivityData } from '@/lib/api';
 import type { EventData, Community, Profile } from '@/shared/schema';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { CultureTokens } from '@/constants/theme';
+
+const isWeb = Platform.OS === 'web';
 
 type ResultType = 'event' | 'movie' | 'restaurant' | 'activity' | 'shopping' | 'community';
 
@@ -19,7 +22,7 @@ interface SearchResult {
   title: string;
   subtitle: string;
   imageUrl?: string;
-  icon: string;
+  icon: keyof typeof Ionicons.glyphMap;
   color: string;
 }
 
@@ -27,21 +30,28 @@ const POPULAR_SEARCHES = ['Diwali', 'Comedy Night', 'Bollywood', 'Food Festival'
 
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
-  const topInset = Platform.OS === 'web' ? 0 : insets.top;
-  const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
   const colors = useColors();
+  const { width } = useWindowDimensions();
+  
+  const topInset = isWeb ? 72 : insets.top;
+  const bottomInset = isWeb ? 34 : insets.bottom;
+  const isDesktop = width >= 1024;
+
+  const s = useMemo(() => getStyles(colors), [colors]);
+
   const [query, setQuery] = useState('');
   const [selectedType, setSelectedType] = useState<ResultType | 'all'>('all');
+  const [searchFocused, setSearchFocused] = useState(false);
   const { state } = useOnboarding();
 
-  const TYPE_CONFIG = useMemo((): Record<ResultType, { label: string; icon: string; color: string }> => ({
-    event:      { label: 'Events',       icon: 'calendar',   color: colors.primary },
-    movie:      { label: 'Movies',       icon: 'film',       color: colors.secondary },
-    restaurant: { label: 'Restaurants',  icon: 'restaurant', color: colors.success },
-    activity:   { label: 'Activities',   icon: 'football',   color: colors.info },
-    shopping:   { label: 'Shopping',     icon: 'bag',        color: colors.accent },
-    community:  { label: 'Communities',  icon: 'people',     color: colors.info },
-  }), [colors]);
+  const TYPE_CONFIG = useMemo((): Record<ResultType, { label: string; icon: keyof typeof Ionicons.glyphMap; color: string }> => ({
+    event:      { label: 'Events',       icon: 'calendar',   color: CultureTokens.saffron },
+    movie:      { label: 'Movies',       icon: 'film',       color: CultureTokens.gold },
+    restaurant: { label: 'Dining',       icon: 'restaurant', color: CultureTokens.coral },
+    activity:   { label: 'Activities',   icon: 'football',   color: CultureTokens.teal },
+    shopping:   { label: 'Stores',       icon: 'bag',        color: '#FF9F1C' },
+    community:  { label: 'Communities',  icon: 'people',     color: CultureTokens.indigo },
+  }), []);
 
   const locationParams = useMemo(() => {
     const params: Record<string, string> = {};
@@ -195,7 +205,7 @@ export default function SearchScreen() {
   }, [allResults]);
 
   const handleResultPress = (result: SearchResult) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const routes: Record<ResultType, string> = {
       event: '/event/[id]',
       movie: '/movies/[id]',
@@ -209,164 +219,192 @@ export default function SearchScreen() {
 
   return (
     <ErrorBoundary>
-    <View style={[s.container, { paddingTop: topInset, backgroundColor: colors.background }]}>
-      <View style={s.header}>
-        <Pressable onPress={() => router.back()} style={[s.backBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]} hitSlop={8}>
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
-        </Pressable>
-        <View style={[s.searchBar, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-          <Ionicons name="search" size={18} color={colors.textSecondary} />
-          <TextInput
-            style={[s.searchInput, { color: colors.text }]}
-            placeholder="Search events, restaurants, movies..."
-            placeholderTextColor={colors.textSecondary}
-            value={query}
-            onChangeText={setQuery}
-            autoFocus
-            returnKeyType="search"
-          />
-          {query.length > 0 && (
-            <Pressable onPress={() => setQuery('')} hitSlop={8}>
-              <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
+      <View style={[s.container, { paddingTop: topInset }]}>
+        <View style={[s.shell, isDesktop && s.desktopShell]}>
+          <View style={s.header}>
+            <Pressable 
+              onPress={() => router.back()} 
+              style={({ pressed }) => [s.backBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight, transform: [{ scale: pressed ? 0.95 : 1 }] }]} 
+              hitSlop={8}
+            >
+              <Ionicons name="chevron-back" size={24} color={colors.text} />
             </Pressable>
+            <View style={[s.searchBar, { backgroundColor: colors.surface, borderColor: searchFocused ? CultureTokens.indigo : colors.borderLight }]}>
+              <Ionicons name="search" size={20} color={searchFocused ? CultureTokens.indigo : colors.textTertiary} />
+              <TextInput
+                style={[s.searchInput, { color: colors.text }]}
+                placeholder="Search events, restaurants, movies..."
+                placeholderTextColor={colors.textTertiary}
+                value={query}
+                onChangeText={setQuery}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setSearchFocused(false)}
+                autoFocus
+                returnKeyType="search"
+              />
+              {query.length > 0 && (
+                <Pressable onPress={() => setQuery('')} hitSlop={10} style={{ padding: 4 }}>
+                  <Ionicons name="close-circle" size={20} color={colors.textTertiary} />
+                </Pressable>
+              )}
+            </View>
+          </View>
+
+          {query.length > 0 && allResults.length > 0 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.typeRow} style={{ flexGrow: 0 }}>
+              <Pressable
+                style={[s.typeChip, { backgroundColor: selectedType === 'all' ? CultureTokens.indigo : colors.surface, borderColor: selectedType === 'all' ? CultureTokens.indigo : colors.borderLight }]}
+                onPress={() => { if(!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setSelectedType('all'); }}
+              >
+                <Text style={[s.typeChipText, { color: selectedType === 'all' ? '#FFFFFF' : colors.textSecondary }]}>All ({typeCounts.all})</Text>
+              </Pressable>
+              {(Object.keys(TYPE_CONFIG) as ResultType[]).filter(t => typeCounts[t]).map(type => (
+                <Pressable
+                  key={type}
+                  style={[s.typeChip, { backgroundColor: selectedType === type ? TYPE_CONFIG[type].color : colors.surface, borderColor: selectedType === type ? TYPE_CONFIG[type].color : colors.borderLight }]}
+                  onPress={() => { if(!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setSelectedType(type); }}
+                >
+                  <Ionicons name={TYPE_CONFIG[type].icon} size={14} color={selectedType === type ? '#FFFFFF' : TYPE_CONFIG[type].color} />
+                  <Text style={[s.typeChipText, { color: selectedType === type ? '#FFFFFF' : colors.textSecondary }]}> 
+                    {TYPE_CONFIG[type].label} ({typeCounts[type]})
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
           )}
+
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: bottomInset + 40 }}>
+            {query.length === 0 ? (
+              <View style={s.suggestionsContainer}>
+                <Text style={[s.suggestionsTitle, { color: colors.text }]}>Trending Searches</Text>
+                <View style={s.suggestionsGrid}>
+                  {POPULAR_SEARCHES.map(term => (
+                    <Pressable 
+                      key={term} 
+                      style={({ pressed }) => [s.suggestionPill, { backgroundColor: colors.surface, borderColor: colors.borderLight, transform: [{ scale: pressed ? 0.98 : 1 }] }]} 
+                      onPress={() => setQuery(term)}
+                    >
+                      <Ionicons name="trending-up" size={16} color={CultureTokens.indigo} />
+                      <Text style={[s.suggestionText, { color: colors.text }]}>{term}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+
+                <Text style={[s.suggestionsTitle, { color: colors.text, marginTop: 32 }]}>Explore Categories</Text>
+                <View style={s.categoriesGrid}>
+                  {(Object.entries(TYPE_CONFIG) as [ResultType, { label: string; icon: keyof typeof Ionicons.glyphMap; color: string }][]).map(([key, config]) => (
+                    <Pressable
+                      key={key}
+                      style={({ pressed }) => [s.categoryCard, { backgroundColor: colors.surface, borderColor: colors.borderLight, transform: [{ scale: pressed ? 0.98 : 1 }] }]}
+                      onPress={() => {
+                        if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        const routes: Record<ResultType, string> = {
+                          event: '/(tabs)/explore',
+                          movie: '/movies',
+                          restaurant: '/restaurants',
+                          activity: '/activities',
+                          shopping: '/shopping',
+                          community: '/(tabs)/communities',
+                        };
+                        router.push(routes[key] as never);
+                      }}
+                    >
+                      <View style={[s.categoryIcon, { backgroundColor: config.color + '15' }]}>
+                        <Ionicons name={config.icon} size={24} color={config.color} />
+                      </View>
+                      <Text style={[s.categoryLabel, { color: colors.text }]}>{config.label}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            ) : filteredResults.length === 0 ? (
+              <View style={s.emptyState}>
+                <View style={[s.emptyIconWrap, { backgroundColor: colors.surface }]}>
+                  <Ionicons name="search-outline" size={48} color={colors.textTertiary} />
+                </View>
+                <Text style={[s.emptyTitle, { color: colors.text }]}>No results found</Text>
+                <Text style={[s.emptyDesc, { color: colors.textSecondary }]}>We couldn&apos;t find anything matching &quot;{query}&quot;. Try different keywords or browse categories.</Text>
+              </View>
+            ) : (
+              <View style={s.resultsList}>
+                <Text style={[s.resultsCount, { color: colors.textSecondary }]}>
+                  {filteredResults.length} {filteredResults.length === 1 ? 'match found' : 'matches found'}
+                </Text>
+                {filteredResults.map((result) => (
+                  <View key={`${result.type}-${result.id}`}>
+                    <Pressable 
+                      style={({ pressed }) => [s.resultCard, { backgroundColor: colors.surface, borderColor: colors.borderLight, transform: [{ scale: pressed ? 0.98 : 1 }] }]} 
+                      onPress={() => handleResultPress(result)}
+                    >
+                      {result.imageUrl ? (
+                        <Image source={{ uri: result.imageUrl }} style={s.resultImage} />
+                      ) : (
+                        <View style={[s.resultIconBox, { backgroundColor: result.color + '15' }]}>
+                          <Ionicons name={result.icon as never} size={24} color={result.color} />
+                        </View>
+                      )}
+                      <View style={s.resultInfo}>
+                        <View style={s.resultTypeBadge}>
+                          <View style={[s.resultTypeDot, { backgroundColor: result.color }]} />
+                          <Text style={[s.resultTypeText, { color: colors.textSecondary }]}>{TYPE_CONFIG[result.type].label}</Text>
+                        </View>
+                        <Text style={[s.resultTitle, { color: colors.text }]} numberOfLines={1}>{result.title}</Text>
+                        <Text style={[s.resultSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>{result.subtitle}</Text>
+                      </View>
+                      <View style={[s.resultArrowBox, { backgroundColor: colors.backgroundSecondary }]}>
+                        <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
+                      </View>
+                    </Pressable>
+                  </View>
+                ))}
+              </View>
+            )}
+          </ScrollView>
         </View>
       </View>
-
-      {query.length > 0 && allResults.length > 0 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.typeRow} style={{ flexGrow: 0 }}>
-          <Pressable
-            style={[s.typeChip, { backgroundColor: colors.surface, borderColor: colors.borderLight },
-              selectedType === 'all' && { backgroundColor: colors.primary, borderColor: colors.primary }]}
-            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setSelectedType('all'); }}
-          >
-            <Text style={[s.typeChipText, { color: colors.text }, selectedType === 'all' && { color: colors.textInverse }]}>All ({typeCounts.all})</Text>
-          </Pressable>
-          {(Object.keys(TYPE_CONFIG) as ResultType[]).filter(t => typeCounts[t]).map(type => (
-            <Pressable
-              key={type}
-              style={[s.typeChip, { backgroundColor: colors.surface, borderColor: colors.borderLight },
-                selectedType === type && { backgroundColor: TYPE_CONFIG[type].color, borderColor: TYPE_CONFIG[type].color }]}
-              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setSelectedType(type); }}
-            >
-              <Ionicons name={TYPE_CONFIG[type].icon as never} size={14} color={selectedType === type ? colors.textInverse : TYPE_CONFIG[type].color} />
-              <Text style={[s.typeChipText, { color: colors.text }, selectedType === type && { color: colors.textInverse }]}> 
-                {TYPE_CONFIG[type].label} ({typeCounts[type]})
-              </Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-      )}
-
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: bottomInset + 20 }}>
-        {query.length === 0 ? (
-          <View style={s.suggestionsContainer}>
-            <Text style={[s.suggestionsTitle, { color: colors.text }]}>Popular Searches</Text>
-            <View style={s.suggestionsGrid}>
-              {POPULAR_SEARCHES.map(term => (
-                <Pressable key={term} style={[s.suggestionPill, { backgroundColor: colors.primary + '08', borderColor: colors.primary + '20' }]} onPress={() => setQuery(term)}>
-                  <Ionicons name="trending-up" size={14} color={colors.primary} />
-                  <Text style={[s.suggestionText, { color: colors.primary }]}>{term}</Text>
-                </Pressable>
-              ))}
-            </View>
-
-            <Text style={[s.suggestionsTitle, { color: colors.text, marginTop: 28 }]}>Browse Categories</Text>
-            <View style={s.categoriesGrid}>
-              {(Object.entries(TYPE_CONFIG) as [ResultType, { label: string; icon: string; color: string }][]).map(([key, config]) => (
-                <Pressable
-                  key={key}
-                  style={[s.categoryCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    const routes: Record<ResultType, string> = {
-                      event: '/(tabs)/explore',
-                      movie: '/movies',
-                      restaurant: '/restaurants',
-                      activity: '/activities',
-                      shopping: '/shopping',
-                      community: '/(tabs)/communities',
-                    };
-                    router.push(routes[key] as never);
-                  }}
-                >
-                  <View style={[s.categoryIcon, { backgroundColor: config.color + '15' }]}>
-                    <Ionicons name={config.icon as never} size={24} color={config.color} />
-                  </View>
-                  <Text style={[s.categoryLabel, { color: colors.text }]}>{config.label}</Text>
-                </Pressable>
-              ))}
-            </View>
-          </View>
-        ) : filteredResults.length === 0 ? (
-          <View style={s.emptyState}>
-            <Ionicons name="search-outline" size={56} color={colors.textSecondary} />
-            <Text style={[s.emptyTitle, { color: colors.text }]}>No results found</Text>
-            <Text style={[s.emptyDesc, { color: colors.text }]}>Try different keywords or browse categories</Text>
-          </View>
-        ) : (
-          <View style={s.resultsList}>
-            <Text style={[s.resultsCount, { color: colors.text }]}>{filteredResults.length} result{filteredResults.length !== 1 ? 's' : ''} found</Text>
-            {filteredResults.map((result) => (
-              <View key={`${result.type}-${result.id}`}>
-                <Pressable style={[s.resultCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]} onPress={() => handleResultPress(result)}>
-                  {result.imageUrl ? (
-                    <Image source={{ uri: result.imageUrl }} style={s.resultImage} />
-                  ) : (
-                    <View style={[s.resultIconBox, { backgroundColor: result.color + '15' }]}>
-                      <Ionicons name={result.icon as never} size={22} color={result.color} />
-                    </View>
-                  )}
-                  <View style={s.resultInfo}>
-                    <View style={s.resultTypeBadge}>
-                      <View style={[s.resultTypeDot, { backgroundColor: result.color }]} />
-                      <Text style={[s.resultTypeText, { color: colors.textSecondary }]}>{TYPE_CONFIG[result.type].label}</Text>
-                    </View>
-                    <Text style={[s.resultTitle, { color: colors.text }]} numberOfLines={1}>{result.title}</Text>
-                    <Text style={[s.resultSubtitle, { color: colors.text }]} numberOfLines={1}>{result.subtitle}</Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
-                </Pressable>
-              </View>
-            ))}
-          </View>
-        )}
-      </ScrollView>
-    </View>
     </ErrorBoundary>
   );
 }
 
-const s = StyleSheet.create({
-  container:        { flex: 1 },
-  header:           { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingVertical: 10 },
-  backBtn:          { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-  searchBar:        { flex: 1, flexDirection: 'row', alignItems: 'center', borderRadius: 14, paddingHorizontal: 14, gap: 8, borderWidth: 1, height: 44, overflow: 'hidden' },
-  searchInput:      { flex: 1, fontSize: 15, fontFamily: 'Poppins_400Regular', paddingVertical: 0, minWidth: 0 },
-  typeRow:          { paddingHorizontal: 20, gap: 8, paddingBottom: 12, paddingTop: 4 },
-  typeChip:         { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 50, borderWidth: 1 },
-  typeChipText:     { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
-  suggestionsContainer: { paddingHorizontal: 20, paddingTop: 24 },
-  suggestionsTitle: { fontSize: 17, fontFamily: 'Poppins_700Bold', marginBottom: 14 },
-  suggestionsGrid:  { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  suggestionPill:   { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 9, borderRadius: 50, borderWidth: 1 },
-  suggestionText:   { fontSize: 13, fontFamily: 'Poppins_500Medium' },
-  categoriesGrid:   { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  categoryCard:     { width: '31%' as never, borderRadius: 16, padding: 16, alignItems: 'center', gap: 8, borderWidth: 1 },
-  categoryIcon:     { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  categoryLabel:    { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
-  emptyState:       { alignItems: 'center', paddingTop: 80, gap: 8, paddingHorizontal: 40 },
-  emptyTitle:       { fontSize: 18, fontFamily: 'Poppins_700Bold', marginTop: 8 },
-  emptyDesc:        { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center' },
-  resultsList:      { paddingHorizontal: 20, paddingTop: 8 },
-  resultsCount:     { fontSize: 13, fontFamily: 'Poppins_500Medium', marginBottom: 12 },
-  resultCard:       { flexDirection: 'row', alignItems: 'center', borderRadius: 14, padding: 12, marginBottom: 8, borderWidth: 1, gap: 12 },
-  resultImage:      { width: 52, height: 52, borderRadius: 12 },
-  resultIconBox:    { width: 52, height: 52, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  resultInfo:       { flex: 1, gap: 2 },
-  resultTypeBadge:  { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  resultTypeDot:    { width: 6, height: 6, borderRadius: 3 },
-  resultTypeText:   { fontSize: 10, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 0.5 },
-  resultTitle:      { fontSize: 15, fontFamily: 'Poppins_600SemiBold' },
-  resultSubtitle:   { fontSize: 12, fontFamily: 'Poppins_400Regular' },
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
+  shell: { flex: 1 },
+  desktopShell: { maxWidth: 800, width: '100%', alignSelf: 'center' },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingVertical: 12 },
+  backBtn: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+  searchBar: { flex: 1, flexDirection: 'row', alignItems: 'center', borderRadius: 16, paddingHorizontal: 16, gap: 10, borderWidth: 1, height: 48, overflow: 'hidden' },
+  searchInput: { flex: 1, fontSize: 16, fontFamily: 'Poppins_500Medium', paddingVertical: 0, minWidth: 0 },
+  
+  typeRow: { paddingHorizontal: 20, gap: 10, paddingBottom: 16, paddingTop: 4 },
+  typeChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12, borderWidth: 1 },
+  typeChipText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
+  
+  suggestionsContainer: { paddingHorizontal: 20, paddingTop: 20 },
+  suggestionsTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', marginBottom: 16 },
+  suggestionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  suggestionPill: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, borderWidth: 1 },
+  suggestionText: { fontSize: 14, fontFamily: 'Poppins_500Medium' },
+  
+  categoriesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  categoryCard: { width: '31%' as never, flexGrow: 1, borderRadius: 20, padding: 20, alignItems: 'center', gap: 12, borderWidth: 1 },
+  categoryIcon: { width: 56, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  categoryLabel: { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
+  
+  emptyState: { alignItems: 'center', paddingTop: 80, gap: 12, paddingHorizontal: 40 },
+  emptyIconWrap: { width: 90, height: 90, borderRadius: 45, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  emptyTitle: { fontSize: 20, fontFamily: 'Poppins_700Bold' },
+  emptyDesc: { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22 },
+  
+  resultsList: { paddingHorizontal: 20, paddingTop: 12 },
+  resultsCount: { fontSize: 14, fontFamily: 'Poppins_500Medium', marginBottom: 16 },
+  resultCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 20, padding: 14, marginBottom: 12, borderWidth: 1, gap: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2 },
+  resultImage: { width: 64, height: 64, borderRadius: 14 },
+  resultIconBox: { width: 64, height: 64, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  resultInfo: { flex: 1, gap: 3 },
+  resultTypeBadge: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  resultTypeDot: { width: 8, height: 8, borderRadius: 4 },
+  resultTypeText: { fontSize: 11, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 0.5 },
+  resultTitle: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', paddingRight: 8 },
+  resultSubtitle: { fontSize: 13, fontFamily: 'Poppins_400Regular' },
+  resultArrowBox: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
 });

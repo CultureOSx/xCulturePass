@@ -1,5 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { Colors, CultureTokens, Spacing } from '@/constants/theme';
+import { CP } from './constants';
 
 export const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
@@ -14,7 +15,7 @@ export const styles = StyleSheet.create({
   arcOuter: {
     position: 'absolute', top: -90, right: -90,
     width: 240, height: 240, borderRadius: 120,
-    borderWidth: 30, borderColor: Colors.teal + '1A',
+    borderWidth: 30, borderColor: CultureTokens.teal + '1A',
   },
   arcInner: {
     position: 'absolute', top: -44, right: -44,
@@ -51,15 +52,15 @@ export const styles = StyleSheet.create({
   avatarGlow: {
     position: 'absolute', top: -20,
     width: 160, height: 160, borderRadius: 80,
-    backgroundColor: Colors.teal + '1A',
-    shadowColor: Colors.teal,
+    backgroundColor: CultureTokens.teal + '1A',
+    shadowColor: CultureTokens.teal,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.25, shadowRadius: 40,
   },
   avatarGradientRing: {
     width: 104, height: 104, borderRadius: 52,
     padding: Spacing.xs, marginBottom: Spacing.lg,
-    shadowColor: Colors.teal,
+    shadowColor: CultureTokens.teal,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.5, shadowRadius: 18,
     elevation: 12,
@@ -71,7 +72,7 @@ export const styles = StyleSheet.create({
   },
   avatarText: {
     fontFamily: 'Poppins_700Bold',
-    fontSize: 33, color: Colors.teal, letterSpacing: 1,
+    fontSize: 33, color: CultureTokens.teal, letterSpacing: 1,
   },
   verifiedBadge: {
     position: 'absolute',
@@ -79,10 +80,10 @@ export const styles = StyleSheet.create({
     alignSelf: 'center',
     marginLeft: Spacing.lg,
     width: 24, height: 24, borderRadius: 12,
-    backgroundColor: Colors.teal,
+    backgroundColor: CultureTokens.teal,
     borderWidth: 3, borderColor: Colors.background,
     alignItems: 'center', justifyContent: 'center',
-    shadowColor: Colors.teal,
+    shadowColor: CultureTokens.teal,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.7, shadowRadius: 5,
   },

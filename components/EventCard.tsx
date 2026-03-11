@@ -45,6 +45,9 @@ function EventCardInner({ event }: EventCardProps) {
       onPress={handleCardPress}
       onHoverIn={Platform.OS === 'web' ? () => setHovered(true) : undefined}
       onHoverOut={Platform.OS === 'web' ? () => setHovered(false) : undefined}
+      accessibilityRole="button"
+      accessibilityLabel={`Event: ${event.title}, on ${event.date}`}
+      accessibilityHint={`Double tap to view details for ${event.title}`}
     >
       <Image
         source={{ uri: event.imageUrl ?? undefined }}

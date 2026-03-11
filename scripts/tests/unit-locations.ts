@@ -6,8 +6,6 @@ import { locationsService } from '../../functions/src/services/locations';
 // Mock Firestore Setup
 // ---------------------------------------------------------------------------
 
-let transactionCallback: any;
-let getRefMock: any;
 let setRefMock: any;
 let docExists: boolean = true;
 let docData: any = {};

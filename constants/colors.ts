@@ -197,11 +197,11 @@ export const light: ColorTheme = {
 
   // Backgrounds - Web-first clean light canvas
   background: "#FFFFFF",
-  backgroundSecondary: "#F8FAFC",
+  backgroundSecondary: "#FFFFFF",
 
   surface: "#FFFFFF",
-  surfaceElevated: "#F8FAFC",
-  surfaceSecondary: "#F1F5F9",
+  surfaceElevated: "#FFFFFF",
+  surfaceSecondary: "#FFFFFF",
 
   border: "#E6D3B3",
   borderLight: "#F0E8DC",

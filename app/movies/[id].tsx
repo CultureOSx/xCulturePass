@@ -61,7 +61,7 @@ export default function MovieDetailScreen() {
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
           <View style={[styles.posterArea]}>
-            <Image source={{ uri: movie.posterUrl }} style={{ position: 'absolute', width: '100%', height: '100%' }} />
+            <Image source={{ uri: movie.imageUrl }} style={{ position: 'absolute', width: '100%', height: '100%' }} />
             <View style={styles.posterBadge}>
               <Ionicons name="star" size={14} color={colors.accent} />
               <Text style={styles.posterScore}>{movie.imdbScore}</Text>
@@ -181,14 +181,14 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   showtimeTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: colors.text },
   cinemaBlock: { gap: 10 },
   cinemaHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.surface, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: colors.border },
-  cinemaName: { flex: 1, fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: Colors.text },
-  cinemaPrice: { fontSize: 15, fontFamily: 'Poppins_700Bold', color: Colors.primary },
+  cinemaName: { flex: 1, fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: colors.text },
+  cinemaPrice: { fontSize: 15, fontFamily: 'Poppins_700Bold', color: colors.primary },
   timesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingLeft: 8 },
-  timeChip: { paddingHorizontal: 18, paddingVertical: 10, borderRadius: 12, backgroundColor: Colors.card, borderWidth: 1.5, borderColor: Colors.cardBorder },
-  timeText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: Colors.text },
-  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 14, backgroundColor: Colors.card, borderTopWidth: 1, borderTopColor: Colors.cardBorder },
-  bottomPrice: { fontSize: 22, fontFamily: 'Poppins_700Bold', color: Colors.text },
-  bottomLabel: { fontSize: 12, fontFamily: 'Poppins_400Regular', color: Colors.textSecondary },
-  bookButton: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: Colors.primary, paddingHorizontal: 28, paddingVertical: 14, borderRadius: 14 },
+  timeChip: { paddingHorizontal: 18, paddingVertical: 10, borderRadius: 12, backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.border },
+  timeText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: colors.text },
+  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 14, backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border },
+  bottomPrice: { fontSize: 22, fontFamily: 'Poppins_700Bold', color: colors.text },
+  bottomLabel: { fontSize: 12, fontFamily: 'Poppins_400Regular', color: colors.textSecondary },
+  bookButton: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.primary, paddingHorizontal: 28, paddingVertical: 14, borderRadius: 14 },
   bookButtonText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#FFF' },
 });

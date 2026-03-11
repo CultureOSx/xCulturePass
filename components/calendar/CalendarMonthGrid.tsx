@@ -1,6 +1,6 @@
 import { View, Text, Pressable, StyleSheet } from "react-native"
 
-export default function CalendarMonthGrid({ events, selectedDate, onSelectDate }) {
+export default function CalendarMonthGrid({ events, selectedDate, onSelectDate }: { events: any[], selectedDate: number, onSelectDate: (day: number) => void }) {
   // For demo: just show days 1-30 with event dots
   return (
     <View style={styles.grid}>
@@ -11,7 +11,7 @@ export default function CalendarMonthGrid({ events, selectedDate, onSelectDate }
           <Pressable key={day} style={styles.cell} onPress={() => onSelectDate(day)}>
             <Text style={[styles.day, selectedDate === day && styles.selectedDay]}>{day}</Text>
             <View style={styles.dotsRow}>
-              {dayEvents.map((e, idx) => (
+              {dayEvents.map((e: any, idx: number) => (
                 <Text key={idx} style={styles.dot}>•</Text>
               ))}
             </View>

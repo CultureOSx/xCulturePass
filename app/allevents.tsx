@@ -16,8 +16,10 @@ import { EventCardSkeleton } from '@/components/EventCardSkeleton';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import FilterModal, { type DateFilter } from '@/components/FilterModal';
 import type { EventData, PaginatedEventsResponse } from '@/shared/schema';
+import { CultureTokens } from '@/constants/theme';
 
 const PAGE_SIZE = 20;
+const isWeb = Platform.OS === 'web';
 
 export default function AllEventsScreen() {
   const insets = useSafeAreaInsets();
@@ -25,9 +27,14 @@ export default function AllEventsScreen() {
   const { state } = useOnboarding();
   const { width: screenWidth } = useWindowDimensions();
 
-  const isDesktop = Platform.OS === 'web' && screenWidth >= 1024;
+  const isDesktop = screenWidth >= 1024;
   const isTablet = screenWidth >= 768;
-  const numCols = isDesktop ? 3 : 2;
+  const numCols = isDesktop ? 3 : isTablet ? 2 : 1;
+
+  const topInset = isWeb ? 72 : insets.top;
+  const bottomInset = isWeb ? 34 : insets.bottom;
+
+  const s = useMemo(() => getStyles(colors), [colors]);
 
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [isFilterModalVisible, setFilterModalVisible] = useState(false);
@@ -60,159 +67,148 @@ export default function AllEventsScreen() {
       });
     },
     initialPageParam: 1,
-    getNextPageParam: (lastPage) =>
-      lastPage.hasNextPage ? lastPage.page + 1 : undefined,
+    getNextPageParam: (lastPage) => lastPage.hasNextPage ? lastPage.page + 1 : undefined,
   });
 
-  const allEvents: EventData[] = useMemo(
-    () => data?.pages.flatMap((p) => p.events) ?? [],
-    [data],
-  );
-
-  const CATEGORIES = useMemo(
-    () => ['All', ...Array.from(new Set(allEvents.map((e) => e.category).filter(Boolean) as string[]))],
-    [allEvents],
-  );
+  const allEvents: EventData[] = useMemo(() => data?.pages.flatMap((p) => p.events) ?? [], [data]);
+  const CATEGORIES = useMemo(() => ['All', ...Array.from(new Set(allEvents.map((e) => e.category).filter(Boolean) as string[]))], [allEvents]);
 
   const handleSelectCategory = useCallback((cat: string) => {
-    Haptics.selectionAsync();
+    if(!isWeb) Haptics.selectionAsync();
     setSelectedCategory(cat);
   }, []);
 
   const handleEndReached = useCallback(() => {
-    if (hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
-    }
+    if (hasNextPage && !isFetchingNextPage) fetchNextPage();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const renderItem = useCallback(({ item }: { item: EventData }) => (
     <View style={s.cardWrapper}>
       <EventCard event={item} />
     </View>
-  ), []);
+  ), [s.cardWrapper]);
 
-  const ListFooter = useMemo(() => {
-    if (isFetchingNextPage) {
-      return (
-        <View style={s.footer}>
-          <ActivityIndicator size="small" color={colors.primary} />
-        </View>
-      );
-    }
-    if (!hasNextPage && allEvents.length > 0) {
-      return (
-        <View style={s.footer}>
-          <Text style={[s.footerText, { color: colors.textTertiary }]}>All events loaded</Text>
-        </View>
-      );
-    }
+  const ListFooter = useCallback(() => {
+    if (isFetchingNextPage) return <View style={s.footer}><ActivityIndicator size="small" color={CultureTokens.indigo} /></View>;
+    if (!hasNextPage && allEvents.length > 0) return <View style={s.footer}><Text style={[s.footerText, { color: colors.textTertiary }]}>No more events found in this category.</Text></View>;
     return null;
-  }, [isFetchingNextPage, hasNextPage, allEvents.length, colors]);
+  }, [isFetchingNextPage, hasNextPage, allEvents.length, colors, s.footer, s.footerText]);
 
   const hPad = isDesktop ? 32 : isTablet ? 24 : 20;
-  const columnGap = isDesktop ? 16 : 14;
+  const columnGap = isDesktop ? 20 : 16;
 
   return (
     <ErrorBoundary>
-      <View style={[s.container, { paddingTop: insets.top, backgroundColor: colors.background }]}>
-      <View style={[s.header, { paddingHorizontal: hPad }]}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
-        </Pressable>
-        <Text style={[s.headerTitle, { color: colors.text }, isDesktop && s.headerTitleDesktop]}>
-          All Events
-        </Text>
-        <View style={{ width: 24 }} />
-      </View>
-
-      <View style={[s.filterBar, { paddingLeft: hPad, paddingRight: hPad - 10 }]}>
-        <FlatList
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          data={CATEGORIES}
-          keyExtractor={(item) => item}
-          contentContainerStyle={s.categoryList}
-          renderItem={({ item: cat }) => (
-            <Pressable
-              onPress={() => handleSelectCategory(cat)}
-              style={[s.chip, { backgroundColor: colors.surface, borderColor: colors.borderLight },
-                selectedCategory === cat && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+      <View style={[s.container, { paddingTop: topInset }]}>
+        <View style={[s.shell, isDesktop && s.desktopShell]}>
+          <View style={[s.header, { paddingHorizontal: hPad }]}>
+            <Pressable 
+              onPress={() => router.back()} 
+              style={({ pressed }) => [s.backBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight, transform: [{ scale: pressed ? 0.95 : 1 }] }]} 
+              hitSlop={8}
             >
-              <Text style={[s.chipText, { color: colors.text }, selectedCategory === cat && { color: '#FFF' }]}>
-                {cat}
-              </Text>
+              <Ionicons name="chevron-back" size={24} color={colors.text} />
             </Pressable>
+            <Text style={[s.headerTitle, { color: colors.text }, isDesktop && s.headerTitleDesktop]}>Melbourne Events</Text>
+            <View style={{ width: 44 }} />
+          </View>
+
+          <View style={[s.filterBar, { paddingLeft: hPad, paddingRight: hPad }]}>
+            <FlatList
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              data={CATEGORIES}
+              keyExtractor={(item) => item}
+              contentContainerStyle={s.categoryList}
+              renderItem={({ item: cat }) => (
+                <Pressable
+                  onPress={() => handleSelectCategory(cat)}
+                  style={[s.chip, { backgroundColor: colors.surface, borderColor: colors.borderLight }, selectedCategory === cat && { backgroundColor: CultureTokens.indigo, borderColor: CultureTokens.indigo }]}
+                >
+                  <Text style={[s.chipText, { color: colors.textSecondary }, selectedCategory === cat && { color: '#FFFFFF' }]}>{cat}</Text>
+                </Pressable>
+              )}
+            />
+            <Pressable 
+               style={({pressed}) => [s.filterButton, { backgroundColor: colors.surface, borderColor: colors.borderLight, transform: [{ scale: pressed ? 0.95 : 1 }] }]} 
+               onPress={() => setFilterModalVisible(true)}
+            >
+              <Ionicons name="options-outline" size={20} color={colors.text} />
+            </Pressable>
+          </View>
+
+          {isLoading ? (
+            <FlatList
+              key={`skeleton-cols-${numCols}`}
+              data={Array.from({ length: 8 })}
+              renderItem={() => ( <View style={s.cardWrapper}><EventCardSkeleton /></View> )}
+              keyExtractor={(_, i) => `skeleton-${i}`}
+              numColumns={numCols}
+              columnWrapperStyle={numCols > 1 ? { gap: columnGap } : undefined}
+              contentContainerStyle={[s.list, { paddingHorizontal: hPad, gap: columnGap }]}
+              scrollEnabled={false}
+            />
+          ) : (
+            <FlatList
+              key={`events-cols-${numCols}`}
+              data={allEvents}
+              renderItem={renderItem}
+              keyExtractor={(item) => item.id}
+              numColumns={numCols}
+              columnWrapperStyle={numCols > 1 ? { gap: columnGap } : undefined}
+              contentContainerStyle={[s.list, { paddingHorizontal: hPad, gap: columnGap, paddingBottom: bottomInset + 80 }]}
+              onEndReached={handleEndReached}
+              onEndReachedThreshold={0.5}
+              refreshing={isRefetching}
+              onRefresh={refetch}
+              ListFooterComponent={ListFooter}
+              showsVerticalScrollIndicator={false}
+              ListEmptyComponent={
+                <View style={s.emptyState}>
+                  <View style={[s.emptyIconBox, { backgroundColor: colors.surface }]}>
+                    <Ionicons name="search-outline" size={40} color={colors.textTertiary} />
+                  </View>
+                  <Text style={[s.emptyTitle, { color: colors.text }]}>No events found</Text>
+                  <Text style={[s.emptyDesc, { color: colors.textSecondary }]}>There are currently no upcoming events in this category. Try adjusting your filters.</Text>
+                </View>
+              }
+            />
           )}
-        />
-        <Pressable style={s.filterButton} onPress={() => setFilterModalVisible(true)}>
-          <Ionicons name="options-outline" size={20} color={colors.primary} />
-        </Pressable>
+
+          <FilterModal
+            visible={isFilterModalVisible}
+            onClose={() => setFilterModalVisible(false)}
+            selectedDateFilter={dateFilter}
+            onDateFilterChange={setDateFilter}
+          />
+        </View>
       </View>
-
-      {isLoading ? (
-        <FlatList
-          key={`skeleton-cols-${numCols}`}
-          data={Array.from({ length: 8 })}
-          renderItem={() => (
-            <View style={s.cardWrapper}>
-              <EventCardSkeleton />
-            </View>
-          )}
-          keyExtractor={(_, i) => `skeleton-${i}`}
-          numColumns={numCols}
-          columnWrapperStyle={{ gap: columnGap }}
-          contentContainerStyle={[s.list, { paddingHorizontal: hPad, gap: columnGap }]}
-          scrollEnabled={false}
-        />
-      ) : (
-        <FlatList
-          key={`events-cols-${numCols}`}
-          data={allEvents}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id}
-          numColumns={numCols}
-          columnWrapperStyle={{ gap: columnGap }}
-          contentContainerStyle={[s.list, { paddingHorizontal: hPad, gap: columnGap }]}
-          onEndReached={handleEndReached}
-          onEndReachedThreshold={0.5}
-          refreshing={isRefetching}
-          onRefresh={refetch}
-          ListFooterComponent={ListFooter}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <View style={s.emptyState}>
-              <Ionicons name="search-outline" size={40} color={colors.textTertiary} />
-              <Text style={[s.emptyText, { color: colors.textTertiary }]}>No events in this category</Text>
-            </View>
-          }
-        />
-      )}
-
-      <FilterModal
-        visible={isFilterModalVisible}
-        onClose={() => setFilterModalVisible(false)}
-        selectedDateFilter={dateFilter}
-        onDateFilterChange={setDateFilter}
-      />
-    </View>
     </ErrorBoundary>
   );
 }
 
-const s = StyleSheet.create({
-  container:            { flex: 1 },
-  header:               { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14 },
-  headerTitle:          { fontFamily: 'Poppins_700Bold', fontSize: 20 },
-  headerTitleDesktop:   { fontSize: 24 },
-  filterBar:            { flexDirection: 'row', alignItems: 'center', paddingBottom: 14 },
-  categoryList:         { gap: 8 },
-  chip:                 { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 50, borderWidth: 1 },
-  chipText:             { fontFamily: 'Poppins_500Medium', fontSize: 13 },
-  filterButton:         { padding: 8, marginLeft: 8 },
-  list:                 { paddingBottom: 100 },
-  cardWrapper:          { flex: 1 },
-  footer:               { paddingVertical: 20, alignItems: 'center' },
-  footerText:           { fontFamily: 'Poppins_400Regular', fontSize: 13 },
-  emptyState:           { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 60, gap: 10 },
-  emptyText:            { fontFamily: 'Poppins_500Medium', fontSize: 15 },
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
+  shell: { flex: 1 },
+  desktopShell: { maxWidth: 1040, width: '100%', alignSelf: 'center' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14 },
+  backBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+  headerTitle: { fontFamily: 'Poppins_700Bold', fontSize: 20 },
+  headerTitleDesktop: { fontSize: 26 },
+  
+  filterBar: { flexDirection: 'row', alignItems: 'center', paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)', marginBottom: 12 },
+  categoryList: { gap: 8, paddingRight: 16 },
+  chip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, borderWidth: 1 },
+  chipText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13 },
+  filterButton: { width: 44, height: 44, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center', marginLeft: 8 },
+  
+  list: { paddingTop: 8 },
+  cardWrapper: { flex: 1, minWidth: '45%' },
+  footer: { paddingVertical: 24, alignItems: 'center' },
+  footerText: { fontFamily: 'Poppins_500Medium', fontSize: 14 },
+  
+  emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 80, gap: 12, paddingHorizontal: 40 },
+  emptyIconBox: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  emptyTitle: { fontFamily: 'Poppins_700Bold', fontSize: 20 },
+  emptyDesc: { fontFamily: 'Poppins_400Regular', fontSize: 14, textAlign: 'center', lineHeight: 22 },
 });

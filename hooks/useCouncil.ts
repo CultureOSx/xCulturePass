@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useAuth } from '@/lib/auth';
-import { api, type CouncilPreference } from '@/lib/api';
+import { api, type CouncilPreference, type CouncilDashboard } from '@/lib/api';
 import { getPostcodesByPlace } from '@shared/location/australian-postcodes';
 
 const DEFAULT_REMINDER_TIME = '19:00';
@@ -96,7 +96,7 @@ export function useCouncil() {
   });
 
   const togglePref = (category: string) => {
-    const next = effectivePrefs.map((item) =>
+    const next = effectivePrefs.map((item: CouncilPreference) =>
       item.category === category ? { ...item, enabled: !item.enabled } : item,
     );
     setLocalPrefs(next);

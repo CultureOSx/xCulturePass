@@ -116,7 +116,7 @@ export function usePushNotifications() {
     registerPushToken(userId);
 
     // Set up notification handlers
-    let cleanupFns: Array<() => void> = [];
+    let cleanupFns: (() => void)[] = [];
 
     import('expo-notifications').then((Notifications) => {
       // Configure how notifications look when app is in foreground

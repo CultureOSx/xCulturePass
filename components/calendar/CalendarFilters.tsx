@@ -9,7 +9,7 @@ const filters = [
   "Council",
 ]
 
-export default function CalendarFilters({ onFilter }) {
+export default function CalendarFilters({ onFilter }: { onFilter: (filter: string) => void }) {
   const [selected, setSelected] = useState("All")
   function select(filter: string) {
     setSelected(filter)

@@ -1,6 +1,19 @@
 import { Alert, Platform, Share } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import * as Sentry from '@sentry/react-native';
 import { apiRequest } from '@/lib/query-client';
+
+export function logError(error: unknown, context?: Record<string, any>) {
+  if (__DEV__) {
+    console.error('Logged Error:', error, context);
+  }
+  
+  if (error instanceof Error) {
+    Sentry.captureException(error, { extra: context });
+  } else {
+    Sentry.captureMessage(String(error), { extra: context, level: 'error' });
+  }
+}
 
 /**
  * CulturePassAU Sydney Report System v2.0
@@ -115,6 +128,7 @@ export async function submitSydneyReport(
       return { id: 'escalated', status: 'escalated' };
     }
     
+    logError(error, { context: 'submitSydneyReport', targetType, targetId, reason });
     throw error;
   }
 }
@@ -171,6 +185,7 @@ export function confirmAndReport(options: {
             
             Alert.alert('Report Status', message);
           } catch (error) {
+            logError(error, { context: 'confirmAndReport.alert_on_error', targetId });
             Alert.alert(
               'Report Failed', 
               'Unable to submit right now. Please try again.',
@@ -201,7 +216,8 @@ export function quickReport(
       }
       Alert.alert('Reported', 'Thank you for keeping our community safe.');
     })
-    .catch(() => {
+    .catch((error) => {
+      logError(error, { context: 'quickReport', targetId, reasonId });
       Alert.alert('Error', 'Failed to report. Please try again.');
     });
 }

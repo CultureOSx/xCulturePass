@@ -219,6 +219,14 @@ export const AvatarTokens = {
     xl: 72,
     xxl: 96,
   },
+  fontSize: {
+    xs: 12,
+    sm: 14,
+    md: 16,
+    lg: 24,
+    xl: 32,
+    xxl: 40,
+  },
   radius: 9999,      // Always circular
   badgeSize: 12,
   badgeOffset: 2,

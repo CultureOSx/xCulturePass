@@ -74,7 +74,7 @@ async function run() {
 
     const councilListRes = await fetch(`${baseUrl}/api/council/list?page=1&pageSize=100`);
     assert.equal(councilListRes.ok, true, 'council list should load');
-    const councilList = (await councilListRes.json()) as { councils: Array<{ id: string; websiteUrl?: string; status?: string }> };
+    const councilList = (await councilListRes.json()) as { councils: { id: string; websiteUrl?: string; status?: string }[] };
 
     const council = councilList.councils.find((item) => normalizeDomain(item.websiteUrl ?? '').length > 0);
     assert.ok(council, 'at least one council with websiteUrl is required for claim-domain check');
@@ -105,14 +105,14 @@ async function run() {
       headers: authedHeaders('user', claimantA),
     });
     assert.equal(myClaimsPendingRes.ok, true, 'my claims should load for claimant');
-    const myClaimsPending = (await myClaimsPendingRes.json()) as Array<{ id: string; status: string }>;
+    const myClaimsPending = (await myClaimsPendingRes.json()) as { id: string; status: string }[];
     assert.ok(myClaimsPending.some((item) => item.id === claimA.id && item.status === 'pending_admin_review'));
 
     const adminPendingRes = await fetch(`${baseUrl}/api/admin/council/claims?status=pending_admin_review`, {
       headers: authedHeaders('admin', 'admin-reviewer'),
     });
     assert.equal(adminPendingRes.ok, true, 'admin should list pending claims');
-    const pendingClaims = (await adminPendingRes.json()) as Array<{ id: string }>;
+    const pendingClaims = (await adminPendingRes.json()) as { id: string }[];
     assert.ok(pendingClaims.some((item) => item.id === claimA.id));
 
     const approveRes = await fetch(`${baseUrl}/api/admin/council/claims/${encodeURIComponent(claimA.id)}/approve`, {
@@ -130,7 +130,7 @@ async function run() {
       headers: authedHeaders('user', claimantA),
     });
     assert.equal(myClaimsApprovedRes.ok, true, 'my claims should load after approval');
-    const myClaimsApproved = (await myClaimsApprovedRes.json()) as Array<{ id: string; status: string }>;
+    const myClaimsApproved = (await myClaimsApprovedRes.json()) as { id: string; status: string }[];
     assert.ok(myClaimsApproved.some((item) => item.id === claimA.id && item.status === 'approved'));
 
     const claimBRes = await fetch(`${baseUrl}/api/council/${encodeURIComponent(councilId)}/claim`, {

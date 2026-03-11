@@ -116,7 +116,7 @@ export default function ProfileDetailScreen() {
 
   const matchedEvents = allEventsData.filter((ev) => {
     const tag = (ev.communityTag || '').toLowerCase();
-    const organizer = (ev.organizer || '').toLowerCase();
+    const organizer = (ev.organizerId || '').toLowerCase();
     const venue = (ev.venue || '').toLowerCase();
     const nameWords = profileName.split(/\s+/).filter((w: string) => w.length > 2);
     return nameWords.some((w: string) => tag.includes(w) || organizer.includes(w)) ||

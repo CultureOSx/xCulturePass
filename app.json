@@ -3,7 +3,7 @@
     "name": "CulturePass",
     "slug": "culturepass",
     "version": "1.1.0",
-    "description": "CulturePass \u2014 Your cultural lifestyle platform. Discover events, join diaspora communities, find local businesses, and celebrate diversity across Australia, New Zealand, UAE, UK & Canada.",
+    "description": "CulturePass — Your cultural lifestyle platform. Discover events, join diaspora communities, find local businesses, and celebrate diversity across Australia, New Zealand, UAE, UK & Canada.",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "culturepass",
@@ -87,7 +87,7 @@
     },
     "web": {
       "favicon": "./assets/images/favicon.png",
-      "name": "CulturePass \u2014 Cultural Events & Communities",
+      "name": "CulturePass — Cultural Events & Communities",
       "shortName": "CulturePass",
       "description": "Discover cultural events, join diaspora communities, find local businesses, and celebrate diversity. CulturePass connects you with cultural experiences across Australia, New Zealand, UAE, UK & Canada.",
       "lang": "en-AU",
@@ -122,7 +122,9 @@
         {
           "cameraPermission": "CulturePass uses the camera to scan event QR codes and update your profile photo."
         }
-      ]
+      ],
+      "@sentry/react-native",
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": false,

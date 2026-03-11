@@ -1,61 +1,118 @@
+# CulturePass Firebase Data Connect GraphQL Schema
+# This serves as an exploratory migration path from Firestore to Cloud SQL via DataConnect.
+
 type User @table {
+  id: String! @col(name: "uid") # Uses Firebase Auth UID
+  username: String!
   displayName: String!
   email: String!
-  createdAt: String!
-  updatedAt: String
+  city: String
+  country: String
+  role: String! # 'user' | 'organizer' | 'moderator' | 'admin'
+  subscriptionTier: String # 'free' | 'plus' | 'elite'
+  isActive: Boolean
+  isSydneyVerified: Boolean
+  culturePassId: String! # CP-USR-XXXX
   avatarUrl: String
   bio: String
-  culturalBackground: String
-  isVerified: Boolean
-  culturePassId: String
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
 }
 
-type Community @table {
+type Profile @table {
+  id: String!
+  entityType: String! # 'community' | 'business' | 'venue' | 'artist'
   name: String!
   description: String!
-  createdAt: String!
-  updatedAt: String
-  avatarUrl: String
-  culturalFocus: String
-  isVerified: Boolean
-  membersCount: Int
-  culturePassId: String
+  imageUrl: String
+  city: String!
+  country: String!
+  owner: User!
+  verified: Boolean!
+  rating: Float
+  memberCount: Int
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
 }
 
 type Event @table {
+  id: String!
+  cpid: String! # CP-EVT-XXXX
   title: String!
   description: String!
-  eventDate: String!
-  location: String!
-  createdAt: String!
-  updatedAt: String
-  community: Community
-  avatarUrl: String
-  startTime: String
+  venue: String!
+  address: String
+  date: String! # YYYY-MM-DD
+  time: String! # HH:MM
   endTime: String
-  isVerified: Boolean
-  culturePassId: String
-  organizerId: String
-}
-
-type Business @table {
-  name: String!
+  city: String!
+  country: String!
+  imageUrl: String!
   category: String!
-  description: String!
-  address: String!
-  createdAt: String!
-  updatedAt: String
-  avatarUrl: String
-  website: String
-  phoneNumber: String
-  culturalSpecialty: String
-  isVerified: Boolean
-  culturePassId: String
-  ownerId: String
+  priceCents: Int! # 0 = free
+  isFree: Boolean!
+  isFeatured: Boolean!
+  organizer: User!
+  capacity: Int!
+  attending: Int!
+  status: String! # 'published' | 'draft' | 'cancelled'
+  geoHash: String
+  lat: Float
+  lng: Float
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
 }
 
-type CommunityMembership @table(key: ["userId", "communityId"]) {
+type Ticket @table {
+  id: String!
+  cpTicketId: String! # CP-TKT-XXXX
+  event: Event!
+  user: User!
+  tierName: String!
+  quantity: Int!
+  totalPriceCents: Int!
+  status: String! # 'pending' | 'confirmed' | 'cancelled' | 'used'
+  paymentStatus: String! # 'pending' | 'paid' | 'refunded' | 'failed'
+  qrCode: String!
+  cashbackCents: Int
+  rewardPointsEarned: Int
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+}
+
+type Wallet @table {
+  user: User! @unique
+  balanceCents: Int!
+  currency: String!
+  lastUpdatedAt: Timestamp!
+}
+
+type Transaction @table {
+  id: String!
+  wallet: Wallet!
+  type: String! # 'deposit' | 'withdrawal' | 'purchase' | 'refund' | 'cashback'
+  amountCents: Int!
+  status: String! # 'pending' | 'completed' | 'failed'
+  description: String!
+  eventId: String
+  ticketId: String
+  createdAt: Timestamp!
+}
+
+# Many-to-Many Relationships
+
+type UserInterest @table(key: ["userId", "interestTag"]) {
   userId: String!
-  communityId: String!
-  joinedAt: String!
+  interestTag: String!
+}
+
+type UserCommunity @table(key: ["userId", "profileId"]) {
+  userId: String!
+  profileId: String! # Must be a Profile of entityType: 'community'
+  joinedAt: Timestamp!
+}
+
+type EventCultureTag @table(key: ["eventId", "cultureTag"]) {
+  eventId: String!
+  cultureTag: String!
 }

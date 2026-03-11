@@ -1,6 +1,8 @@
 import { fetch } from 'expo/fetch';
 import { Platform } from 'react-native';
 import { QueryClient, QueryFunction } from '@tanstack/react-query';
+import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { getExplicitApiUrl } from '@/lib/config';
@@ -213,6 +215,14 @@ export const queryClient = new QueryClient({
       },
     },
   },
+});
+
+export const queryPersister = createAsyncStoragePersister({
+  storage: AsyncStorage,
+  // Use a custom key to avoid colliding with other AsyncStorage items
+  key: 'CULTUREPASS_QUERY_CACHE_V1',
+  // Limit cached data to avoid blowing up storage limits (10MB limit in AsyncStorage usually, we go 5MB)
+  throttleTime: 1000,
 });
 
 export function invalidateSydneyQueries() {

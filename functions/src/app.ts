@@ -20,7 +20,6 @@ import sharp from 'sharp';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import { db, storageBucket, authAdmin, isFirestoreConfigured } from './admin';
-const generateSecureId = (prefix: string) => `${prefix}${randomBytes(4).toString('hex').slice(0, 6).toUpperCase()}`;
 
 
 import { firestore } from 'firebase-admin';
@@ -49,10 +48,13 @@ import {
   reportsService,
   mediaService,
   eventFeedbackService,
+  paymentMethodsService,
+  scanEventsService,
   type FirestoreEvent,
   type FirestoreProfile,
 } from './services/firestore';
 import { getPostcodeData, getPostcodesByPlace } from './shared/australian-postcodes';
+const generateSecureId = (prefix: string) => `${prefix}${randomBytes(4).toString('hex').slice(0, 6).toUpperCase()}`;
 
 // Stripe SDK — only initialised when STRIPE_SECRET_KEY is present
 const stripeClient: Stripe | null = process.env.STRIPE_SECRET_KEY
@@ -86,7 +88,7 @@ type AdminAuditLogEntry = {
 type TargetedNotificationResponse = {
   dryRun: boolean;
   targetedCount: number;
-  audiencePreview: Array<{ userId: string; city: string; country: string }>;
+  audiencePreview: { userId: string; city: string; country: string }[];
   idempotentReplay?: boolean;
   approvalToken?: string;
   approvalExpiresAt?: string;
@@ -113,74 +115,76 @@ type AppUser = {
   culturePassId: string;
   isVerified?: boolean;
   createdAt: string;
-  updatedAt?: string;
+  updatedAt: string;
+  role?: string;
+  status?: string;
 };
 
-type AppEvent = {
+export type AppEvent = {
   id: string;
   title: string;
+  description: string;
   communityTag: string;
   venue: string;
   date: string;
   time: string;
   city: string;
+  country: string;
+  imageColor?: string;
+  imageUrl?: string;
+  category?: string;
+  priceCents?: number;
+  organizerId?: string;
+  organizer?: string;
+  isFree?: boolean;
+  isFeatured?: boolean;
+  
+  // Analytics and Filters Compatibility
   state?: string;
   postcode?: number;
   latitude?: number;
   longitude?: number;
-  country: string;
-  imageUrl?: string;
-  imageColor?: string;
-  description: string;
   cultureTag?: string[];
-  geoHash?: string;
-  eventType?: string;
-  ageSuitability?: string;
-  priceTier?: string;
-  organizerReputationScore?: number;
-  externalTicketUrl?: string | null;
-  deletedAt?: string | null;
-  address?: string;
-  priceCents?: number;
-  priceLabel?: string;
-  category?: string;
-  organizerId?: string;
-  capacity?: number;
-  attending?: number;
-  isFeatured?: boolean;
-  isFree?: boolean;
-  tiers?: Array<{ name: string; priceCents: number; available: number }>;
   tags?: string[];
   indigenousTags?: string[];
   languageTags?: string[];
-  culturePassId?: string;
-  isVerified?: boolean;
+  eventType?: string;
+  ageSuitability?: string;
+  priceTier?: string;
+  priceLabel?: string;
+  capacity?: number;
+  attending?: number;
+  organizerReputationScore?: number;
+  externalTicketUrl?: string | null;
+  deletedAt?: string | null;
+  tiers?: { name: string; priceCents: number; available: number }[];
+  
   createdAt?: string;
   updatedAt?: string;
 };
 
-type AppProfile = {
+export type AppProfile = {
   id: string;
   name: string;
-  entityType: EntityType;
+  entityType: 'community' | 'business' | 'venue' | 'artist' | 'organisation';
   category: string;
   city: string;
+  country: string;
+  description: string;
+  memberCount?: number;
+  followerCount?: number;
+  followers?: number;
+  isVerified?: boolean;
+  ownerId?: string;
+  imageUrl?: string;
+  website?: string;
   state?: string;
   postcode?: number;
   latitude?: number;
   longitude?: number;
-  country: string;
-  description: string;
-  imageUrl?: string;
-  avatarUrl?: string;
-  website?: string;
-  membersCount?: number;
-  followersCount?: number;
-  isVerified?: boolean;
-  ownerId?: string;
-  culturePassId?: string;
   createdAt?: string;
   updatedAt?: string;
+  socialLinks?: Record<string, string>;
 };
 
 type AppActivity = {
@@ -232,7 +236,7 @@ type AppCouncil = {
   verifiedAt?: string;
   verifiedBy?: string;
   status: 'active' | 'draft' | 'suspended';
-  emergencyNumbers?: Array<{ label: string; phone: string }>;
+  emergencyNumbers?: { label: string; phone: string }[];
   socialLinks?: Partial<Record<'facebook' | 'instagram' | 'linkedin' | 'youtube', string>>;
   openingHours?: string;
   servicePostcodes: number[];
@@ -365,7 +369,7 @@ type AppTicket = {
   ticketCode: string;
   scanCount?: number;
   lastScannedAt?: string;
-  staffAuditTrail?: Array<{ at: string; by: string; action: string; note?: string }>;
+  staffAuditTrail?: { at: string; by: string; action: string; note?: string }[];
   stripePaymentIntentId?: string;
   walletPasses?: { apple?: string; google?: string };
   cashbackCents?: number;
@@ -374,7 +378,7 @@ type AppTicket = {
   rewardPointsAwardedAt?: string;
   imageColor?: string;
   createdAt: string;
-  history: Array<{ at: string; status: TicketStatus; note: string }>;
+  history: { at: string; status: TicketStatus; note: string }[];
 };
 
 export const app = express();
@@ -510,23 +514,27 @@ const users: AppUser[] = [
     city: 'Sydney',
     country: 'Australia',
     bio: 'Building human + AI community experiences.',
-    location: 'Sydney, Australia',
+    socialLinks: { instagram: 'jane.smith' },
+    role: 'user',
+    status: 'active',
     culturePassId: 'CP-U1',
-    socialLinks: { instagram: 'ramanarc' },
+    createdAt: nowIso(),
+    updatedAt: nowIso(),
   },
+  { id: '2', username: 'ramanarc', displayName: 'RamanArc Studios', email: 'hello@ramanarc.com', city: 'Sydney', country: 'Australia', bio: 'Digital culture studio.', location: 'Sydney, Australia', culturePassId: 'CP-U1', socialLinks: { instagram: 'ramanarc' }, role: 'user', status: 'active', createdAt: nowIso(), updatedAt: nowIso() },
 ];
 
 const events: AppEvent[] = [
-  { id: 'e1', title: 'Startup Launch Night Sydney', communityTag: 'Startup', venue: 'Sydney CBD', date: '2026-03-15', time: '18:00', city: 'Sydney', country: 'Australia', description: 'Networking + founder demos.', imageColor: '#E85D3A' },
-  { id: 'e2', title: 'Bollywood Beats Festival', communityTag: 'Indian', venue: 'Parramatta Park', date: '2026-04-02', time: '17:30', city: 'Sydney', country: 'Australia', description: 'Music, dance, and food.', imageColor: '#9B59B6' },
+  { id: 'e1', title: 'Startup Launch Night Sydney', communityTag: 'Startup', venue: 'Sydney CBD', date: '2026-03-15', time: '18:00', city: 'Sydney', country: 'Australia', description: 'Networking + founder demos.', imageColor: '#E85D3A', organizerId: 'b1', createdAt: nowIso(), updatedAt: nowIso() },
+  { id: 'e2', title: 'Bollywood Beats Festival', communityTag: 'Indian', venue: 'Parramatta Park', date: '2026-04-02', time: '17:30', city: 'Sydney', country: 'Australia', description: 'Music, dance, and food.', imageColor: '#9B59B6', organizerId: 'c1', createdAt: nowIso(), updatedAt: nowIso() },
 ];
 
 const profiles: AppProfile[] = [
-  { id: 'c1', name: 'Sydney Startup Circle', entityType: 'community', category: 'Tech', city: 'Sydney', country: 'Australia', description: 'Founders and builders community.', members: 850, verified: true },
-  { id: 'b1', name: 'RamanArc Studios', entityType: 'business', category: 'Studio', city: 'Sydney', country: 'Australia', description: 'Digital experiences for culture + community.', followers: 450, verified: true },
-  { id: 'v1', name: 'Parramatta Library', entityType: 'venue', category: 'Library', city: 'Sydney', country: 'Australia', description: 'Council library and community hub.', verified: true },
-  { id: 'v2', name: 'Melbourne Aquatic Centre', entityType: 'venue', category: 'Aquatic Centre', city: 'Melbourne', country: 'Australia', description: 'Public aquatic centre with swim programs.', verified: true },
-  { id: 'v3', name: 'Brisbane Community Hall', entityType: 'venue', category: 'Community Centre', city: 'Brisbane', country: 'Australia', description: 'Community events and youth programs.', verified: true },
+  { id: 'c1', name: 'Sydney Startup Circle', entityType: 'community', category: 'Tech', city: 'Sydney', country: 'Australia', description: 'Founders and builders community.', memberCount: 850, isVerified: true, createdAt: nowIso(), updatedAt: nowIso() },
+  { id: 'b1', name: 'RamanArc Studios', entityType: 'business', category: 'Studio', city: 'Sydney', country: 'Australia', description: 'Digital experiences for culture + community.', followers: 450, isVerified: true, createdAt: nowIso(), updatedAt: nowIso() },
+  { id: 'v1', name: 'Parramatta Library', entityType: 'venue', category: 'Library', city: 'Sydney', country: 'Australia', description: 'Council library and community hub.', isVerified: true, createdAt: nowIso(), updatedAt: nowIso() },
+  { id: 'v2', name: 'Melbourne Aquatic Centre', entityType: 'venue', category: 'Aquatic Centre', city: 'Melbourne', country: 'Australia', description: 'Public aquatic centre with swim programs.', isVerified: true, createdAt: nowIso(), updatedAt: nowIso() },
+  { id: 'v3', name: 'Brisbane Community Hall', entityType: 'venue', category: 'Community Centre', city: 'Brisbane', country: 'Australia', description: 'Community events and youth programs.', isVerified: true, createdAt: nowIso(), updatedAt: nowIso() },
 ];
 
 const councils: AppCouncil[] = [
@@ -777,15 +785,15 @@ const councilClaimLetters: AppCouncilClaimLetter[] = [];
 const privacySettings = new Map<string, Record<string, boolean>>();
 const wallets = new Map<string, { id: string; userId: string; balance: number; currency: string; points: number }>();
 const memberships = new Map<string, { id: string; userId: string; tier: MembershipTier; isActive: boolean; validUntil?: string }>();
-const notifications = new Map<string, Array<{ id: string; userId: string; title: string; message: string; type: string; isRead: boolean; metadata: Record<string, unknown> | null; createdAt: string }>>();
+const notifications = new Map<string, { id: string; userId: string; title: string; message: string; type: string; isRead: boolean; metadata: Record<string, unknown> | null; createdAt: string }[]>();
 const targetedNotificationIdempotency = new Map<string, TargetedNotificationResponse>();
 const adminAuditLogs: AdminAuditLogEntry[] = [];
 const tickets: AppTicket[] = [];
-const paymentMethods = new Map<string, Array<{ id: string; brand: string; last4: string; isDefault: boolean }>>();
-const transactions = new Map<string, Array<{ id: string; type: 'charge' | 'refund' | 'debit' | 'cashback'; amountCents: number; createdAt: string; description: string }>>();
-const scanEvents: Array<{ id: string; ticketId: string; ticketCode: string; scannedAt: string; scannedBy: string; outcome: 'accepted' | 'duplicate' | 'rejected' }> = [];
+const paymentMethods = new Map<string, { id: string; brand: string; last4: string; isDefault: boolean }[]>();
+const transactions = new Map<string, { id: string; type: 'charge' | 'refund' | 'debit' | 'cashback'; amountCents: number; createdAt: string; description: string }[]>();
+const scanEvents: { id: string; ticketId: string; ticketCode: string; scannedAt: string; scannedBy: string; outcome: 'accepted' | 'duplicate' | 'rejected' }[] = [];
 
-const culturalTagStore: Array<{ id: string; name: string; slug: string; category: string; iconUrl?: string }> = [
+const culturalTagStore: { id: string; name: string; slug: string; category: string; iconUrl?: string }[] = [
   { id: 'ct1', name: 'Malayali', slug: 'malayali', category: 'diaspora' },
   { id: 'ct2', name: 'Tamil', slug: 'tamil', category: 'diaspora' },
   { id: 'ct3', name: 'Sikh', slug: 'sikh', category: 'religious' },
@@ -935,8 +943,8 @@ if (csvCouncils.length > 0) {
 }
 
 const recommendationProfiles = new Map<string, { culturalTagWeights: Record<string, number>; eventTypeWeights: Record<string, number> }>();
-const discoveryFeedbackStore: Array<{ userId: string; eventId: string; signal: 'up' | 'down'; createdAt: string }> = [];
-const eventFeedbackStore: Array<{ id: string; eventId: string; userId: string; rating: number; comment?: string; createdAt: string }> = [];
+const discoveryFeedbackStore: { userId: string; eventId: string; signal: 'up' | 'down'; createdAt: string }[] = [];
+const eventFeedbackStore: { id: string; eventId: string; userId: string; rating: number; comment?: string; createdAt: string }[] = [];
 
 const INTEREST_CATEGORY_KEYWORDS: Record<string, string[]> = {
   cultural: ['cultural', 'community', 'temple', 'diwali', 'onam', 'eid', 'heritage', 'festival'],
@@ -990,12 +998,8 @@ function buildEventText(event: AppEvent): string {
     event.title,
     event.description,
     event.category,
-    event.eventType,
     event.communityTag,
     event.city,
-    ...(event.tags ?? []),
-    ...(event.cultureTag ?? []),
-    ...(event.languageTags ?? []),
   ]
     .filter(Boolean)
     .join(' ')
@@ -1027,7 +1031,7 @@ type UploadedMedia = {
   createdAt: string;
 };
 
-const perks: Array<{
+const perks: {
   id: string;
   title: string;
   description: string;
@@ -1046,12 +1050,12 @@ const perks: Array<{
   status: string;
   startDate: string;
   endDate: string | null;
-}> = [
+}[] = [
   { id: 'p1', title: '20% Off Partner Cafes', description: 'Save on selected Sydney partner cafes.', perkType: 'discount_percent', discountPercent: 20, discountFixedCents: null, providerType: 'business', providerId: 'b1', providerName: 'RamanArc Studios', category: 'dining', isMembershipRequired: false, requiredMembershipTier: 'free', usageLimit: 500, usedCount: 34, perUserLimit: 2, status: 'active', startDate: new Date().toISOString(), endDate: null },
   { id: 'p2', title: 'VIP Event Priority Entry', description: 'Skip the queue at selected community events.', perkType: 'vip_upgrade', discountPercent: null, discountFixedCents: null, providerType: 'event', providerId: 'e1', providerName: 'CulturePass Events', category: 'events', isMembershipRequired: true, requiredMembershipTier: 'plus', usageLimit: null, usedCount: 10, perUserLimit: 1, status: 'active', startDate: new Date().toISOString(), endDate: null },
 ];
 
-const redemptions = new Map<string, Array<{ id: string; perkId: string; userId: string; redeemedAt: string }>>();
+const redemptions = new Map<string, { id: string; perkId: string; userId: string; redeemedAt: string }[]>();
 const reports: ContentReport[] = [];
 const uploadedMedia: UploadedMedia[] = [];
 
@@ -1205,9 +1209,9 @@ const fallbackEvents: FirestoreEvent[] = events.map((event) => ({
   category: event.category ?? event.communityTag ?? 'Culture',
   organizer: event.organizer,
   organizerId: event.organizerId,
-  organizerReputationScore: event.organizerReputationScore,
   capacity: event.capacity,
   attending: event.attending,
+  priceCents: event.priceCents,
   isFeatured: event.isFeatured ?? false,
   isFree: event.isFree ?? true,
   tiers: event.tiers,
@@ -1215,11 +1219,11 @@ const fallbackEvents: FirestoreEvent[] = events.map((event) => ({
   cultureTag: event.cultureTag,
   indigenousTags: event.indigenousTags,
   languageTags: event.languageTags,
-  priceCents: event.priceCents,
+  organizerReputationScore: event.organizerReputationScore,
   priceLabel: event.priceLabel,
   status: 'published',
-  createdAt: FALLBACK_EVENT_TIMESTAMP,
-  updatedAt: FALLBACK_EVENT_TIMESTAMP,
+  createdAt: event.createdAt ?? FALLBACK_EVENT_TIMESTAMP,
+  updatedAt: event.updatedAt ?? event.createdAt ?? FALLBACK_EVENT_TIMESTAMP,
 }));
 const fallbackEventLookup = new Map(fallbackEvents.map((event) => [event.id, event]));
 const hasFirestoreProject = isFirestoreConfigured;
@@ -1236,7 +1240,7 @@ const MEMBERSHIP_PLAN_CONFIG: Record<MembershipTier, {
   pro: { label: 'Pro', cashbackRate: 0.03, earlyAccessHours: 48 },
   vip: { label: 'VIP', cashbackRate: 0.05, earlyAccessHours: 96 },
 };
-const REWARDS_TIERS: Array<{ tier: RewardsTier; minPoints: number; label: string }> = [
+const REWARDS_TIERS: { tier: RewardsTier; minPoints: number; label: string }[] = [
   { tier: 'diamond', minPoints: 5000, label: 'Diamond' },
   { tier: 'gold', minPoints: 1000, label: 'Gold' },
   { tier: 'silver', minPoints: 0, label: 'Silver' },
@@ -1735,7 +1739,7 @@ function getSearchCorpus(): SearchableItem[] {
       id: profile.id,
       type: 'community',
       title: profile.name,
-      subtitle: `${profile.category} · ${profile.members ?? 0} members`,
+      subtitle: `${profile.category} · ${profile.memberCount ?? 0} members`,
       description: profile.description,
       city: profile.city,
       country: profile.country,
@@ -2014,10 +2018,20 @@ app.get('/api/events', async (req, res) => {
     const dateFrom     = qstr(req.query.dateFrom).trim()     || undefined;
     const dateTo       = qstr(req.query.dateTo).trim()       || undefined;
     const organizerId  = qstr(req.query.organizerId).trim()  || undefined;
-    const isFeatured = qstr(req.query.isFeatured) === 'true' ? true : undefined;
+    const isFeatured   = qstr(req.query.isFeatured) === 'true' ? true : undefined;
+    
+    // Geolocation Bounding
+    const centerLatStr  = qstr(req.query.centerLat).trim();
+    const centerLngStr  = qstr(req.query.centerLng).trim();
+    const radiusInKmStr = qstr(req.query.radiusInKm).trim();
+    const centerLat   = centerLatStr ? parseFloat(centerLatStr) : undefined;
+    const centerLng   = centerLngStr ? parseFloat(centerLngStr) : undefined;
+    const radiusInKm  = radiusInKmStr ? parseFloat(radiusInKmStr) : undefined;
+    
     const page       = Math.max(1, parseInt(qstr(req.query.page)    || '1',  10) || 1);
     const pageSize   = Math.min(100, Math.max(1, parseInt(qstr(req.query.pageSize) || '20', 10) || 20));
-    const filtersApplied = [city, country, category, eventType, dateFrom, dateTo, isFeatured, organizerId].some(
+    
+    const filtersApplied = [city, country, category, eventType, dateFrom, dateTo, isFeatured, organizerId, centerLat, centerLng].some(
       (value) => value != null
     );
 
@@ -2026,7 +2040,7 @@ app.get('/api/events', async (req, res) => {
     }
 
     const result = await eventsService.list(
-      { city, country, category, eventType, dateFrom, dateTo, isFeatured, organizerId },
+      { city, country, category, eventType, dateFrom, dateTo, isFeatured, organizerId, centerLat, centerLng, radiusInKm },
       { page, pageSize }
     );
 
@@ -2113,7 +2127,6 @@ app.post('/api/events', requireAuth, requireRole('organizer', 'admin'), moderati
       imageUrl: b.imageUrl ? String(b.imageUrl) : undefined,
       priceCents: b.priceCents ? Number(b.priceCents) : 0,
       organizerId: req.user!.id,
-      organizer: req.user!.username,
       isFree: b.isFree ?? false,
       isFeatured: b.isFeatured ?? false,
     };
@@ -3797,23 +3810,6 @@ app.get('/api/wallet/:userId', requireAuth, (req, res) => {
   if (!isOwnerOrAdmin(req.user!, userId)) {
     return res.status(403).json({ error: 'Forbidden' });
   }
-  if (!hasFirestoreProject) {
-    const legacyWallet = wallets.get(userId);
-    if (!legacyWallet) return res.json(null);
-    const balanceCents = Math.round(Number(legacyWallet.balance ?? 0));
-    const currency = String(legacyWallet.currency ?? 'AUD');
-    const tx = transactions.get(userId) ?? [];
-    return res.json({
-      id: legacyWallet.id ?? `w-${userId}`,
-      userId,
-      balance: Number((balanceCents / 100).toFixed(2)),
-      balanceCents,
-      currency,
-      points: Number(legacyWallet.points ?? 0),
-      rewards: buildRewardsStatus(legacyWallet.points ?? 0),
-      transactions: tx.map((item) => toTransactionApiRecord(userId, currency, item)),
-    });
-  }
   walletsService.getOrCreate(userId)
     .then((wallet) => res.json({
       id: `w-${userId}`,
@@ -3836,12 +3832,6 @@ app.get('/api/transactions/:userId', requireAuth, (req, res) => {
   if (!isOwnerOrAdmin(req.user!, userId)) {
     return res.status(403).json({ error: 'Forbidden' });
   }
-  if (!hasFirestoreProject) {
-    const legacyWallet = wallets.get(userId);
-    const currency = legacyWallet?.currency ?? 'AUD';
-    return res.json((transactions.get(userId) ?? [])
-      .map((item) => toTransactionApiRecord(userId, currency, item)));
-  }
   walletsService.getOrCreate(userId)
     .then((wallet) => res.json((wallet.transactions ?? [])
       .map((item) => toTransactionApiRecord(userId, wallet.currency ?? 'AUD', item as RawWalletTransaction))))
@@ -3856,11 +3846,6 @@ app.get('/api/rewards/:userId', requireAuth, async (req, res) => {
     return res.status(403).json({ error: 'Forbidden' });
   }
   try {
-    if (!hasFirestoreProject) {
-      const wallet = wallets.get(userId);
-      const rewards = buildRewardsStatus(wallet?.points ?? 0);
-      return res.json({ userId, ...rewards });
-    }
     const wallet = await walletsService.getOrCreate(userId);
     const rewards = buildRewardsStatus(wallet.points ?? 0);
     return res.json({ userId, ...rewards });
@@ -3869,39 +3854,60 @@ app.get('/api/rewards/:userId', requireAuth, async (req, res) => {
     return res.status(500).json({ error: 'Failed to fetch rewards' });
   }
 });
-app.get('/api/payment-methods/:userId', requireAuth, (req, res) => {
-  if (!isOwnerOrAdmin(req.user!, qparam(req.params.userId))) {
+app.get('/api/payment-methods/:userId', requireAuth, async (req, res) => {
+  const userId = qparam(req.params.userId);
+  if (!isOwnerOrAdmin(req.user!, userId)) {
     return res.status(403).json({ error: 'Forbidden' });
   }
-  return res.json(paymentMethods.get(qparam(req.params.userId)) ?? []);
+  try {
+    const methods = await paymentMethodsService.listForUser(userId);
+    return res.json(methods);
+  } catch (err) {
+    console.error('[GET /api/payment-methods/:userId]:', err);
+    return res.status(500).json({ error: 'Failed to fetch payment methods' });
+  }
 });
-app.post('/api/payment-methods', requireAuth, (req, res) => {
+app.post('/api/payment-methods', requireAuth, async (req, res) => {
   const userId = req.user!.id;
-  const current = paymentMethods.get(userId) ?? [];
-  const method = { id: randomUUID(), brand: String(req.body?.brand ?? 'visa'), last4: String(req.body?.last4 ?? '4242'), isDefault: current.length === 0 };
-  paymentMethods.set(userId, [...current, method]);
-  return res.status(201).json(method);
+  try {
+    const list = await paymentMethodsService.listForUser(userId);
+    const method = await paymentMethodsService.create({
+      userId,
+      type: 'credit',
+      brand: String(req.body?.brand ?? 'visa'),
+      last4: String(req.body?.last4 ?? '4242'),
+      label: 'Card',
+      isDefault: list.length === 0,
+    });
+    return res.status(201).json(method);
+  } catch (err) {
+    console.error('[POST /api/payment-methods]:', err);
+    return res.status(500).json({ error: 'Failed to create payment method' });
+  }
 });
-app.delete('/api/payment-methods/:id', requireAuth, (req, res) => {
-  const uid = req.user!.id;
-  const methods = paymentMethods.get(uid) ?? [];
-  const next = methods.filter((method) => method.id !== qparam(req.params.id));
-  if (next.length === methods.length) return res.status(404).json({ error: 'Payment method not found' });
-  if (next.length > 0 && !next.some((method) => method.isDefault)) next[0].isDefault = true;
-  paymentMethods.set(uid, next);
-  return res.json({ ok: true });
+app.delete('/api/payment-methods/:id', requireAuth, async (req, res) => {
+  try {
+    await paymentMethodsService.delete(qparam(req.params.id));
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('[DELETE /api/payment-methods/:id]:', err);
+    return res.status(500).json({ error: 'Failed to delete payment method' });
+  }
 });
-app.put('/api/payment-methods/:userId/default/:methodId', requireAuth, (req, res) => {
-  if (!isOwnerOrAdmin(req.user!, qparam(req.params.userId))) {
+app.put('/api/payment-methods/:userId/default/:methodId', requireAuth, async (req, res) => {
+  const userId = qparam(req.params.userId);
+  const methodId = qparam(req.params.methodId);
+  if (!isOwnerOrAdmin(req.user!, userId)) {
     return res.status(403).json({ error: 'Forbidden' });
   }
-  const methods = paymentMethods.get(qparam(req.params.userId)) ?? [];
-  if (methods.length === 0) return res.status(404).json({ error: 'No payment methods found' });
-  let found = false;
-  methods.forEach((method) => { method.isDefault = method.id === qparam(req.params.methodId); if (method.isDefault) found = true; });
-  if (!found) return res.status(404).json({ error: 'Payment method not found' });
-  paymentMethods.set(qparam(req.params.userId), methods);
-  return res.json(methods);
+  try {
+    await paymentMethodsService.setDefault(userId, methodId);
+    const methods = await paymentMethodsService.listForUser(userId);
+    return res.json(methods);
+  } catch (err) {
+    console.error('[PUT /api/payment-methods/:userId/default/:methodId]:', err);
+    return res.status(500).json({ error: 'Failed' });
+  }
 });
 app.post('/api/wallet/:userId/topup', requireAuth, (req, res) => {
   if (!isOwnerOrAdmin(req.user!, qparam(req.params.userId))) {
@@ -3915,43 +3921,22 @@ app.post('/api/wallet/:userId/topup', requireAuth, (req, res) => {
     return res.status(400).json({ error: err instanceof Error ? err.message : 'Invalid amount' });
   }
 
-  if (hasFirestoreProject) {
-    walletsService.topup(userId, Math.round(parsedAmount * 100))
-      .then((wallet) => res.json({
-        id: `w-${userId}`,
-        userId,
-        balance: Number((Number(wallet.balanceCents ?? 0) / 100).toFixed(2)),
-        balanceCents: Number(wallet.balanceCents ?? 0),
-        currency: wallet.currency ?? 'AUD',
-        points: Number(wallet.points ?? 0),
-        rewards: buildRewardsStatus(wallet.points ?? 0),
-        transactions: (wallet.transactions ?? []).map((item) =>
-          toTransactionApiRecord(userId, wallet.currency ?? 'AUD', item as RawWalletTransaction)),
-      }))
-      .catch((err) => {
-        console.error('[POST /api/wallet/:userId/topup]:', err);
-        res.status(500).json({ error: 'Failed to top up wallet' });
-      });
-    return;
-  }
-
-  const wallet = wallets.get(qparam(req.params.userId));
-  if (!wallet) return res.status(404).json({ error: 'Wallet not found' });
-  wallet.balance += Math.round(parsedAmount * 100);
-  const tx = transactions.get(qparam(req.params.userId)) ?? [];
-  tx.unshift({ id: randomUUID(), type: 'charge', amountCents: Math.round(parsedAmount * 100), createdAt: nowIso(), description: 'Wallet top up' });
-  transactions.set(qparam(req.params.userId), tx);
-  const balanceCents = Math.round(Number(wallet.balance ?? 0));
-  return res.json({
-    id: wallet.id ?? `w-${userId}`,
-    userId,
-    balance: Number((balanceCents / 100).toFixed(2)),
-    balanceCents,
-    currency: String(wallet.currency ?? 'AUD'),
-    points: Number(wallet.points ?? 0),
-    rewards: buildRewardsStatus(wallet.points ?? 0),
-    transactions: tx.map((item) => toTransactionApiRecord(userId, String(wallet.currency ?? 'AUD'), item)),
-  });
+  walletsService.topup(userId, Math.round(parsedAmount * 100))
+    .then((wallet) => res.json({
+      id: `w-${userId}`,
+      userId,
+      balance: Number((Number(wallet.balanceCents ?? 0) / 100).toFixed(2)),
+      balanceCents: Number(wallet.balanceCents ?? 0),
+      currency: wallet.currency ?? 'AUD',
+      points: Number(wallet.points ?? 0),
+      rewards: buildRewardsStatus(wallet.points ?? 0),
+      transactions: (wallet.transactions ?? []).map((item) =>
+        toTransactionApiRecord(userId, wallet.currency ?? 'AUD', item as RawWalletTransaction)),
+    }))
+    .catch((err) => {
+      console.error('[POST /api/wallet/:userId/topup]:', err);
+      res.status(500).json({ error: 'Failed to top up wallet' });
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -4160,16 +4145,10 @@ app.get('/api/tickets/:userId', requireAuth, async (req, res) => {
     return res.status(403).json({ error: 'Forbidden' });
   }
   try {
-    if (!hasFirestoreProject) {
-      return res.json(tickets.filter((t) => t.userId === qparam(req.params.userId)));
-    }
     const userTickets = await ticketsService.listForUser(qparam(req.params.userId));
     return res.json(userTickets);
   } catch (err) {
     console.error('[GET /api/tickets/:userId]:', err);
-    if (!hasFirestoreProject) {
-      return res.json(tickets.filter((t) => t.userId === qparam(req.params.userId)));
-    }
     return res.status(500).json({ error: 'Failed to fetch tickets' });
   }
 });
@@ -4180,21 +4159,11 @@ app.get('/api/tickets/:userId/count', requireAuth, async (req, res) => {
     return res.status(403).json({ error: 'Forbidden' });
   }
   try {
-    if (!hasFirestoreProject) {
-      const userTickets = tickets.filter((t) => t.userId === qparam(req.params.userId));
-      const count = userTickets.filter((t) => t.status === 'confirmed').length;
-      return res.json({ count });
-    }
     const userTickets = await ticketsService.listForUser(qparam(req.params.userId));
     const count = userTickets.filter((t) => t.status === 'confirmed').length;
     return res.json({ count });
   } catch (err) {
     console.error('[GET /api/tickets/:userId/count]:', err);
-    if (!hasFirestoreProject) {
-      const userTickets = tickets.filter((t) => t.userId === qparam(req.params.userId));
-      const count = userTickets.filter((t) => t.status === 'confirmed').length;
-      return res.json({ count });
-    }
     return res.status(500).json({ error: 'Failed to count tickets' });
   }
 });
@@ -4202,15 +4171,6 @@ app.get('/api/tickets/:userId/count', requireAuth, async (req, res) => {
 // GET /api/ticket/:id (singular)
 app.get('/api/ticket/:id', requireAuth, async (req, res) => {
   try {
-    if (!hasFirestoreProject) {
-      const ticket = tickets.find((t) => t.id === qparam(req.params.id));
-      if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
-      if (!isOwnerOrAdmin(req.user!, ticket.userId)) {
-        return res.status(403).json({ error: 'Forbidden' });
-      }
-      return res.json(ticket);
-    }
-
     const ticket = await ticketsService.getById(qparam(req.params.id));
     if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
     if (!isOwnerOrAdmin(req.user!, ticket.userId)) {
@@ -4219,10 +4179,6 @@ app.get('/api/ticket/:id', requireAuth, async (req, res) => {
     return res.json(ticket);
   } catch (err) {
     console.error('[GET /api/ticket/:id]:', err);
-    if (!hasFirestoreProject) {
-      const ticket = tickets.find((t) => t.id === qparam(req.params.id));
-      if (ticket && isOwnerOrAdmin(req.user!, ticket.userId)) return res.json(ticket);
-    }
     return res.status(500).json({ error: 'Failed to fetch ticket' });
   }
 });
@@ -4237,36 +4193,6 @@ app.post('/api/tickets', requireAuth, async (req, res) => {
     const quantity = Number(req.body?.quantity ?? 1);
     if (!Number.isInteger(quantity) || quantity <= 0) {
       return res.status(400).json({ error: 'Ticket quantity must be a positive integer' });
-    }
-
-    if (!hasFirestoreProject) {
-      const event = fallbackEventLookup.get(eventId);
-      if (!event) return res.status(404).json({ error: 'Event not found' });
-      const priceCents = Number(req.body?.priceCents ?? event.priceCents ?? 0);
-      const ticketCode = generateSecureId('CP-T-');
-      const ticket: AppTicket = {
-        id: randomUUID(), eventId, userId,
-        eventTitle: event.title, eventDate: event.date, eventTime: event.time ?? '', eventVenue: event.venue,
-        tierName: String(req.body?.tierName ?? 'General'), quantity, totalPriceCents: priceCents * quantity,
-        currency: 'AUD', status: 'confirmed', paymentStatus: 'paid', priority: 'normal',
-        ticketCode, createdAt: nowIso(),
-        history: [{ at: nowIso(), status: 'confirmed', note: 'Ticket issued (dev mode)' }],
-      };
-      tickets.push(ticket);
-      const rewardPoints = await awardRewardsPoints(userId, ticket.totalPriceCents, {
-        ticketId: ticket.id,
-        source: 'ticket purchase',
-      });
-      if (rewardPoints > 0) {
-        ticket.rewardPointsEarned = rewardPoints;
-        ticket.rewardPointsAwardedAt = nowIso();
-        ticket.history.push({
-          at: nowIso(),
-          status: 'confirmed',
-          note: `Reward points awarded: +${rewardPoints}`,
-        });
-      }
-      return res.status(201).json(ticket);
     }
 
     const eventRef = db.collection('events').doc(eventId);
@@ -4335,9 +4261,6 @@ app.post('/api/tickets', requireAuth, async (req, res) => {
         return res.status(400).json({ error: 'Not enough tickets available for this quantity' });
       }
     }
-    if (!hasFirestoreProject) {
-      return res.status(500).json({ error: 'Failed to purchase ticket (dev mode)' });
-    }
     return res.status(500).json({ error: 'Failed to purchase ticket' });
   }
 });
@@ -4345,20 +4268,6 @@ app.post('/api/tickets', requireAuth, async (req, res) => {
 // PUT /api/tickets/:id/cancel
 app.put('/api/tickets/:id/cancel', requireAuth, async (req, res) => {
   try {
-    if (!hasFirestoreProject) {
-      const ticket = tickets.find((t) => t.id === qparam(req.params.id));
-      if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
-      if (!isOwnerOrAdmin(req.user!, ticket.userId)) {
-        return res.status(403).json({ error: 'Forbidden' });
-      }
-      if (ticket.status === 'used') {
-        return res.status(400).json({ error: 'Used tickets cannot be cancelled' });
-      }
-      ticket.status = 'cancelled';
-      ticket.history?.push({ at: nowIso(), status: 'cancelled', note: 'Cancelled (dev mode)' });
-      return res.json(ticket);
-    }
-
     const ticket = await ticketsService.getById(qparam(req.params.id));
     if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
     if (!isOwnerOrAdmin(req.user!, ticket.userId)) {
@@ -4371,10 +4280,6 @@ app.put('/api/tickets/:id/cancel', requireAuth, async (req, res) => {
     return res.json(updated);
   } catch (err) {
     console.error('[PUT /api/tickets/:id/cancel]:', err);
-    if (!hasFirestoreProject) {
-      const ticket = tickets.find((t) => t.id === qparam(req.params.id));
-      if (ticket) return res.json(ticket);
-    }
     return res.status(500).json({ error: 'Failed to cancel ticket' });
   }
 });
@@ -4385,17 +4290,6 @@ app.post('/api/tickets/scan', requireAuth, requireRole('organizer', 'moderator',
   if (!qrCode) return res.status(400).json({ valid: false, error: 'ticketCode is required' });
 
   try {
-    if (!hasFirestoreProject) {
-      const ticket = tickets.find((t) => t.ticketCode === qrCode || t.ticketCode === qrCode);
-      if (!ticket) return res.status(404).json({ valid: false, error: 'Invalid ticket code' });
-      if (ticket.status !== 'confirmed') {
-        return res.status(400).json({ valid: false, error: `Ticket is ${ticket.status}`, ticket });
-      }
-      ticket.status = 'used';
-      ticket.history?.push({ at: nowIso(), status: 'used', note: `Scanned by ${req.user?.id ?? 'scanner'}` });
-      return res.json({ valid: true, message: 'Ticket scanned successfully', ticket });
-    }
-
     const ticket = await ticketsService.getByQrCode(qrCode);
     if (!ticket) {
       return res.status(404).json({ valid: false, error: 'Invalid ticket code' });
@@ -4408,12 +4302,10 @@ app.post('/api/tickets/scan', requireAuth, requireRole('organizer', 'moderator',
       });
     }
     const updated = await ticketsService.updateStatus(ticket.id, 'used', req.user!.id);
+    await scanEventsService.record({ ticketId: ticket.id, eventId: ticket.eventId, scannedBy: req.user!.id, outcome: 'accepted', scannedAt: nowIso() });
     return res.json({ valid: true, message: 'Ticket scanned successfully', ticket: updated });
   } catch (err) {
     console.error('[POST /api/tickets/scan]:', err);
-    if (!hasFirestoreProject) {
-      return res.status(500).json({ valid: false, error: 'Scan failed (dev mode)' });
-    }
     return res.status(500).json({ valid: false, error: 'Scan failed' });
   }
 });
@@ -4421,15 +4313,6 @@ app.post('/api/tickets/scan', requireAuth, requireRole('organizer', 'moderator',
 // GET /api/tickets/:id/history
 app.get('/api/tickets/:id/history', requireAuth, async (req, res) => {
   try {
-    if (!hasFirestoreProject) {
-      const ticket = tickets.find((t) => t.id === qparam(req.params.id));
-      if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
-      if (!isOwnerOrAdmin(req.user!, ticket.userId)) {
-        return res.status(403).json({ error: 'Forbidden' });
-      }
-      return res.json({ history: ticket.history });
-    }
-
     const ticket = await ticketsService.getById(qparam(req.params.id));
     if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
     if (!isOwnerOrAdmin(req.user!, ticket.userId)) {
@@ -4438,28 +4321,22 @@ app.get('/api/tickets/:id/history', requireAuth, async (req, res) => {
     return res.json({ history: ticket.history });
   } catch (err) {
     console.error('[GET /api/tickets/:id/history]:', err);
-    if (!hasFirestoreProject) {
-      const ticket = tickets.find((t) => t.id === qparam(req.params.id));
-      if (ticket && isOwnerOrAdmin(req.user!, ticket.userId)) return res.json({ history: ticket.history });
-    }
     return res.status(500).json({ error: 'Failed to fetch history' });
   }
 });
-app.get('/api/tickets/admin/scan-events', requireAuth, requireRole('moderator', 'admin'), (_req, res) => res.json(scanEvents.slice(0, 200)));
-app.get('/api/tickets/:id/wallet/apple', (req, res) => {
-  const ticket = tickets.find((t) => t.id === qparam(req.params.id));
+app.get('/api/tickets/admin/scan-events', requireAuth, requireRole('moderator', 'admin'), async (_req, res) => {
+  res.json([]); // Not implemented properly yet
+});
+app.get('/api/tickets/:id/wallet/apple', async (req, res) => {
+  const ticket = await ticketsService.getById(qparam(req.params.id));
   if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
   const url = `https://wallet.culturepass.au/apple/${ticket.id}`;
-  ticket.walletPasses = { ...(ticket.walletPasses ?? {}), apple: url };
-  ticket.staffAuditTrail?.unshift({ at: nowIso(), by: 'user', action: 'apple_wallet_pass_generated' });
   res.json({ url, provider: 'apple', ticketId: ticket.id });
 });
-app.get('/api/tickets/:id/wallet/google', (req, res) => {
-  const ticket = tickets.find((t) => t.id === qparam(req.params.id));
+app.get('/api/tickets/:id/wallet/google', async (req, res) => {
+  const ticket = await ticketsService.getById(qparam(req.params.id));
   if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
   const url = `https://wallet.culturepass.au/google/${ticket.id}`;
-  ticket.walletPasses = { ...(ticket.walletPasses ?? {}), google: url };
-  ticket.staffAuditTrail?.unshift({ at: nowIso(), by: 'user', action: 'google_wallet_pass_generated' });
   res.json({ url, provider: 'google', ticketId: ticket.id });
 });
 
@@ -4468,7 +4345,6 @@ app.get('/api/tickets/:id/wallet/google', (req, res) => {
 // ---------------------------------------------------------------------------
 
 app.get('/api/perks', async (_req, res) => {
-  if (!hasFirestoreProject) return res.json(perks);
   try {
     const items = await perksService.list();
     return res.json(items);
@@ -4478,11 +4354,6 @@ app.get('/api/perks', async (_req, res) => {
   }
 });
 app.get('/api/perks/:id', async (req, res) => {
-  if (!hasFirestoreProject) {
-    const perk = perks.find((item) => item.id === qparam(req.params.id));
-    if (!perk) return res.status(404).json({ error: 'Perk not found' });
-    return res.json(perk);
-  }
   try {
     const perk = await perksService.getById(qparam(req.params.id));
     if (!perk) return res.status(404).json({ error: 'Perk not found' });
@@ -4500,102 +4371,65 @@ app.post('/api/perks', requireAuth, requireRole('admin'), moderationCheck, async
     return res.status(400).json({ error: err instanceof Error ? err.message : 'Invalid perk payload' });
   }
 
-  if (hasFirestoreProject) {
-    try {
-      const perk = await perksService.create({
-        title: payload.title,
-        description: payload.description ?? '',
-        perkType: payload.perkType,
-        discountPercent: payload.discountPercent ?? null,
-        discountFixedCents: payload.discountFixedCents ?? null,
-        providerType: payload.providerType ?? 'business',
-        providerId: payload.providerId ?? '',
-        providerName: payload.providerName ?? '',
-        category: payload.category,
-        isMembershipRequired: Boolean(payload.isMembershipRequired ?? false),
-        requiredMembershipTier: payload.requiredMembershipTier ?? 'free',
-        usageLimit: payload.usageLimit ?? null,
-        usedCount: 0,
-        perUserLimit: payload.perUserLimit ?? null,
-        status: 'active',
-        startDate: nowIso(),
-        endDate: payload.endDate ?? null,
-      });
-      return res.status(201).json(perk);
-    } catch (err) {
-      console.error('[POST /api/perks]:', err);
-      return res.status(500).json({ error: 'Failed to create perk' });
-    }
+  try {
+    const perk = await perksService.create({
+      title: payload.title,
+      description: payload.description ?? '',
+      perkType: payload.perkType,
+      discountPercent: payload.discountPercent ?? null,
+      discountFixedCents: payload.discountFixedCents ?? null,
+      providerType: payload.providerType ?? 'business',
+      providerId: payload.providerId ?? '',
+      providerName: payload.providerName ?? '',
+      category: payload.category,
+      isMembershipRequired: Boolean(payload.isMembershipRequired ?? false),
+      requiredMembershipTier: payload.requiredMembershipTier ?? 'free',
+      usageLimit: payload.usageLimit ?? null,
+      usedCount: 0,
+      perUserLimit: payload.perUserLimit ?? null,
+      status: 'active',
+      startDate: nowIso(),
+      endDate: payload.endDate ?? null,
+    });
+    return res.status(201).json(perk);
+  } catch (err) {
+    console.error('[POST /api/perks]:', err);
+    return res.status(500).json({ error: 'Failed to create perk' });
   }
-
-  const perk = {
-    id: randomUUID(), title: payload.title, description: String(payload.description ?? ''),
-    perkType: payload.perkType, discountPercent: payload.discountPercent ?? null,
-    discountFixedCents: payload.discountFixedCents ?? null,
-    providerType: String(payload.providerType ?? 'business'), providerId: String(payload.providerId ?? ''),
-    providerName: String(payload.providerName ?? ''), category: payload.category,
-    isMembershipRequired: Boolean(payload.isMembershipRequired ?? false),
-    requiredMembershipTier: String(payload.requiredMembershipTier ?? 'free'),
-    usageLimit: payload.usageLimit ?? null, usedCount: 0,
-    perUserLimit: payload.perUserLimit ?? null,
-    status: 'active', startDate: nowIso(), endDate: payload.endDate ?? null,
-  };
-  perks.unshift(perk);
-  return res.status(201).json(perk);
 });
 app.post('/api/perks/:id/redeem', requireAuth, async (req, res) => {
   const userId = req.user!.id;
   const perkId = qparam(req.params.id);
 
-  if (hasFirestoreProject) {
-    try {
-      const perk = await perksService.getById(perkId);
-      if (!perk) return res.status(404).json({ error: 'Perk not found' });
-      const alreadyUsed = await redemptionsService.countForUserAndPerk(userId, perkId);
-      if (perk.perUserLimit && alreadyUsed >= perk.perUserLimit) {
-        return res.status(400).json({ error: 'Per-user redemption limit reached' });
-      }
-      if (perk.isMembershipRequired) {
-        const membership = await usersService.getById(userId);
-        const tier = membership?.membership?.tier ?? 'free';
-        if (tier === 'free') return res.status(403).json({ error: 'Membership tier required for this perk' });
-      }
-      const redemption = await redemptionsService.create({ perkId, userId, redeemedAt: nowIso() });
-      await perksService.incrementUsed(perkId);
-      return res.status(201).json(redemption);
-    } catch (err) {
-      console.error('[POST /api/perks/:id/redeem]:', err);
-      return res.status(500).json({ error: 'Failed to redeem perk' });
+  try {
+    const perk = await perksService.getById(perkId);
+    if (!perk) return res.status(404).json({ error: 'Perk not found' });
+    const alreadyUsed = await redemptionsService.countForUserAndPerk(userId, perkId);
+    if (perk.perUserLimit && alreadyUsed >= perk.perUserLimit) {
+      return res.status(400).json({ error: 'Per-user redemption limit reached' });
     }
+    if (perk.isMembershipRequired) {
+      const membership = await usersService.getById(userId);
+      const tier = membership?.membership?.tier ?? 'free';
+      if (tier === 'free') return res.status(403).json({ error: 'Membership tier required for this perk' });
+    }
+    const redemption = await redemptionsService.create({ perkId, userId, redeemedAt: nowIso() });
+    await perksService.incrementUsed(perkId);
+    return res.status(201).json(redemption);
+  } catch (err) {
+    console.error('[POST /api/perks/:id/redeem]:', err);
+    return res.status(500).json({ error: 'Failed to redeem perk' });
   }
-
-  const perk = perks.find((item) => item.id === perkId);
-  if (!perk) return res.status(404).json({ error: 'Perk not found' });
-  const userRedemptions = redemptions.get(userId) ?? [];
-  const alreadyUsed = userRedemptions.filter((item) => item.perkId === perkId).length;
-  if (perk.perUserLimit && alreadyUsed >= perk.perUserLimit) return res.status(400).json({ error: 'Per-user redemption limit reached' });
-  if (perk.isMembershipRequired) {
-    const membership = memberships.get(userId);
-    if (!membership || membership.tier === 'free') return res.status(403).json({ error: 'Membership tier required for this perk' });
-  }
-  const redemption = { id: randomUUID(), perkId, userId, redeemedAt: nowIso() };
-  userRedemptions.unshift(redemption);
-  redemptions.set(userId, userRedemptions);
-  perk.usedCount = Number(perk.usedCount ?? 0) + 1;
-  return res.status(201).json(redemption);
 });
 app.get('/api/redemptions', requireAuth, async (req, res) => {
   const userId = req.user!.id;
-  if (hasFirestoreProject) {
-    try {
-      const items = await redemptionsService.listForUser(userId);
-      return res.json(items);
-    } catch (err) {
-      console.error('[GET /api/redemptions]:', err);
-      return res.status(500).json({ error: 'Failed to fetch redemptions' });
-    }
+  try {
+    const items = await redemptionsService.listForUser(userId);
+    return res.json(items);
+  } catch (err) {
+    console.error('[GET /api/redemptions]:', err);
+    return res.status(500).json({ error: 'Failed to fetch redemptions' });
   }
-  return res.json(redemptions.get(userId) ?? []);
 });
 
 // ---------------------------------------------------------------------------
@@ -4606,16 +4440,12 @@ app.get('/api/notifications/:userId', requireAuth, (req, res) => {
   if (!isOwnerOrAdmin(req.user!, qparam(req.params.userId))) {
     return res.status(403).json({ error: 'Forbidden' });
   }
-  if (hasFirestoreProject) {
-    notificationsService.listForUser(qparam(req.params.userId))
-      .then((items) => res.json(items))
-      .catch((err) => {
-        console.error('[GET /api/notifications/:userId]:', err);
-        res.status(500).json({ error: 'Failed to fetch notifications' });
-      });
-    return;
-  }
-  return res.json(notifications.get(qparam(req.params.userId)) ?? []);
+  notificationsService.listForUser(qparam(req.params.userId))
+    .then((items) => res.json(items))
+    .catch((err) => {
+      console.error('[GET /api/notifications/:userId]:', err);
+      res.status(500).json({ error: 'Failed to fetch notifications' });
+    });
 });
 app.post('/api/notifications/approval-status', requireAuth, requireRole('admin', 'moderator', 'platformAdmin', 'cityAdmin'), (req, res) => {
   let payload: z.infer<typeof approvalStatusSchema>;
@@ -4659,20 +4489,15 @@ app.post('/api/notifications/targeted', requireAuth, requireRole('admin', 'moder
   const idempotencyScope = idempotencyKey ? `${req.user!.id}:${idempotencyKey}` : null;
 
   if (!payload.dryRun && idempotencyScope) {
-    if (hasFirestoreProject) {
-      try {
-        const idemRef = db.collection('targetedNotificationRequests').doc(idempotencyScope);
-        const existing = await idemRef.get();
-        if (existing.exists) {
-          const stored = (existing.data()?.response ?? null) as TargetedNotificationResponse | null;
-          if (stored) return res.json({ ...stored, idempotentReplay: true });
-        }
-      } catch (err) {
-        console.error('[POST /api/notifications/targeted:idempotency-check]:', err);
+    try {
+      const idemRef = db.collection('targetedNotificationRequests').doc(idempotencyScope);
+      const existing = await idemRef.get();
+      if (existing.exists) {
+        const stored = (existing.data()?.response ?? null) as TargetedNotificationResponse | null;
+        if (stored) return res.json({ ...stored, idempotentReplay: true });
       }
-    } else {
-      const existing = targetedNotificationIdempotency.get(idempotencyScope);
-      if (existing) return res.json({ ...existing, idempotentReplay: true });
+    } catch (err) {
+      console.error('[POST /api/notifications/targeted:idempotency-check]:', err);
     }
   }
 
@@ -4740,29 +4565,21 @@ app.post('/api/notifications/targeted', requireAuth, requireRole('admin', 'moder
     return true;
   };
 
-  const selectedUsers: Array<{ id: string; data: Record<string, unknown> }> = [];
+  const selectedUsers: { id: string; data: Record<string, unknown> }[] = [];
 
-  if (hasFirestoreProject) {
-    try {
-      let query = db.collection('users') as FirebaseFirestore.Query;
-      if (payload.city) query = query.where('city', '==', payload.city);
-      if (payload.country) query = query.where('country', '==', payload.country);
-      const snap = await query.limit(1000).get();
-      for (const doc of snap.docs) {
-        if (selectedUsers.length >= payload.limit) break;
-        const data = (doc.data() ?? {}) as Record<string, unknown>;
-        if (matchesSignals(data)) selectedUsers.push({ id: doc.id, data });
-      }
-    } catch (err) {
-      console.error('[POST /api/notifications/targeted]:', err);
-      return res.status(500).json({ error: 'Failed to resolve target audience' });
-    }
-  } else {
-    for (const user of users) {
+  try {
+    let query = db.collection('users') as FirebaseFirestore.Query;
+    if (payload.city) query = query.where('city', '==', payload.city);
+    if (payload.country) query = query.where('country', '==', payload.country);
+    const snap = await query.limit(1000).get();
+    for (const doc of snap.docs) {
       if (selectedUsers.length >= payload.limit) break;
-      const data = user as unknown as Record<string, unknown>;
-      if (matchesSignals(data)) selectedUsers.push({ id: user.id, data });
+      const data = (doc.data() ?? {}) as Record<string, unknown>;
+      if (matchesSignals(data)) selectedUsers.push({ id: doc.id, data });
     }
+  } catch (err) {
+    console.error('[POST /api/notifications/targeted]:', err);
+    return res.status(500).json({ error: 'Failed to resolve target audience' });
   }
 
   const audiencePreview = selectedUsers.slice(0, 20).map((user) => ({
@@ -4818,41 +4635,11 @@ app.post('/api/notifications/targeted', requireAuth, requireRole('admin', 'moder
     return res.status(409).json({ error: 'Campaign payload changed after dry-run. Please run dry-run again.' });
   }
 
-  if (hasFirestoreProject) {
-    try {
-      const batchSize = 100;
-      for (let index = 0; index < selectedUsers.length; index += batchSize) {
-        const batch = selectedUsers.slice(index, index + batchSize);
-        await Promise.all(batch.map((user) => notificationsService.create({
-          userId: user.id,
-          title: payload.title,
-          message: payload.message,
-          type: payload.type as TargetedNotificationType,
-          isRead: false,
-          metadata: {
-            targeting: {
-              city: payload.city,
-              country: payload.country,
-              interestsAny: payload.interestsAny ?? [],
-              communitiesAny: payload.communitiesAny ?? [],
-              languagesAny: payload.languagesAny ?? [],
-              categoryIdsAny: payload.categoryIdsAny ?? [],
-              ethnicityContains: payload.ethnicityContains ?? null,
-            },
-            ...(payload.metadata ?? {}),
-          } as Record<string, unknown>,
-          createdAt: nowIso(),
-        })));
-      }
-    } catch (err) {
-      console.error('[POST /api/notifications/targeted:create]:', err);
-      return res.status(500).json({ error: 'Failed to create targeted notifications' });
-    }
-  } else {
-    for (const user of selectedUsers) {
-      const list = notifications.get(user.id) ?? [];
-      list.unshift({
-        id: randomUUID(),
+  try {
+    const batchSize = 100;
+    for (let index = 0; index < selectedUsers.length; index += batchSize) {
+      const batch = selectedUsers.slice(index, index + batchSize);
+      await Promise.all(batch.map((user) => notificationsService.create({
         userId: user.id,
         title: payload.title,
         message: payload.message,
@@ -4869,11 +4656,13 @@ app.post('/api/notifications/targeted', requireAuth, requireRole('admin', 'moder
             ethnicityContains: payload.ethnicityContains ?? null,
           },
           ...(payload.metadata ?? {}),
-        },
+        } as Record<string, unknown>,
         createdAt: nowIso(),
-      });
-      notifications.set(user.id, list);
+      })));
     }
+  } catch (err) {
+    console.error('[POST /api/notifications/targeted:create]:', err);
+    return res.status(500).json({ error: 'Failed to create targeted notifications' });
   }
 
   await writeAdminAuditLog({
@@ -4902,18 +4691,15 @@ app.post('/api/notifications/targeted', requireAuth, requireRole('admin', 'moder
   };
 
   if (idempotencyScope) {
-    targetedNotificationIdempotency.set(idempotencyScope, responsePayload);
-    if (hasFirestoreProject) {
-      try {
-        await db.collection('targetedNotificationRequests').doc(idempotencyScope).set({
-          actorId: req.user!.id,
-          endpoint: '/api/notifications/targeted',
-          createdAt: nowIso(),
-          response: responsePayload,
-        }, { merge: true });
-      } catch (err) {
-        console.error('[POST /api/notifications/targeted:idempotency-store]:', err);
-      }
+    try {
+      await db.collection('targetedNotificationRequests').doc(idempotencyScope).set({
+        actorId: req.user!.id,
+        endpoint: '/api/notifications/targeted',
+        createdAt: nowIso(),
+        response: responsePayload,
+      }, { merge: true });
+    } catch (err) {
+      console.error('[POST /api/notifications/targeted:idempotency-store]:', err);
     }
   }
 
@@ -4923,83 +4709,48 @@ app.get('/api/notifications/:userId/unread-count', requireAuth, (req, res) => {
   if (!isOwnerOrAdmin(req.user!, qparam(req.params.userId))) {
     return res.status(403).json({ error: 'Forbidden' });
   }
-  if (hasFirestoreProject) {
-    notificationsService.unreadCount(qparam(req.params.userId))
-      .then((count) => res.json({ count }))
-      .catch((err) => {
-        console.error('[GET /api/notifications/:userId/unread-count]:', err);
-        res.status(500).json({ error: 'Failed to fetch notification count' });
-      });
-    return;
-  }
-  const list = notifications.get(qparam(req.params.userId)) ?? [];
-  return res.json({ count: list.filter((n) => !n.isRead).length });
+  notificationsService.unreadCount(qparam(req.params.userId))
+    .then((count) => res.json({ count }))
+    .catch((err) => {
+      console.error('[GET /api/notifications/:userId/unread-count]:', err);
+      res.status(500).json({ error: 'Failed to fetch notification count' });
+    });
 });
 app.put('/api/notifications/:id/read', requireAuth, async (req, res) => {
-  if (hasFirestoreProject) {
-    const item = await notificationsService.getById(qparam(req.params.id));
-    if (!item) return res.status(404).json({ error: 'Notification not found' });
-    if (!isOwnerOrAdmin(req.user!, item.userId)) {
-      return res.status(403).json({ error: 'Forbidden' });
-    }
-    await notificationsService.markRead(item.id);
-    return res.json({ ok: true, item: { ...item, isRead: true } });
-  }
-
-  const uid = req.user!.id;
-  const list = notifications.get(uid) ?? [];
-  const item = list.find((n) => n.id === qparam(req.params.id));
+  const item = await notificationsService.getById(qparam(req.params.id));
   if (!item) return res.status(404).json({ error: 'Notification not found' });
-  item.isRead = true;
-  notifications.set(uid, list);
-  return res.json({ ok: true, item });
+  if (!isOwnerOrAdmin(req.user!, item.userId)) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  await notificationsService.markRead(item.id);
+  return res.json({ ok: true, item: { ...item, isRead: true } });
 });
 app.put('/api/notifications/:userId/read-all', requireAuth, async (req, res) => {
   if (!isOwnerOrAdmin(req.user!, qparam(req.params.userId))) {
     return res.status(403).json({ error: 'Forbidden' });
   }
-  if (hasFirestoreProject) {
-    await notificationsService.markAllRead(qparam(req.params.userId));
-    const count = await notificationsService.unreadCount(qparam(req.params.userId));
-    return res.json({ ok: true, unreadCount: count });
-  }
-  const list = notifications.get(qparam(req.params.userId)) ?? [];
-  list.forEach((item) => { item.isRead = true; });
-  notifications.set(qparam(req.params.userId), list);
-  return res.json({ ok: true, updated: list.length });
+  await notificationsService.markAllRead(qparam(req.params.userId));
+  const count = await notificationsService.unreadCount(qparam(req.params.userId));
+  return res.json({ ok: true, unreadCount: count });
 });
 app.delete('/api/notifications/:id', requireAuth, async (req, res) => {
-  if (hasFirestoreProject) {
-    const item = await notificationsService.getById(qparam(req.params.id));
-    if (!item) return res.status(404).json({ error: 'Notification not found' });
-    if (!isOwnerOrAdmin(req.user!, item.userId)) {
-      return res.status(403).json({ error: 'Forbidden' });
-    }
-    await notificationsService.delete(item.id);
-    return res.json({ ok: true });
+  const item = await notificationsService.getById(qparam(req.params.id));
+  if (!item) return res.status(404).json({ error: 'Notification not found' });
+  if (!isOwnerOrAdmin(req.user!, item.userId)) {
+    return res.status(403).json({ error: 'Forbidden' });
   }
-
-  const uid = req.user!.id;
-  const list = notifications.get(uid) ?? [];
-  const next = list.filter((item) => item.id !== qparam(req.params.id));
-  if (next.length === list.length) return res.status(404).json({ error: 'Notification not found' });
-  notifications.set(uid, next);
+  await notificationsService.delete(item.id);
   return res.json({ ok: true });
 });
 app.post('/api/notifications/:userId/:id/read', requireAuth, async (req, res) => {
   if (!isOwnerOrAdmin(req.user!, qparam(req.params.userId))) {
     return res.status(403).json({ error: 'Forbidden' });
   }
-  if (hasFirestoreProject) {
-    const item = await notificationsService.getById(qparam(req.params.id));
-    if (!item || item.userId !== qparam(req.params.userId)) {
-      return res.status(404).json({ error: 'Notification not found' });
-    }
-    await notificationsService.markRead(item.id);
-    return res.json({ ok: true });
+  const item = await notificationsService.getById(qparam(req.params.id));
+  if (!item || item.userId !== qparam(req.params.userId)) {
+    return res.status(404).json({ error: 'Notification not found' });
   }
-  const list = notifications.get(qparam(req.params.userId)) ?? [];
-  list.forEach((n) => { if (n.id === qparam(req.params.id)) n.isRead = true; });
+  await notificationsService.markRead(item.id);
   return res.json({ ok: true });
 });
 
@@ -5253,7 +5004,7 @@ app.get('/api/admin/audit-logs.csv', requireAuth, requireRole('admin', 'moderato
   const to = String(req.query['to'] ?? '').trim();
   const actorId = req.user!.role === 'cityAdmin' ? req.user!.id : actorIdQuery;
 
-  let logs: Array<Record<string, unknown>> = [];
+  let logs: Record<string, unknown>[] = [];
 
   if (hasFirestoreProject) {
     try {
@@ -5365,7 +5116,7 @@ app.put('/api/privacy/settings/:userId', requireAuth, (req, res) => {
   return res.json(merged);
 });
 
-const ACCOUNT_ORPHAN_CLEANUP_TARGETS: Array<{ collection: string; field: string }> = [
+const ACCOUNT_ORPHAN_CLEANUP_TARGETS: { collection: string; field: string }[] = [
   { collection: 'wallets', field: 'userId' },
   { collection: 'tickets', field: 'userId' },
   { collection: 'notifications', field: 'userId' },

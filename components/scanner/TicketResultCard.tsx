@@ -14,6 +14,7 @@ export function TicketResultCard({ result, colors, onClose, onScanNext, onPrintB
 }) {
   const cfg = getOutcomeConfig(result);
   const t = result.ticket;
+  const rs = React.useMemo(() => getStyles(colors), [colors]);
 
   return (
     <View style={[rs.card, { backgroundColor: colors.surface, borderColor: cfg.color + '40' }]}>
@@ -89,7 +90,7 @@ export function TicketResultCard({ result, colors, onClose, onScanNext, onPrintB
   );
 }
 
-const rs = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   card:                { borderRadius: 20, overflow: 'hidden', borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 12, elevation: 6 },
   statusHeader:        { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16 },
   statusTitle:         { fontSize: 18, fontFamily: 'Poppins_700Bold' },

@@ -1,6 +1,5 @@
 import * as ImageManipulator from 'expo-image-manipulator';
-import { Platform } from 'react-native';
-import { Alert } from 'react-native';
+import { Platform , Alert } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 
 /**

@@ -24,7 +24,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AuthGuard } from '@/components/AuthGuard';
 
-import { s } from '@/components/scanner/Scanner.styles';
+import { getStyles } from '@/components/scanner/Scanner.styles';
 import {
   ScanMode,
   TicketScanResult,
@@ -45,6 +45,8 @@ export default function ScannerScreen() {
   const colors = useColors();
   const { isOrganizer } = useRole();
   const canUseStaffScanner = isOrganizer;
+
+  const s = useMemo(() => getStyles(colors), [colors]);
 
   const [mode, setMode] = useState<ScanMode>('culturepass');
 

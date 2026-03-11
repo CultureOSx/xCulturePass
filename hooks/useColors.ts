@@ -27,10 +27,7 @@ import type { ColorTheme } from '@/constants/colors';
 import { light, dark } from '@/constants/colors';
 
 export function useColors(): ColorTheme {
-  // Web: respect the user's system color scheme preference
-  // Native: same — useColorScheme returns the device setting
-  const scheme = useColorScheme();
-  return scheme === 'dark' ? dark : light;
+  return light;
 }
 
 // ---------------------------------------------------------------------------
@@ -51,12 +48,10 @@ export function useColor<K extends keyof ColorTheme>(key: K): ColorTheme[K] {
 
 /** Returns `darkValue` if the current scheme is dark, `lightValue` otherwise */
 export function useSchemeValue<T>(darkValue: T, lightValue: T): T {
-  const scheme = useColorScheme();
-  return scheme === 'dark' ? darkValue : lightValue;
+  return lightValue;
 }
 
 /** Returns true when the current color scheme is dark */
 export function useIsDark(): boolean {
-  const scheme = useColorScheme();
-  return scheme === 'dark';
+  return false;
 }

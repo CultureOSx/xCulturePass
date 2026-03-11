@@ -36,8 +36,8 @@ async function run() {
     await waitForServer();
 
     // Flow 1: saved -> event detail -> ticket create -> tickets list -> community/profile
-    type EventsResponse = { events?: Array<{ id?: string }>; };
-    const eventsPayload = await (await fetch(`${base}/api/events`)).json() as EventsResponse | Array<{ id?: string }>;
+    type EventsResponse = { events?: { id?: string }[]; };
+    const eventsPayload = await (await fetch(`${base}/api/events`)).json() as EventsResponse | { id?: string }[];
     const events = Array.isArray(eventsPayload) ? eventsPayload : eventsPayload.events ?? [];
     const event = events[0];
     assert.ok(event?.id);

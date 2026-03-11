@@ -16,6 +16,10 @@ import { PERK_TYPE_INFO } from '@/components/perks/constants';
 import { PerkHero } from '@/components/perks/PerkHero';
 import { PerkAbout } from '@/components/perks/PerkAbout';
 import { PerkDetails } from '@/components/perks/PerkDetails';
+import { PerkAvailability } from '@/components/perks/PerkAvailability';
+import { PerkMembershipCard } from '@/components/perks/PerkMembershipCard';
+import { PerkIndigenousCard } from '@/components/perks/PerkIndigenousCard';
+import { PerkCouponModal } from '@/components/perks/PerkCouponModal';
 export default function PerkDetailScreen() {
   const colors = useColors();
   const styles = getStyles(colors);

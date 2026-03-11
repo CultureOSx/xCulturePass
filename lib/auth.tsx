@@ -195,7 +195,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return unsubscribe;
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);  
 
   // ------------------------------------------------------------------
   // Force-refresh ID token every 50 min to keep query-client in sync

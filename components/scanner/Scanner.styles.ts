@@ -3,7 +3,7 @@ import { StyleSheet } from 'react-native';
 export const CORNER = 28;
 export const CORNER_W = 4;
 
-export const s = StyleSheet.create({
+export const getStyles = (colors: any) => StyleSheet.create({
   container:           { flex: 1 },
   header:              { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 10 },
   headerBtn:           { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },

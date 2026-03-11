@@ -1,21 +1,31 @@
 import "react-native-reanimated"; // <-- CRUCIAL FIX: Must be at the very top
 import { Buffer } from "buffer";
 
-import { QueryClientProvider } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
+import * as Sentry from '@sentry/react-native';
+import { PostHogProvider } from 'posthog-react-native';
+import posthogClient, { identifyUser, resetUser } from '@/lib/analytics';
 import React, { useCallback, useEffect, useRef } from "react";
+
+Sentry.init({
+  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN || '',
+  tracesSampleRate: 1.0,
+  debug: false,
+});
 import {
   Platform,
   View,
   StyleSheet,
+  useWindowDimensions,
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { queryClient } from "@/lib/query-client";
+import { queryClient, queryPersister } from "@/lib/query-client";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import {
   OnboardingProvider,
@@ -23,7 +33,6 @@ import {
 } from "@/contexts/OnboardingContext";
 import { SavedProvider } from "@/contexts/SavedContext";
 import { ContactsProvider } from "@/contexts/ContactsContext";
-import { Colors } from "@/constants/theme";
 import { useColors } from "@/hooks/useColors";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 
@@ -34,6 +43,7 @@ import {
   Inter_600SemiBold,
   Inter_700Bold,
 } from "@expo-google-fonts/inter";
+import { WebTopBar } from "@/components/web/WebTopBar";
 
 global.Buffer = Buffer;
 
@@ -55,6 +65,7 @@ function DataSync() {
     setSubscriptionTier,
     state,
     resetOnboarding,
+    completeOnboarding,
   } = useOnboarding();
   // Track the previous user id so we can detect logout (authenticated → null)
   // without incorrectly resetting onboarding on the initial cold-start null state.
@@ -87,11 +98,21 @@ function DataSync() {
         }
         // Fallback: If user profile is complete but onboarding is not, complete onboarding
         if (!state.isComplete && city && country && interests.length > 0) {
-          await import('@/contexts/OnboardingContext').then(ctx => ctx.completeOnboarding?.());
+          await completeOnboarding();
         }
+
+        // Analytics Tracking
+        identifyUser(user.id, {
+          email: user.email,
+          city: user.city,
+          country: user.country,
+          subscriptionTier: user.subscriptionTier,
+        });
+
       } else if (prevUserIdRef.current !== null) {
         // User was authenticated and has now signed out — clear onboarding state.
         prevUserIdRef.current = null;
+        resetUser();
         resetOnboarding();
       }
     }
@@ -207,6 +228,8 @@ function RootLayoutNav() {
 // ---------------------------------------------------------------------------
 function WebShell({ children }: { children: React.ReactNode }) {
   const colors = useColors();
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 1024;
   return (
     <View
       style={[
@@ -217,10 +240,8 @@ function WebShell({ children }: { children: React.ReactNode }) {
       ]}
     >
       {/* Top bar wrapper for web, uses surface for contrast, shadow, and border */}
-      {Platform.OS === 'web' ? (
-        <View style={{ width: '100%' }}>
-          {require('@/components/web/WebTopBar').WebTopBar()}
-        </View>
+      {Platform.OS === 'web' && isDesktop ? (
+          <WebTopBar />
       ) : (
         <View style={{
           width: "100%",
@@ -250,7 +271,7 @@ function WebShell({ children }: { children: React.ReactNode }) {
 //       └── DataSync    (syncs auth user → onboarding state)
 //       └── SavedProvider / ContactsProvider / ...
 // ---------------------------------------------------------------------------
-export default function RootLayout() {
+function RootLayoutContent() {
   const [fontsLoaded, fontError] = useFonts({
     Poppins_400Regular: Inter_400Regular,
     Poppins_500Medium: Inter_500Medium,
@@ -279,7 +300,15 @@ export default function RootLayout() {
   return (
     <ErrorBoundary>
       <SafeAreaProvider>
-        <QueryClientProvider client={queryClient}>
+        <PostHogProvider 
+          client={posthogClient ?? undefined}
+          apiKey={posthogClient ? undefined : 'disabled'}
+          options={posthogClient ? undefined : { disabled: true }}
+        >
+          <PersistQueryClientProvider 
+            client={queryClient}
+            persistOptions={{ persister: queryPersister }}
+          >
           {/*
            * OnboardingProvider MUST wrap AuthProvider.
            * AuthProvider itself no longer calls useOnboarding() — DataSync
@@ -309,7 +338,8 @@ export default function RootLayout() {
               </SavedProvider>
             </AuthProvider>
           </OnboardingProvider>
-        </QueryClientProvider>
+        </PersistQueryClientProvider>
+        </PostHogProvider>
       </SafeAreaProvider>
     </ErrorBoundary>
   );
@@ -324,3 +354,5 @@ const webStyles = StyleSheet.create({
     overflow: "hidden",
   },
 });
+
+export default Sentry.wrap(RootLayoutContent);

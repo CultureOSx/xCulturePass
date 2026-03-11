@@ -9,7 +9,7 @@ const TABS = [
   "Interests",
 ]
 
-export default function CalendarTabs({ onChange }) {
+export default function CalendarTabs({ onChange }: { onChange: (tab: string) => void }) {
   const [active, setActive] = useState("All")
   function select(tab: string) {
     setActive(tab)

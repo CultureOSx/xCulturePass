@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, StyleSheet, useColorScheme } from 'react-native';
+import { View, Text, Pressable, StyleSheet, useColorScheme, Platform } from 'react-native';
 import { usePathname, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/lib/auth';
 import { useRole } from '@/hooks/useRole';
 import { Colors } from '@/constants/theme';
+import { useColors } from '@/hooks/useColors';
+
 import { Image } from 'expo-image';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';

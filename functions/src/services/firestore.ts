@@ -19,9 +19,9 @@
  *   const page = await eventsService.listByCity('Sydney', 'Australia', { page: 1, pageSize: 20 });
  */
 
-import type { Timestamp } from 'firebase-admin/firestore';
+import type { Timestamp , FieldValue } from 'firebase-admin/firestore';
+import * as geofire from 'geofire-common';
 import { db } from '../admin';
-import type { FieldValue } from 'firebase-admin/firestore';
 
 // ---------------------------------------------------------------------------
 // Shared types
@@ -71,6 +71,15 @@ export interface FirestoreUser {
   socialLinks?: Record<string, string>;
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
+  
+  // Modern Data Architecture / Analytics Fields
+  lastActiveAt?: string;
+  authProvider?: string;
+  deviceTokens?: string[];
+  marketingOptIn?: boolean;
+  dataProcessingConsent?: boolean;
+  metadata?: Record<string, any>; // Flexible payload for BigQuery/CDP streaming
+  
   createdAt: string;
   updatedAt: string;
 }
@@ -147,13 +156,23 @@ export interface FirestoreEvent {
   isFeatured?: boolean;
   isFree?: boolean;
   externalTicketUrl?: string | null;
-  tiers?: Array<{ name: string; priceCents: number; available: number }>;
+  tiers?: { name: string; priceCents: number; available: number }[];
   cpid?: string;
   /**
    * status replaces deletedAt/publishedAt for efficient Firestore composite indexes.
    * 'draft' → created but not visible | 'published' → live | 'deleted' → soft-deleted
    */
   status: 'draft' | 'published' | 'deleted';
+  
+  // Modern Data Architecture / Analytics Fields
+  viewCount?: number;
+  favoriteCount?: number;
+  shareCount?: number;
+  ticketSalesCount?: number;
+  sourceSystem?: string; // e.g. 'user_submission', 'api_ingest'
+  searchTokens?: string[]; // Tokenized strings for Algolia/Vertex AI vector search
+  metadata?: Record<string, any>; // Extensible JSON metadata
+  
   createdAt: string;
   updatedAt: string;
 }
@@ -167,8 +186,12 @@ export interface EventFilters {
   dateFrom?: string;
   dateTo?: string;
   organizerId?: string;
-  /** Defaults to 'published'. Omit when querying by organizerId to see all statuses. */
   status?: FirestoreEvent['status'];
+  
+  // Geolocation Bounding
+  centerLat?: number;
+  centerLng?: number;
+  radiusInKm?: number;
 }
 
 const eventsCol = () => db.collection('events');
@@ -186,36 +209,77 @@ export const eventsService = {
     filters: EventFilters = {},
     pagination: PaginationParams = { page: 1, pageSize: 20 }
   ): Promise<PaginatedResult<FirestoreEvent>> {
-    // When querying by organizerId without an explicit status, show all non-deleted statuses.
-    // For public listings (no organizerId), default to 'published'.
-    let query = eventsCol().orderBy('date', 'asc') as FirebaseFirestore.Query;
+    let baseQuery = eventsCol() as FirebaseFirestore.Query;
 
     if (filters.status) {
-      query = query.where('status', '==', filters.status);
+      baseQuery = baseQuery.where('status', '==', filters.status);
     } else if (!filters.organizerId) {
-      query = query.where('status', '==', 'published');
-    } else {
-      // organizerId present, no explicit status — exclude only hard-deleted docs
-      // Firestore doesn't support '!=' without a composite index, so we rely on
-      // the organizerId where clause + client-side filtering for deleted events.
+      baseQuery = baseQuery.where('status', '==', 'published');
     }
 
-    if (filters.organizerId) query = query.where('organizerId', '==', filters.organizerId);
-    if (filters.city) query = query.where('city', '==', filters.city);
-    if (filters.country) query = query.where('country', '==', filters.country);
-    if (filters.category) query = query.where('category', '==', filters.category);
-    if (filters.isFeatured) query = query.where('isFeatured', '==', true);
-    if (filters.dateFrom) query = query.where('date', '>=', filters.dateFrom);
-    if (filters.dateTo) query = query.where('date', '<=', filters.dateTo);
+    if (filters.organizerId) baseQuery = baseQuery.where('organizerId', '==', filters.organizerId);
+    if (filters.city) baseQuery = baseQuery.where('city', '==', filters.city);
+    if (filters.country) baseQuery = baseQuery.where('country', '==', filters.country);
+    if (filters.category) baseQuery = baseQuery.where('category', '==', filters.category);
+    if (filters.isFeatured) baseQuery = baseQuery.where('isFeatured', '==', true);
+    if (filters.dateFrom) baseQuery = baseQuery.where('date', '>=', filters.dateFrom);
+    if (filters.dateTo) baseQuery = baseQuery.where('date', '<=', filters.dateTo);
 
-    const countSnap = await query.count().get();
-    const total = countSnap.data().count;
+    const isGeoQuery = filters.centerLat != null && filters.centerLng != null && filters.radiusInKm != null;
+    let items: FirestoreEvent[] = [];
+    let total = 0;
+
+    if (isGeoQuery) {
+      const center: [number, number] = [filters.centerLat!, filters.centerLng!];
+      const radiusInM = filters.radiusInKm! * 1000;
+      const bounds = geofire.geohashQueryBounds(center, radiusInM);
+      const promises = [];
+
+      for (const b of bounds) {
+        const q = baseQuery.orderBy('geoHash').startAt(b[0]).endAt(b[1]);
+        promises.push(q.get());
+      }
+      const snapshots = await Promise.all(promises);
+      const matchingDocs: FirestoreEvent[] = [];
+
+      for (const snap of snapshots) {
+        for (const doc of snap.docs) {
+          const data = { id: doc.id, ...doc.data() } as FirestoreEvent;
+          if (data.latitude != null && data.longitude != null) {
+            const distanceInKm = geofire.distanceBetween([data.latitude, data.longitude], center);
+            if (distanceInKm <= filters.radiusInKm!) {
+              matchingDocs.push(data);
+            }
+          }
+        }
+      }
+
+      // Memory sort by date since we used the DB sort on geoHash
+      matchingDocs.sort((a, b) => a.date.localeCompare(b.date));
+      total = matchingDocs.length;
+      
+      const { page, pageSize } = pagination;
+      items = matchingDocs.slice((page - 1) * pageSize, page * pageSize);
+
+      return {
+        items,
+        total,
+        page,
+        pageSize,
+        hasNextPage: page * pageSize < total,
+      };
+    }
+
+    // Standard non-geo query
+    const sortedQuery = baseQuery.orderBy('date', 'asc');
+    const countSnap = await sortedQuery.count().get();
+    total = countSnap.data().count;
 
     const { page, pageSize } = pagination;
     const offset = (page - 1) * pageSize;
-    const dataSnap = await query.offset(offset).limit(pageSize).get();
+    const dataSnap = await sortedQuery.offset(offset).limit(pageSize).get();
 
-    const items = dataSnap.docs.map((doc) => ({
+    items = dataSnap.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
     })) as FirestoreEvent[];
@@ -232,9 +296,16 @@ export const eventsService = {
   async create(data: Omit<FirestoreEvent, 'id' | 'createdAt' | 'updatedAt'>): Promise<FirestoreEvent> {
     const now = new Date().toISOString();
     const ref = eventsCol().doc();
+    
+    let geoHash = data.geoHash;
+    if (!geoHash && data.latitude != null && data.longitude != null) {
+      geoHash = geofire.geohashForLocation([data.latitude, data.longitude]);
+    }
+    
     const event: FirestoreEvent = {
       ...data,
       id: ref.id,
+      geoHash,
       status: data.status ?? 'draft',
       createdAt: now,
       updatedAt: now,
@@ -245,8 +316,17 @@ export const eventsService = {
 
   async update(id: string, data: Partial<FirestoreEvent>): Promise<FirestoreEvent | null> {
     const ref = eventsCol().doc(id);
-    if (!(await ref.get()).exists) return null;
-    await ref.update({ ...data, updatedAt: new Date().toISOString() });
+    const existingSnap = await ref.get();
+    if (!existingSnap.exists) return null;
+    
+    const updates: Partial<FirestoreEvent> = { ...data, updatedAt: new Date().toISOString() };
+    
+    // Auto-update geohash if coords change or missing
+    if (updates.latitude != null && updates.longitude != null) {
+      updates.geoHash = geofire.geohashForLocation([updates.latitude, updates.longitude]);
+    }
+
+    await ref.update(updates);
     const updated = await ref.get();
     return { id: updated.id, ...updated.data() } as FirestoreEvent;
   },
@@ -291,7 +371,15 @@ export interface FirestoreTicket {
   imageColor?: string;
   qrCode: string;
   cpTicketId: string;
-  history: Array<{ action: string; timestamp: string; actorId?: string }>;
+  history: { action: string; timestamp: string; actorId?: string }[];
+  
+  // Analytics and Audit Fields
+  paymentMethodType?: string; // 'card', 'apple_pay', 'google_pay'
+  promotionalCode?: string;
+  discountCents?: number;
+  sourceMedium?: string; // e.g., 'app_ios', 'app_android', 'web'
+  metadata?: Record<string, any>;
+  
   createdAt: string;
   updatedAt: string;
 }
@@ -376,12 +464,18 @@ export interface FirestoreProfile {
   latitude?: number;
   longitude?: number;
   country?: string;
-  website?: string;
-  rating?: number;
-  ownerId?: string;
   isVerified?: boolean;
-  membersCount?: number;
-  culturePassId?: string;
+  memberCount?: number;
+  followerCount?: number;
+  ownerId?: string; // App logic relies on this for permissions
+  socialLinks?: Record<string, string>;
+  contactEmail?: string;
+  website?: string;
+  
+  // Analytics
+  viewCount?: number;
+  metadata?: Record<string, any>;
+  
   createdAt: string;
   updatedAt: string;
 }

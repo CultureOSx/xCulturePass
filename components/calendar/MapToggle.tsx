@@ -1,6 +1,6 @@
 import { View, Text, Switch, StyleSheet } from "react-native"
 
-export default function MapToggle({ showMap, onToggle }) {
+export default function MapToggle({ showMap, onToggle }: { showMap: boolean, onToggle: (value: boolean) => void }) {
   return (
     <View style={styles.row}>
       <Text style={styles.label}>Map View</Text>

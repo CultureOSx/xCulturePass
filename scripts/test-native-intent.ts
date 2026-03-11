@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { redirectSystemPath } from '../app/+native-intent';
 
-const cases: Array<{ input: string; initial?: boolean; expected: string }> = [
+const cases: { input: string; initial?: boolean; expected: string }[] = [
   { input: '/events/e1', expected: '/event/e1' },
   { input: '/artists/a1', expected: '/artist/a1' },
   { input: '/communities/c1?ref=push', expected: '/community/c1?ref=push' },

@@ -28,11 +28,11 @@ export default function CouncilDashboardScreen() {
   const { isAdmin, isOrganizer, isLoading: roleLoading } = useRole();
   const councilHook = useCouncil();
   const council = councilHook.data?.council;
-  const activeAlerts = councilHook.data?.activeAlerts ?? [];
-  const openGrants = councilHook.data?.openGrants ?? [];
+  const activeAlerts = councilHook.data?.alerts ?? [];
+  const openGrants = councilHook.data?.grants ?? [];
   const facilities = councilHook.data?.facilities ?? [];
   const links = councilHook.data?.links ?? [];
-  const waste = councilHook.data?.waste ?? [];
+  const waste = councilHook.data?.waste ?? null;
   const following = councilHook.data?.following ?? false;
   const isLoading = councilHook.isLoading;
   const refetch = councilHook.refetch;

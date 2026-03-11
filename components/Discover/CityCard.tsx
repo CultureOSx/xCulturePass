@@ -6,28 +6,27 @@ import { useColors } from '@/hooks/useColors';
 
 const CITY_IMAGES: Record<string, string> = {
   // Australian metro areas (used by default in FEATURED_CITIES)
-  'Sydney': 'https://images.pexels.com/photos/995764/pexels-photo-995764.jpeg?auto=compress&cs=tinysrgb&w=1200',
-  'Melbourne': 'https://images.pexels.com/photos/302827/pexels-photo-302827.jpeg?auto=compress&cs=tinysrgb&w=1200',
-  'Brisbane': 'https://images.pexels.com/photos/417173/pexels-photo-417173.jpeg?auto=compress&cs=tinysrgb&w=1200',
-  'Perth': 'https://images.pexels.com/photos/208817/pexels-photo-208817.jpeg?auto=compress&cs=tinysrgb&w=1200',
-  'Adelaide': 'https://images.pexels.com/photos/161722/pexels-photo-161722.jpeg?auto=compress&cs=tinysrgb&w=1200',
-  'Gold Coast': 'https://images.pexels.com/photos/204790/pexels-photo-204790.jpeg?auto=compress&cs=tinysrgb&w=1200',
-  'Canberra': 'https://images.pexels.com/photos/1051681/pexels-photo-1051681.jpeg?auto=compress&cs=tinysrgb&w=1200',
-  'Darwin': 'https://images.pexels.com/photos/442112/pexels-photo-442112.jpeg?auto=compress&cs=tinysrgb&w=1200',
-  // international fallback set (still useful for future expansion)
-  'Auckland': 'https://images.pexels.com/photos/315793/pexels-photo-315793.jpeg?auto=compress&cs=tinysrgb&w=1200',
-  'Dubai': 'https://images.pexels.com/photos/3787839/pexels-photo-3787839.jpeg?auto=compress&cs=tinysrgb&w=1200',
-  'London': 'https://images.pexels.com/photos/460672/pexels-photo-460672.jpeg?auto=compress&cs=tinysrgb&w=1200',
-  'Toronto': 'https://images.pexels.com/photos/374870/pexels-photo-374870.jpeg?auto=compress&cs=tinysrgb&w=1200',
-  'Vancouver': 'https://images.pexels.com/photos/2087391/pexels-photo-2087391.jpeg?auto=compress&cs=tinysrgb&w=1200',
+  'Sydney': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Sydney_Opera_House_and_Harbour_Bridge_Dusk_%282%29_2019-06-21.jpg/1280px-Sydney_Opera_House_and_Harbour_Bridge_Dusk_%282%29_2019-06-21.jpg',
+  'Melbourne': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Melburnian_Skyline.jpg/1280px-Melburnian_Skyline.jpg',
+  'Brisbane': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Brisbane_CBD_seen_from_Kangaroo_Point%2C_2024%2C_01_%282%29.jpg/1280px-Brisbane_CBD_seen_from_Kangaroo_Point%2C_2024%2C_01_%282%29.jpg',
+  'Perth': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Perth_CBD_skyline_from_State_War_Memorial_Lookout%2C_2023%2C_04_b.jpg/1280px-Perth_CBD_skyline_from_State_War_Memorial_Lookout%2C_2023%2C_04_b.jpg',
+  'Adelaide': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Adelaide_skyline%2C_December_2022_b.jpg/1280px-Adelaide_skyline%2C_December_2022_b.jpg',
+  'Gold Coast': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Gold_Coast_skyline_%28Unsplash%29.jpg/1280px-Gold_Coast_skyline_%28Unsplash%29.jpg',
+  'Canberra': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/Canberra_panorama_from_Mount_Ainslie.jpg/1280px-Canberra_panorama_from_Mount_Ainslie.jpg',
+  'Darwin': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/DarwinOct172024_02.jpg/1280px-DarwinOct172024_02.jpg',
+  'Hobart': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Franklin_Wharf_2015_b_%28cropped%29.jpg/1280px-Franklin_Wharf_2015_b_%28cropped%29.jpg',
+  
+  // international fallback set
+  'Auckland': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Auckland_skyline_-_May_2024_%282%29.jpg/1280px-Auckland_skyline_-_May_2024_%282%29.jpg',
+  'Dubai': 'https://upload.wikimedia.org/wikipedia/en/thumb/c/c7/Burj_Khalifa_2021.jpg/1280px-Burj_Khalifa_2021.jpg',
+  'London': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/London_Skyline_%28125508655%29.jpeg/1280px-London_Skyline_%28125508655%29.jpeg',
+  'Toronto': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Toronto_Skyline_viewed_from_Algonquin_Island_%2816-9_crop%29.jpg/1280px-Toronto_Skyline_viewed_from_Algonquin_Island_%2816-9_crop%29.jpg',
+  'Vancouver': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/57/Concord_Pacific_Master_Plan_Area.jpg/1280px-Concord_Pacific_Master_Plan_Area.jpg',
 };
 
-const CITY_FALLBACK_IMAGES: Record<string, string> = {
-  'Toronto': 'https://images.pexels.com/photos/1781629/pexels-photo-1781629.jpeg?auto=compress&cs=tinysrgb&w=1200',
-  'Vancouver': 'https://images.pexels.com/photos/264112/pexels-photo-264112.jpeg?auto=compress&cs=tinysrgb&w=1200',
-};
+const CITY_FALLBACK_IMAGES: Record<string, string> = {};
 
-const FALLBACK_IMAGE = 'https://images.pexels.com/photos/2566242/pexels-photo-2566242.jpeg?auto=compress&cs=tinysrgb&w=1200';
+const FALLBACK_IMAGE = 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/Canberra_panorama_from_Mount_Ainslie.jpg/1280px-Canberra_panorama_from_Mount_Ainslie.jpg';
 
 interface CityCardProps {
   city: {
@@ -89,7 +88,6 @@ const styles = StyleSheet.create({
     height: 130,
     borderRadius: 20,
     overflow: 'hidden',
-    // backgroundColor applied inline
   },
   content: {
     position: 'absolute',
@@ -101,13 +99,13 @@ const styles = StyleSheet.create({
   cityName: {
     fontSize: 16,
     fontFamily: 'Poppins_700Bold',
-    // color inline
+    color: '#FFFFFF',
   },
   country: {
     fontSize: 11,
     fontFamily: 'Poppins_500Medium',
     marginTop: 1,
-    // color inline
+    color: 'rgba(255,255,255,0.8)',
   },
 });
 

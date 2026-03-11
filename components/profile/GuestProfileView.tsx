@@ -30,7 +30,7 @@ export function GuestProfileView({ topInset }: { topInset: number }) {
         <Text style={[gs.headerTitle, { color: colors.textInverse }]}>Profile</Text>
       </View>
       <ScrollView contentContainerStyle={[gs.content, isDesktop && gs.desktopContent]} showsVerticalScrollIndicator={false}>
-        <View style={[gs.contentCard, isDesktop && gs.desktopCard, { backgroundColor: colors.surfaceElevated ?? (Platform.OS === 'web' ? '#FFF8F0' : '#2C2A72'), borderColor: colors.border + '66' }]}> {/* Max contrast card */}
+        <View style={[gs.contentCard, isDesktop && gs.desktopCard, { backgroundColor: colors.surfaceElevated ?? (Platform.OS === 'web' ? '#FFF8F0' : '#2C2A72'), borderColor: colors.border + '66' }]}>
         <View style={[gs.iconWrap, { backgroundColor: colors.textInverse + '24', borderColor: colors.textInverse + '47' }]}>
           <Ionicons name="person-circle-outline" size={64} color={colors.textInverse + 'E6'} />
         </View>

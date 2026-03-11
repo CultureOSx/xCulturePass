@@ -12,7 +12,7 @@ import {
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors } from '@/constants/theme';
+import { CultureTokens, EntityTypeColors, shadows } from '@/constants/theme';
 import { useState, useMemo, useCallback } from 'react';
 import * as Haptics from 'expo-haptics';
 import { useQuery } from '@tanstack/react-query';
@@ -20,17 +20,12 @@ import { queryClient } from '@/lib/query-client';
 import type { Profile } from '@shared/schema';
 import { FilterChipRow, FilterItem } from '@/components/FilterChip';
 import { useColors } from '@/hooks/useColors';
+import { useLayout } from '@/hooks/useLayout';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
+const isWeb = Platform.OS === 'web';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-
-const TYPE_COLORS: Record<string, string> = {
-  business: '#F2A93B',
-  venue: '#9B59B6',
-  council: '#3498DB',
-  government: '#2C3E50',
-  organisation: '#1A7A6D',
-};
 
 const TYPE_ICONS: Record<string, string> = {
   business: 'storefront',
@@ -41,12 +36,12 @@ const TYPE_ICONS: Record<string, string> = {
 };
 
 const ENTITY_FILTERS = [
-  { label: 'All', icon: 'grid', color: Colors.primary, display: 'All' },
-  { label: 'business', icon: 'storefront', color: '#F2A93B', display: 'Businesses' },
-  { label: 'venue', icon: 'location', color: '#9B59B6', display: 'Venues' },
-  { label: 'organisation', icon: 'business', color: '#1A7A6D', display: 'Organisations' },
-  { label: 'council', icon: 'shield-checkmark', color: '#3498DB', display: 'Councils' },
-  { label: 'government', icon: 'flag', color: '#2C3E50', display: 'Government' },
+  { label: 'All', icon: 'grid', color: CultureTokens.indigo, display: 'All' },
+  { label: 'business', icon: 'storefront', color: EntityTypeColors.business, display: 'Businesses' },
+  { label: 'venue', icon: 'location', color: EntityTypeColors.venue, display: 'Venues' },
+  { label: 'organisation', icon: 'business', color: EntityTypeColors.organisation, display: 'Organisations' },
+  { label: 'council', icon: 'shield-checkmark', color: EntityTypeColors.council, display: 'Councils' },
+  { label: 'government', icon: 'flag', color: EntityTypeColors.government, display: 'Government' },
 ] as const;
 
 function getOptionalString(record: Record<string, unknown>, key: string): string | null {
@@ -68,8 +63,8 @@ function getTags(profile: Profile): string[] {
 
 // ─── DirectoryCard ────────────────────────────────────────────────────────────
 
-function DirectoryCard({ profile, index, colors }: { profile: Profile; index: number; colors: ReturnType<typeof useColors> }) {
-  const color = TYPE_COLORS[profile.entityType] ?? Colors.primary;
+function DirectoryCard({ profile, colors, styles }: { profile: Profile; colors: ReturnType<typeof useColors>; styles: any }) {
+  const color = (EntityTypeColors as Record<string, string>)[profile.entityType] ?? CultureTokens.indigo;
   const icon = TYPE_ICONS[profile.entityType] ?? 'business';
   const tags = getTags(profile);
   const profileRecord = profile as unknown as Record<string, unknown>;
@@ -79,15 +74,20 @@ function DirectoryCard({ profile, index, colors }: { profile: Profile; index: nu
   return (
     <View>
       <Pressable
-        style={styles.card}
-        onPress={() =>
-          router.push({ pathname: '/profile/[id]', params: { id: profile.id } })
-        }
+        style={({ pressed }) => [
+          styles.card,
+          pressed && !isWeb && { transform: [{ scale: 0.98 }] },
+          pressed && isWeb && { opacity: 0.9 },
+        ]}
+        onPress={() => {
+          if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          router.push({ pathname: '/profile/[id]', params: { id: profile.id } });
+        }}
       >
         {/* Header */}
         <View style={styles.cardHeader}>
-          <View style={[styles.businessIcon, { backgroundColor: color + '15' }]}>
-            <Ionicons name={icon as never} size={26} color={color} />
+          <View style={[styles.businessIcon, { backgroundColor: `${color}15` }]}>
+            <Ionicons name={icon as never} size={28} color={color} />
           </View>
 
           <View style={styles.cardInfo}>
@@ -96,7 +96,7 @@ function DirectoryCard({ profile, index, colors }: { profile: Profile; index: nu
                 {profile.name}
               </Text>
               {profile.isVerified && (
-                <Ionicons name="checkmark-circle" size={16} color={Colors.secondary} />
+                <Ionicons name="checkmark-circle" size={18} color={CultureTokens.indigo} />
               )}
             </View>
             <Text style={styles.cardCategory}>
@@ -109,7 +109,7 @@ function DirectoryCard({ profile, index, colors }: { profile: Profile; index: nu
 
           {profile.rating != null ? (
             <View style={styles.ratingBadge}>
-              <Ionicons name="star" size={14} color={Colors.accent} />
+              <Ionicons name="star" size={14} color={CultureTokens.saffron} />
               <Text style={styles.ratingText}>{profile.rating.toFixed(1)}</Text>
             </View>
           ) : null}
@@ -138,13 +138,13 @@ function DirectoryCard({ profile, index, colors }: { profile: Profile; index: nu
         {(phone || address) && (
           <View style={styles.quickActions}>
             {phone ? (
-              <View style={[styles.quickActionCircle, { backgroundColor: Colors.secondary + '15' }]}>
-                <Ionicons name="call" size={18} color={Colors.secondary} />
+              <View style={styles.quickActionCirclePhone}>
+                <Ionicons name="call" size={18} color={CultureTokens.success} />
               </View>
             ) : null}
             {address ? (
-              <View style={[styles.quickActionCircle, { backgroundColor: Colors.info + '15' }]}> 
-                <Ionicons name="location" size={18} color={Colors.info} />
+              <View style={styles.quickActionCircleAddr}> 
+                <Ionicons name="location" size={18} color={CultureTokens.saffron} />
               </View>
             ) : null}
           </View>
@@ -152,7 +152,7 @@ function DirectoryCard({ profile, index, colors }: { profile: Profile; index: nu
         <View style={styles.cardFooter}>
           {profile.city ? (
             <View style={styles.locationRow}>
-              <Ionicons name="location-outline" size={14} color={Colors.textSecondary} />
+              <Ionicons name="location-outline" size={16} color={colors.textSecondary} />
               <Text style={styles.locationText}>
                 {profile.city}
                 {profile.country ? `, ${profile.country}` : ''}
@@ -172,15 +172,16 @@ function DirectoryCard({ profile, index, colors }: { profile: Profile; index: nu
           </View>
         </View>
 
-        {/* CTA — navigates to the same route as the card press */}
+        {/* CTA */}
         <Pressable
           style={styles.cardAction}
-          onPress={() =>
-            router.push({ pathname: '/profile/[id]', params: { id: profile.id } })
-          }
+          onPress={() => {
+            if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            router.push({ pathname: '/profile/[id]', params: { id: profile.id } });
+          }}
         >
           <Text style={styles.cardActionText}>View Details</Text>
-          <Ionicons name="arrow-forward-circle" size={20} color={Colors.primary} />
+          <Ionicons name="arrow-forward-circle" size={20} color={CultureTokens.indigo} />
         </Pressable>
       </Pressable>
     </View>
@@ -191,10 +192,21 @@ function DirectoryCard({ profile, index, colors }: { profile: Profile; index: nu
 
 export default function DirectoryScreen() {
   const insets = useSafeAreaInsets();
-  const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const colors = useColors();
+  const styles = getStyles(colors);
+  const { width, isDesktop, isTablet } = useLayout();
+  
+  const isDesktopWeb = isWeb && isDesktop;
+  const topInset = isWeb ? (isDesktopWeb ? 32 : 16) : insets.top;
+  const shellMaxWidth = isDesktopWeb ? 1120 : isTablet ? 840 : width;
+  
+  const shellStyle = isWeb || isTablet
+    ? { maxWidth: shellMaxWidth, width: '100%' as const, alignSelf: 'center' as const }
+    : undefined;
+
   const [selectedType, setSelectedType] = useState('All');
   const [search, setSearch] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
 
   const { data: allProfiles, isLoading } = useQuery<Profile[]>({
     queryKey: ['/api/profiles'],
@@ -241,11 +253,14 @@ export default function DirectoryScreen() {
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
     queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
-    setTimeout(() => setRefreshing(false), 1000);
+    setTimeout(() => {
+      if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      setRefreshing(false);
+    }, 1000);
   }, []);
 
   const handleFilterSelect = useCallback((id: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedType(id);
   }, []);
 
@@ -260,224 +275,248 @@ export default function DirectoryScreen() {
   }, [typeCounts]);
 
   return (
-    <View style={[styles.container, { paddingTop: topInset }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>Directory</Text>
-        <Text style={[styles.subtitle, { color: colors.text }]}>Businesses, venues, organisations & more</Text>
-      </View>
+    <ErrorBoundary>
+      <View style={[styles.container, { paddingTop: topInset }]}>
+        <View style={shellStyle}>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.title}>Directory</Text>
+            <Text style={styles.subtitle}>Businesses, venues, organisations & more</Text>
+          </View>
 
-      {/* Search bar */}
-      <View style={styles.searchContainer}>
-        <Ionicons name="search" size={22} color={colors.textSecondary} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search directory..."
-          placeholderTextColor={colors.textSecondary}
-          value={search}
-          onChangeText={setSearch}
-          returnKeyType="search"
-        />
-        {search.length > 0 && (
-          <Pressable onPress={() => setSearch('')} hitSlop={8}>
-            <Ionicons name="close-circle" size={22} color={colors.textSecondary} />
-          </Pressable>
+          {/* Search bar */}
+          <View style={[styles.searchContainer, searchFocused && styles.searchContainerFocused]}>
+            <Ionicons name="search" size={22} color={searchFocused ? CultureTokens.indigo : colors.textTertiary} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search directory..."
+              placeholderTextColor={colors.textTertiary}
+              value={search}
+              onChangeText={setSearch}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
+              returnKeyType="search"
+            />
+            {search.length > 0 && (
+              <Pressable onPress={() => setSearch('')} hitSlop={14}>
+                <Ionicons name="close-circle" size={22} color={colors.textTertiary} />
+              </Pressable>
+            )}
+          </View>
+
+          {/* Category filter chips */}
+          <View style={styles.categorySection}>
+            <FilterChipRow items={filterItems} selectedId={selectedType} onSelect={handleFilterSelect} />
+          </View>
+        </View>
+
+        {/* Content */}
+        {isLoading ? (
+          <View style={styles.loadingWrap}>
+            <ActivityIndicator size="large" color={CultureTokens.indigo} />
+          </View>
+        ) : (
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={[styles.list, { paddingBottom: isWeb ? 40 : 100 }]}
+            keyboardShouldPersistTaps="handled"
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={CultureTokens.indigo} colors={[CultureTokens.indigo]} />}
+          >
+            <View style={shellStyle}>
+              <Text style={styles.resultCount}>
+                {filtered.length} {filtered.length === 1 ? 'listing' : 'listings'} found
+              </Text>
+
+              {filtered.map((profile) => (
+                <DirectoryCard key={profile.id} profile={profile} colors={colors} styles={styles} />
+              ))}
+
+              {filtered.length === 0 && (
+                <View style={styles.emptyState}>
+                  <View style={styles.emptyIconBox}>
+                    <Ionicons name="storefront-outline" size={48} color={colors.textTertiary} />
+                  </View>
+                  <Text style={styles.emptyTitle}>No results found</Text>
+                  <Text style={styles.emptySubtext}>
+                    Try a different filter or search term
+                  </Text>
+                </View>
+              )}
+            </View>
+          </ScrollView>
         )}
       </View>
-
-      {/* Category filter chips */}
-      <View style={styles.categorySection}>
-        <FilterChipRow items={filterItems} selectedId={selectedType} onSelect={handleFilterSelect} />
-      </View>
-
-      {/* Content */}
-      {isLoading ? (
-        <View style={styles.loadingWrap}>
-          <ActivityIndicator size="large" color={Colors.primary} />
-        </View>
-      ) : (
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.list}
-          keyboardShouldPersistTaps="handled"
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.primary} colors={[Colors.primary]} />}
-        >
-          <Text style={styles.resultCount}>
-            {filtered.length} {filtered.length === 1 ? 'listing' : 'listings'} found
-          </Text>
-
-          {filtered.map((profile, index) => (
-            <DirectoryCard key={profile.id} profile={profile} index={index} colors={colors} />
-          ))}
-
-          {filtered.length === 0 && (
-            <View style={styles.emptyState}>
-              <Ionicons name="storefront-outline" size={52} color={colors.textSecondary} />
-              <Text style={styles.emptyTitle}>No results found</Text>
-              <Text style={[styles.emptySubtext, { color: colors.text }]}>
-                Try a different filter or search term
-              </Text>
-            </View>
-          )}
-
-          <View style={{ height: 100 }} />
-        </ScrollView>
-      )}
-    </View>
+    </ErrorBoundary>
   );
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  header: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 4 },
-  title: { fontSize: 28, fontFamily: 'Poppins_700Bold', color: Colors.text },
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
+  header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
+  title: { fontSize: 32, fontFamily: 'Poppins_700Bold', color: colors.text, letterSpacing: -0.6 },
   subtitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: 'Poppins_400Regular',
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: 2,
-    marginBottom: 4,
+    marginBottom: 8,
   },
   loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: 16,
     marginHorizontal: 20,
     paddingHorizontal: 16,
     paddingVertical: 14,
     gap: 12,
-    borderWidth: 0.5,
-    borderColor: Colors.cardBorder,
-    marginBottom: 8,
-    overflow: 'hidden',
-    ...Colors.shadow.medium,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    marginBottom: 12,
+  },
+  searchContainerFocused: {
+    borderColor: CultureTokens.indigo,
   },
   searchInput: {
     flex: 1,
-    fontSize: 15,
-    fontFamily: 'Poppins_400Regular',
-    color: Colors.text,
+    fontSize: 16,
+    fontFamily: 'Poppins_500Medium',
+    color: colors.text,
     padding: 0,
     minWidth: 0,
   },
-  categorySection: { paddingTop: 8, paddingBottom: 4 },
+  categorySection: { paddingTop: 4, paddingBottom: 12, paddingHorizontal: isWeb ? 0 : undefined },
   resultCount: {
     fontSize: 15,
     fontFamily: 'Poppins_700Bold',
-    color: Colors.text,
-    marginBottom: 12,
+    color: colors.textSecondary,
+    marginBottom: 16,
   },
-  list: { paddingHorizontal: 20, paddingTop: 6 },
+  list: { paddingHorizontal: 20, paddingTop: 8 },
+  
   card: {
-    backgroundColor: Colors.card,
-    borderRadius: 22,
-    padding: 20,
-    borderWidth: 0.5,
-    borderColor: Colors.cardBorder,
-    gap: 12,
-    marginBottom: 14,
-    ...Colors.shadow.medium,
+    backgroundColor: colors.surface,
+    borderRadius: 24,
+    padding: 22,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    gap: 14,
+    marginBottom: 16,
+    ...shadows.medium,
   },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  cardHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 14 },
   businessIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
+    width: 60,
+    height: 60,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
   cardInfo: { flex: 1, gap: 2 },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   cardName: {
-    fontSize: 17,
+    fontSize: 18,
     fontFamily: 'Poppins_700Bold',
-    color: Colors.text,
+    color: colors.text,
     flexShrink: 1,
   },
-  cardCategory: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: Colors.textSecondary },
+  cardCategory: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: colors.textSecondary, textTransform: 'capitalize' },
   cpidLabel: {
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'Poppins_600SemiBold',
     fontSize: 11,
-    color: Colors.textTertiary,
+    color: colors.textTertiary,
     letterSpacing: 0.8,
-    marginTop: 1,
+    marginTop: 4,
   },
   ratingBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: Colors.accent + '18',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    backgroundColor: 'rgba(255, 200, 87, 0.15)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 14,
   },
-  ratingText: { fontSize: 14, fontFamily: 'Poppins_700Bold', color: Colors.accent },
+  ratingText: { fontSize: 13, fontFamily: 'Poppins_700Bold', color: CultureTokens.saffron },
   cardDesc: {
     fontSize: 14,
     fontFamily: 'Poppins_400Regular',
-    color: Colors.textSecondary,
-    lineHeight: 21,
+    color: colors.textSecondary,
+    lineHeight: 22,
   },
-  serviceRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, alignItems: 'center' },
+  serviceRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
   servicePill: {
-    backgroundColor: Colors.backgroundSecondary,
-    paddingHorizontal: 14,
+    backgroundColor: colors.backgroundSecondary,
+    paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 10,
   },
-  serviceText: { fontSize: 12, fontFamily: 'Poppins_500Medium', color: Colors.textSecondary },
-  moreServices: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: Colors.primary },
+  serviceText: { fontSize: 12, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
+  moreServices: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.indigo },
   quickActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
   },
-  quickActionCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  quickActionCirclePhone: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(46, 196, 182, 0.15)',
+  },
+  quickActionCircleAddr: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 140, 66, 0.15)',
   },
   cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 2,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderLight,
+    marginTop: 4,
   },
-  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  locationText: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: Colors.textSecondary },
-  statsRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  followersText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: Colors.secondary },
-  reviewCount: { fontSize: 12, fontFamily: 'Poppins_400Regular', color: Colors.textTertiary },
+  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  locationText: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
+  statsRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  followersText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.teal },
+  reviewCount: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: colors.textTertiary },
   cardAction: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 13,
-    marginTop: 6,
-    borderRadius: 14,
-    backgroundColor: Colors.primaryGlow,
+    paddingVertical: 14,
+    marginTop: 8,
+    borderRadius: 16,
+    backgroundColor: 'rgba(44, 42, 114, 0.08)',
     borderWidth: 1,
-    borderColor: Colors.primary + '20',
+    borderColor: 'rgba(44, 42, 114, 0.15)',
   },
-  cardActionText: { fontSize: 14, fontFamily: 'Poppins_700Bold', color: Colors.primary },
+  cardActionText: { fontSize: 14, fontFamily: 'Poppins_700Bold', color: CultureTokens.indigo },
+  
   emptyState: { alignItems: 'center', paddingVertical: 80, gap: 14 },
+  emptyIconBox: { width: 88, height: 88, borderRadius: 44, borderWidth: 1, borderColor: colors.borderLight, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   emptyTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontFamily: 'Poppins_600SemiBold',
-    color: Colors.text,
+    color: colors.text,
     marginTop: 4,
   },
   emptySubtext: {
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: 'Poppins_400Regular',
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     paddingHorizontal: 40,
   },

@@ -1,0 +1,25 @@
+{
+  "apple": {
+    "info": {
+      "en-AU": {
+        "title": "CulturePass - Diaspora Events",
+        "subtitle": "Events & Groups near you",
+        "description": "CulturePass is your cultural lifestyle platform. Discover events, join diaspora communities, find local businesses, and celebrate diversity across Australia, New Zealand, UAE, UK & Canada. Connect with your heritage, find food from back home, and meet people who share your roots.",
+        "keywords": ["diaspora", "events", "culture", "community", "sydney events", "multicultural"]
+      }
+    },
+    "categories": ["LIFESTYLE", "SOCIAL_NETWORKING"],
+    "rating": "4+"
+  },
+  "google": {
+    "info": {
+      "en-AU": {
+        "title": "CulturePass - Cultural Events",
+        "shortDescription": "Discover diaspora events, groups & businesses.",
+        "fullDescription": "CulturePass is your cultural lifestyle platform. Discover events, join diaspora communities, find local businesses, and celebrate diversity across Australia, New Zealand, UAE, UK & Canada. Connect with your heritage, find food from back home, and meet people who share your roots.",
+        "video": "https://www.youtube.com/watch?v=placeholder"
+      }
+    },
+    "categories": ["LIFESTYLE"]
+  }
+}
