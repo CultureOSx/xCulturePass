@@ -13,11 +13,11 @@ export type NotificationType =
 export interface Notification {
   id: string;
   userId: string;
+  type: string;
   title: string;
   message: string;
-  type: NotificationType;
-  isRead: boolean;
-  metadata?: Record<string, unknown>;
-  deepLink?: string;
+  entityType?: string;
+  entityId?: string;
+  read: boolean;
   createdAt: string;
 }

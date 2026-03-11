@@ -27,6 +27,7 @@ import { Input } from '@/components/ui/Input';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { SocialButton } from '@/components/ui/SocialButton';
 import { LinearGradient } from 'expo-linear-gradient';
+import { olympicColors } from '@/constants/theme';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useColors } from '@/hooks/useColors';
 import * as AppleAuthentication from 'expo-apple-authentication';
@@ -47,13 +48,15 @@ export default function LoginScreen() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  // Form logic
-  const normalizedEmail = email.trim().toLowerCase();
-  const isValid = normalizedEmail.length > 0 && password.length >= 6;
+  const validate = () => {
+    if (!email.match(/^[^@]+@[^@]+\.[^@]+$/)) return 'Invalid email address';
+    if (password.length < 6) return 'Password must be at least 6 characters';
+    return '';
+  };
 
   const postAuthRoute = async () => {
     // 1. Redirect target
@@ -67,12 +70,7 @@ export default function LoginScreen() {
 
     // 2. Onboarding fallback
     if (!onboardingState.isComplete) {
-      if (normalizedEmail && password) {
-        await completeOnboarding();
-        router.replace('/(tabs)');
-        return;
-      }
-      router.push('/(onboarding)/location');
+      router.replace('/(onboarding)/login');
       return;
     }
 
@@ -148,15 +146,11 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     setError('');
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
-      setError('Please enter a valid email address.');
-      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      return;
-    }
-
+    const validationError = validate();
+    if (validationError) return setError(validationError);
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(firebaseAuth, normalizedEmail, password);
+      await signInWithEmailAndPassword(firebaseAuth, email, password);
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       postAuthRoute();
     } catch (e: any) {
@@ -177,10 +171,10 @@ export default function LoginScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={gradients.culturepassBrand}
+        colors={olympicColors}
         start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0.95 }}
-        style={StyleSheet.absoluteFillObject}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradientBg}
       />
       
       {/* Desktop Layout Background Back Button */}
@@ -274,7 +268,7 @@ export default function LoginScreen() {
                     setPassword(value);
                     if (error) setError('');
                   }}
-                  secureTextEntry
+                  secureTextEntry={!showPassword}
                   passwordToggle
                   returnKeyType="done"
                   onSubmitEditing={handleLogin}

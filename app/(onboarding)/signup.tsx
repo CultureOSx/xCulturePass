@@ -72,7 +72,7 @@ export default function SignUpScreen() {
       if (Platform.OS !== 'web') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
-      router.push('/(onboarding)/location');
+      router.push('/(onboarding)/login');
     } catch (e: any) {
       const code = e?.code;
       if (!['auth/popup-closed-by-user', 'auth/cancelled-popup-request', '-5'].includes(code)) {
@@ -102,7 +102,7 @@ export default function SignUpScreen() {
       });
       await signInWithCredential(firebaseAuth, firebaseCredential);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      router.push('/(onboarding)/location');
+      router.push('/(onboarding)/login');
     } catch (e: any) {
       if (e?.code !== 'ERR_REQUEST_CANCELED') {
         setError('Apple sign-up failed. Please try again.');
@@ -136,7 +136,7 @@ export default function SignUpScreen() {
       if (Platform.OS !== 'web') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
-      router.push('/(onboarding)/location');
+      router.push('/(onboarding)/login');
     } catch (e: any) {
       const code = e?.code;
       if (code === 'auth/email-already-in-use') {

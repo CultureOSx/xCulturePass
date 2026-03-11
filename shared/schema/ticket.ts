@@ -14,27 +14,48 @@ export interface TicketAuditEntry {
 
 export interface Ticket {
   id: string;
-  eventId: string;
-  userId: string;
-  title?: string;
-  eventName?: string;
-  eventTitle?: string;
-  eventDate?: string;
-  eventTime?: string;
-  eventVenue?: string;
-  date?: string;
-  venue?: string;
-  qrCode?: string;
+  cpTicketId?: string;
   ticketCode?: string;
+  eventId: string;
+  bookingId?: string;
+  userId: string;
   tierName?: string;
   quantity?: number;
+  seatNumber?: string;
+  section?: string;
+  row?: string;
   totalPriceCents?: number;
-  imageColor?: string;
+  currency?: string;
+  status: 'reserved' | 'confirmed' | 'cancelled' | 'used' | 'expired';
+  paymentStatus?: 'pending' | 'paid' | 'failed' | 'refunded';
+  stripeSessionId?: string;
+  stripePaymentIntentId?: string;
+  qrCode?: string;
+  qrSecret?: string;
+  qrExpiresAt?: string;
+  checkedIn?: boolean;
+  checkedInAt?: string;
+  checkedInBy?: string;
+  cashbackCents?: number;
   rewardPointsEarned?: number;
   rewardPointsAwardedAt?: string;
-  status: TicketStatus | null;
-  paymentStatus?: 'pending' | 'paid' | 'refunded' | 'failed';
-  scannedAt?: string;
-  history: TicketHistoryEntry[];
+  refundStatus?: 'pending' | 'approved' | 'rejected' | 'completed';
+  refundAmountCents?: number;
+  refundedAt?: string;
+  eventSnapshot?: {
+    title: string;
+    venue: string;
+    startAt: string;
+  };
+  source?: string;
+  campaign?: string;
+  history: Array<{
+    action: string;
+    at: string;
+    by?: string;
+    note?: string;
+  }>;
   staffAuditTrail?: TicketAuditEntry[];
+  createdAt: string;
+  updatedAt?: string;
 }

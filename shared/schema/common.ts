@@ -21,32 +21,48 @@ export interface Locatable {
   country: string;
 }
 
-export interface Location {
-  id: string;
+// Hierarchical location model
+export interface Country {
+  code: string;
   name: string;
-  geoHash: string;
-  lat?: number;
-  lng?: number;
-  suburb?: string;
-  state?: string;
+  emoji?: string;
+  phoneCode?: string;
+  currency?: string;
+  timezone?: string;
+  acknowledgement?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface Country {
-  id: string;
-  name: string;
+export interface State {
   code: string;
-  flagEmoji?: string;
+  name: string;
+  countryCode: string;
+  emoji?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface City {
   id: string;
   name: string;
-  countryId: string;
+  slug: string;
+  stateCode: string;
   countryCode: string;
-  state?: string;
-  lat?: number;
-  lng?: number;
-  geoHash?: string;
+  location: { lat: number; lng: number };
+  geoHash: string;
+  population?: number;
   timezone?: string;
-  isActive: boolean;
+  featured?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Region {
+  id: string;
+  name: string;
+  countryCode: string;
+  cities: string[];
+  createdAt?: string;
+  updatedAt?: string;
 }

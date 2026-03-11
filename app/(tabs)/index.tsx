@@ -346,7 +346,7 @@ export default function HomeScreen() {
                     end={{ x: 1, y: 1 }}
                     style={{ borderRadius: 12, paddingHorizontal: 16, paddingVertical: 8, alignSelf: 'center' }}
                   >
-                    <Text style={styles.heroTitleDesktop}>WHAT&apos;S ON This Week.</Text>
+                    <Text style={styles.heroTitleDesktop}>WATS ON This Week.</Text>
                   </LinearGradient>
                 </Pressable>
               </View>
@@ -367,7 +367,7 @@ export default function HomeScreen() {
                     end={{ x: 1, y: 1 }}
                     style={{ borderRadius: 12, paddingHorizontal: 16, paddingVertical: 8, alignSelf: 'flex-start' }}
                   >
-                    <Text style={styles.heroTitle}>WHAT&apos;S ON This Week.</Text>
+                    <Text style={styles.heroTitle}>WATS ON This Week.</Text>
                   </LinearGradient>
                 </Pressable>
               </View>

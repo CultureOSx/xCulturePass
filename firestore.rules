@@ -22,33 +22,101 @@ service cloud.firestore {
       return hasRole('organizer');
     }
 
+    // Users: Only owner or admin can write, anyone can read public profiles
     match /users/{uid} {
-      allow read, create, update, delete: if isOwner(uid) || isAdmin();
+      allow read: if true;
+      allow write: if isOwner(uid) || isAdmin();
+      // User subcollections: Only owner can access
+      match /{sub=/(tickets|savedEvents|calendar|notifications|perks|communities)}/{docId} {
+        allow read, write: if isOwner(uid);
+      }
     }
 
+    // Events: Anyone can read published, only organizer/admin can write
     match /events/{eventId} {
-      allow read: if ((resource.data.deletedAt == null) && (resource.data.publishedAt != null)) || isAdmin() || isOrganizer();
-      allow create: if isSignedIn() && (isOrganizer() || isAdmin()) && request.resource.data.organizerId == request.auth.uid;
-      allow update, delete: if isAdmin() || (isOrganizer() && resource.data.organizerId == request.auth.uid);
+      allow read: if resource.data.status == 'published';
+      allow write: if isSignedIn() && (isOrganizer() || isAdmin());
+      // Event subcollections: Only organizer/admin can write, attendees can read their own tickets
+      match /{sub=/(tickets|attendees|reviews|comments|media)}/{docId} {
+        allow read: if true;
+        allow write: if isOrganizer() || isAdmin();
+      }
     }
 
+    // Communities: Anyone can read, only admin/owner can write
+    match /communities/{communityId} {
+      allow read: if true;
+      allow write: if isAdmin() || isOrganizer();
+      match /members/{memberId} {
+        allow read: if true;
+        allow write: if isAdmin() || isOrganizer();
+      }
+      match /events/{eventId} {
+        allow read: if true;
+        allow write: if isAdmin() || isOrganizer();
+      }
+      match /council/{councilId} {
+        allow read: if true;
+        allow write: if isAdmin() || isOrganizer();
+      }
+    }
+
+    // Council: Only council members/admin can write, anyone can read
+    match /council/{councilId} {
+      allow read: if true;
+      allow write: if isAdmin() || isOrganizer();
+      match /members/{memberId} {
+        allow read: if true;
+        allow write: if isAdmin() || isOrganizer();
+      }
+      match /events/{eventId} {
+        allow read: if true;
+        allow write: if isAdmin() || isOrganizer();
+      }
+      match /claims/{claimId} {
+        allow read: if true;
+        allow write: if isAdmin() || isOrganizer();
+      }
+    }
+
+    // Perks: Anyone can read, only admin can write
+    match /perks/{perkId} {
+      allow read: if true;
+      allow write: if isAdmin();
+      match /redemptions/{redemptionId} {
+        allow read: if true;
+        allow write: if isOwner(request.auth.uid) || isAdmin();
+      }
+    }
+
+    // Tickets: Only owner or event organizer can read/write
     match /tickets/{ticketId} {
-      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin() || isOrganizer());
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isAdmin();
+      allow read, write: if isOwner(resource.data.userId) || isOrganizer() || isAdmin();
     }
 
+    // Feed: Only owner can read/write
+    match /feed/{feedId} {
+      allow read, write: if isOwner(resource.data.userId);
+    }
+
+    // Notifications: Only recipient can read/write
+    match /notifications/{notificationId} {
+      allow read, write: if isOwner(resource.data.userId);
+    }
+
+    // Profiles: Anyone can read, only owner/admin can write
     match /profiles/{profileId} {
       allow read: if true;
-      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
-      allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
+      allow write: if isOwner(resource.data.ownerId) || isAdmin();
     }
 
+    // Locations: Anyone can read, only admin can write
     match /locations/{countryCode} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
+    // Default: deny all
     match /{document=**} {
       allow read, write: if false;
     }

@@ -1,11 +1,9 @@
 export interface MediaAttachment {
   id: string;
-  targetType: string;
-  targetId: string;
-  imageUrl: string;
-  thumbnailUrl?: string;
-  width?: number;
-  height?: number;
-  uploadedBy: string;
+  entityType: string;
+  entityId: string;
+  url: string;
+  type: string;
+  caption?: string;
   createdAt: string;
 }
