@@ -1,15 +1,34 @@
-import { View, Text, Pressable, StyleSheet, ScrollView, Platform, Alert, ActivityIndicator } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  ScrollView,
+  Platform,
+  Alert,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  useWindowDimensions,
+} from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useOnboarding } from '@/contexts/OnboardingContext';
-import { interestCategories, interestIcons, popularInterestsSydney, type InterestCategory } from '@/constants/onboardingInterests';
+import {
+  interestCategories,
+  interestIcons,
+  popularInterestsSydney,
+  type InterestCategory,
+} from '@/constants/onboardingInterests';
 import { useColors } from '@/hooks/useColors';
-import { useMemo, useState } from 'react';
-import * as Haptics from 'expo-haptics';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import type { User } from '@/shared/schema';
+import { Button } from '@/components/ui/Button';
+import { LinearGradient } from 'expo-linear-gradient';
+import { gradients } from '@/constants/theme';
+import * as Haptics from 'expo-haptics';
 
 const MIN_REQUIRED_INTERESTS = 5;
 
@@ -20,11 +39,15 @@ const DEFAULT_EXPANDED: Record<string, boolean> = interestCategories.reduce((acc
 
 export default function InterestsScreen() {
   const insets = useSafeAreaInsets();
-  const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const colors = useColors();
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === 'web' && width >= 1024;
+  const topInset = Platform.OS === 'web' ? 0 : insets.top;
+
   const { user } = useAuth();
   const { state, setInterests: setSelectedInterests, completeOnboarding } = useOnboarding();
-  const [selected, setSelected] = useState<string[]>(state.interests);
+  
+  const [selected, setSelected] = useState<string[]>(state.interests || []);
   const [expanded, setExpanded] = useState<Record<string, boolean>>(DEFAULT_EXPANDED);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -41,12 +64,14 @@ export default function InterestsScreen() {
   const selectedSet = useMemo(() => new Set(selected), [selected]);
 
   const toggle = (interest: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSelected((prev) => (prev.includes(interest) ? prev.filter((item) => item !== interest) : [...prev, interest]));
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSelected((prev) => 
+      prev.includes(interest) ? prev.filter((item) => item !== interest) : [...prev, interest]
+    );
   };
 
   const toggleSection = (categoryId: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setExpanded((prev) => ({ ...prev, [categoryId]: !prev[categoryId] }));
   };
 
@@ -92,11 +117,11 @@ export default function InterestsScreen() {
 
     try {
       await completeOnboarding();
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace('/(tabs)');
     } catch (error) {
       console.warn('[onboarding] failed to complete onboarding:', error);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Could not finish onboarding', 'Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -104,155 +129,382 @@ export default function InterestsScreen() {
   };
 
   return (
-    <View style={[s.container, { paddingTop: topInset, backgroundColor: colors.background }]}>
-      <View style={s.header}>
-        <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/(onboarding)/culture-match'))} hitSlop={12}>
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
-        </Pressable>
-        <Text style={[s.step, { color: colors.textSecondary }]}>4 of 4</Text>
-      </View>
+    <View style={styles.container}>
+      <LinearGradient
+        colors={gradients.culturepassBrand}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0.95 }}
+        style={StyleSheet.absoluteFillObject}
+      />
 
-      <ScrollView style={s.content} showsVerticalScrollIndicator={false}>
-        <Text style={[s.title, { color: colors.text }]}>What interests you?</Text>
-        <Text style={[s.subtitle, { color: colors.textSecondary }]}>
-          Choose at least {MIN_REQUIRED_INTERESTS} interests so we can personalize your feed, perks, council updates, and community suggestions.
-        </Text>
+      {isDesktop && (
+        <View style={styles.desktopBackRow}>
+          <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/(onboarding)/communities')} hitSlop={8} style={[styles.desktopBackBtn, { backgroundColor: colors.surface + '26' }]}>
+            <Ionicons name="chevron-back" size={18} color="#FFFFFF" />
+            <Text style={styles.desktopBackText}>Back</Text>
+          </Pressable>
+        </View>
+      )}
 
-        <View style={s.block}>
-          <Text style={[s.sectionLabel, { color: colors.textSecondary }]}>Popular in Sydney</Text>
-          <View style={s.popularRow}>
-            {popularInterestsSydney.map((interest) => {
-              const category = categoryByInterest.get(interest);
-              const isSelected = selectedSet.has(interest);
-              const accentColor = category?.accentColor ?? colors.primary;
-              const iconName = (interestIcons[interest] as string | undefined) ?? 'star';
+      {!isDesktop && (
+        <View style={[styles.mobileHeader, { paddingTop: topInset }]}>
+          <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/(onboarding)/communities'))} hitSlop={12}>
+            <Ionicons name="chevron-back" size={28} color="#FFFFFF" />
+          </Pressable>
+          <Text style={[styles.stepText, { color: '#FFFFFF' }]}>3 of 3</Text>
+        </View>
+      )}
+
+      <KeyboardAvoidingView 
+        style={styles.keyboardAvoid} 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+        keyboardVerticalOffset={0}
+      >
+        <ScrollView 
+          showsVerticalScrollIndicator={false} 
+          keyboardShouldPersistTaps="handled" 
+          contentContainerStyle={[
+            styles.scrollContent,
+            isDesktop && styles.scrollContentDesktop,
+            !isDesktop && { paddingTop: 20 }
+          ]}
+        >
+          <View style={[
+            styles.formCard, 
+            { backgroundColor: colors.surface },
+            isDesktop && styles.formCardDesktop
+          ]}>
+            <Text style={[styles.title, { color: colors.text }]}>What interests you?</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+              Choose at least {MIN_REQUIRED_INTERESTS} interests to personalize your content.
+            </Text>
+
+            <View style={styles.block}>
+              <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Popular in Sydney</Text>
+              <View style={styles.popularRow}>
+                {popularInterestsSydney.map((interest) => {
+                  const category = categoryByInterest.get(interest);
+                  const isSelected = selectedSet.has(interest);
+                  const accentColor = category?.accentColor ?? colors.primary;
+                  const iconName = (interestIcons[interest] as string | undefined) ?? 'star';
+
+                  return (
+                    <Pressable
+                      key={interest}
+                      onPress={() => toggle(interest)}
+                      style={[
+                        styles.popularChip,
+                        { borderColor: colors.borderLight, backgroundColor: colors.surface },
+                        isSelected && { borderColor: accentColor, backgroundColor: accentColor },
+                      ]}
+                    >
+                      <Ionicons 
+                        name={iconName as never} 
+                        size={14} 
+                        color={isSelected ? '#FFF' : accentColor} 
+                      />
+                      <Text 
+                        numberOfLines={1} 
+                        style={[styles.popularChipText, { color: isSelected ? '#FFF' : colors.text }]}
+                      >
+                        {interest}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+
+            {interestCategories.map((category) => {
+              const isOpen = expanded[category.id] ?? true;
+              const selectedInCategory = category.interests.filter((interest) => selectedSet.has(interest)).length;
 
               return (
-                <Pressable
-                  key={interest}
-                  onPress={() => toggle(interest)}
+                <View 
+                  key={category.id} 
                   style={[
-                    s.popularChip,
-                    { borderColor: colors.borderLight, backgroundColor: colors.surface },
-                    isSelected && { borderColor: accentColor, backgroundColor: accentColor },
+                    styles.categorySection, 
+                    { backgroundColor: colors.surface, borderColor: colors.borderLight }
                   ]}
                 >
-                  <Ionicons name={iconName as never} size={14} color={isSelected ? colors.textInverse : accentColor} />
-                  <Text numberOfLines={1} style={[s.popularChipText, { color: isSelected ? colors.textInverse : colors.text }]}>
-                    {interest}
-                  </Text>
-                </Pressable>
+                  <Pressable style={styles.categoryHeader} onPress={() => toggleSection(category.id)}>
+                    <View style={styles.categoryTitleWrap}>
+                      <View style={[styles.categoryDot, { backgroundColor: category.accentColor }]} />
+                      <View>
+                        <Text style={[styles.categoryTitle, { color: colors.text }]}>
+                          {category.title}
+                        </Text>
+                        <Text style={[styles.categoryMeta, { color: colors.textSecondary }]}>
+                          {selectedInCategory} selected
+                        </Text>
+                      </View>
+                    </View>
+                    <Ionicons 
+                      name={isOpen ? 'chevron-up' : 'chevron-down'} 
+                      size={20} 
+                      color={colors.textSecondary} 
+                    />
+                  </Pressable>
+
+                  {isOpen ? (
+                    <View style={styles.grid}>
+                      {category.interests.map((interest) => {
+                        const isSelected = selectedSet.has(interest);
+                        const iconName = (interestIcons[interest] as string | undefined) ?? 'star';
+
+                        return (
+                          <Pressable
+                            key={interest}
+                            style={[
+                              styles.card,
+                              { backgroundColor: colors.surface, borderColor: colors.borderLight },
+                              isSelected && { 
+                                backgroundColor: category.accentColor, 
+                                borderColor: category.accentColor 
+                              },
+                            ]}
+                            onPress={() => toggle(interest)}
+                          >
+                            <View style={[
+                              styles.iconCircle, 
+                              { backgroundColor: isSelected ? colors.surface + '33' : colors.backgroundSecondary }
+                            ]}>
+                              <Ionicons 
+                                name={iconName as never} 
+                                size={20} 
+                                color={isSelected ? '#FFF' : category.accentColor} 
+                              />
+                            </View>
+                            <Text style={[styles.cardText, { color: isSelected ? '#FFF' : colors.text }]}>
+                              {interest}
+                            </Text>
+                            {isSelected && (
+                              <View style={[styles.checkBadge, { backgroundColor: colors.surface }]}> 
+                                <Ionicons name="checkmark" size={14} color={category.accentColor} />
+                              </View>
+                            )}
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  ) : null}
+                </View>
               );
             })}
-          </View>
-        </View>
 
-        {interestCategories.map((category) => {
-          const isOpen = expanded[category.id] ?? true;
-          const selectedInCategory = category.interests.filter((interest) => selectedSet.has(interest)).length;
+            <View style={styles.spacer} />
 
-          return (
-            <View key={category.id} style={[s.categorySection, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-              <Pressable style={s.categoryHeader} onPress={() => toggleSection(category.id)}>
-                <View style={s.categoryTitleWrap}>
-                  <View style={[s.categoryDot, { backgroundColor: category.accentColor }]} />
-                  <View>
-                    <Text style={[s.categoryTitle, { color: colors.text }]}>{category.title}</Text>
-                    <Text style={[s.categoryMeta, { color: colors.textSecondary }]}>{selectedInCategory} selected</Text>
-                  </View>
-                </View>
-                <Ionicons name={isOpen ? 'chevron-up' : 'chevron-down'} size={20} color={colors.textSecondary} />
-              </Pressable>
-
-              {isOpen ? (
-                <View style={s.grid}>
-                  {category.interests.map((interest) => {
-                    const isSelected = selectedSet.has(interest);
-                    const iconName = (interestIcons[interest] as string | undefined) ?? 'star';
-
-                    return (
-                      <Pressable
-                        key={interest}
-                        style={[
-                          s.card,
-                          { backgroundColor: colors.surface, borderColor: colors.borderLight },
-                          isSelected && { backgroundColor: category.accentColor, borderColor: category.accentColor },
-                        ]}
-                        onPress={() => toggle(interest)}
-                      >
-                        <View style={[s.iconCircle, { backgroundColor: isSelected ? colors.surface : colors.backgroundSecondary }]}>
-                          <Ionicons name={iconName as never} size={20} color={isSelected ? colors.textInverse : category.accentColor} />
-                        </View>
-                        <Text style={[s.cardText, { color: isSelected ? colors.textInverse : colors.text }]}>{interest}</Text>
-                        {isSelected ? (
-                          <View style={[s.checkBadge, { backgroundColor: colors.surface }]}> 
-                            <Ionicons name="checkmark" size={14} color={category.accentColor} />
-                          </View>
-                        ) : null}
-                      </Pressable>
-                    );
-                  })}
-                </View>
-              ) : null}
+            <View style={styles.footerInfo}>
+               <Text style={[styles.selectedCount, { color: colors.textSecondary }]}>
+                {selected.length} selected · minimum {MIN_REQUIRED_INTERESTS}
+              </Text>
             </View>
-          );
-        })}
 
-        <View style={{ height: 120 }} />
-      </ScrollView>
-
-      <View style={[s.footer, { paddingBottom: Platform.OS === 'web' ? 34 : insets.bottom + 16, backgroundColor: colors.background }]}> 
-        <Text style={[s.selectedCount, { color: colors.textSecondary }]}>
-          {selected.length} selected · minimum {MIN_REQUIRED_INTERESTS}
-        </Text>
-        <Pressable
-          style={[s.nextBtn, { backgroundColor: colors.primary }, (selected.length < MIN_REQUIRED_INTERESTS || isSubmitting) && { opacity: 0.4 }]}
-          onPress={handleFinish}
-          disabled={selected.length < MIN_REQUIRED_INTERESTS || isSubmitting}
-        >
-          {isSubmitting ? (
-            <ActivityIndicator size="small" color={colors.textInverse} />
-          ) : (
-            <>
-              <Text style={[s.nextBtnText, { color: colors.textInverse }]}>Start Exploring</Text>
-              <Ionicons name="sparkles" size={20} color={colors.textInverse} />
-            </>
-          )}
-        </Pressable>
-      </View>
+            <Button
+              variant="primary"
+              size="lg"
+              fullWidth
+              rightIcon="sparkles"
+              disabled={selected.length < MIN_REQUIRED_INTERESTS || isSubmitting}
+              onPress={handleFinish}
+              style={styles.submitBtn}
+            >
+              {isSubmitting ? 'Starting...' : 'Start Exploring'}
+            </Button>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }
 
-const s = StyleSheet.create({
-  container: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
-  step: { fontSize: 14, fontFamily: 'Poppins_500Medium' },
-  content: { flex: 1, paddingHorizontal: 20 },
-  title: { fontSize: 28, fontFamily: 'Poppins_700Bold', marginTop: 8 },
-  subtitle: { fontSize: 15, fontFamily: 'Poppins_400Regular', marginTop: 8, lineHeight: 22, marginBottom: 16 },
-
-  block: { marginBottom: 12 },
-  sectionLabel: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 },
-  popularRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  popularChip: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1.5, borderRadius: 18, paddingHorizontal: 10, paddingVertical: 8, maxWidth: '100%' as never },
-  popularChipText: { fontSize: 12, fontFamily: 'Poppins_500Medium', maxWidth: 170 },
-
-  categorySection: { borderWidth: 1.5, borderRadius: 16, marginBottom: 12, padding: 12 },
-  categoryHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
-  categoryTitleWrap: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  categoryDot: { width: 10, height: 10, borderRadius: 5 },
-  categoryTitle: { fontSize: 16, fontFamily: 'Poppins_600SemiBold' },
-  categoryMeta: { fontSize: 12, fontFamily: 'Poppins_500Medium' },
-
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  card: { width: '47%' as never, flexGrow: 1, paddingVertical: 14, paddingHorizontal: 12, borderRadius: 14, borderWidth: 1.5, alignItems: 'center', gap: 8, position: 'relative' },
-  iconCircle: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  cardText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', textAlign: 'center' },
-  checkBadge: { position: 'absolute', top: 7, right: 7, width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
-
-  footer: { paddingHorizontal: 20, paddingTop: 12, gap: 8 },
-  selectedCount: { fontSize: 13, fontFamily: 'Poppins_500Medium', textAlign: 'center' },
-  nextBtn: { borderRadius: 16, paddingVertical: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  nextBtnText: { fontSize: 17, fontFamily: 'Poppins_600SemiBold' },
+const styles = StyleSheet.create({
+  container: { 
+    flex: 1, 
+    backgroundColor: 'transparent' 
+  },
+  keyboardAvoid: { 
+    flex: 1 
+  },
+  mobileHeader: { 
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20, 
+    paddingBottom: 12 
+  },
+  stepText: {
+    fontSize: 14,
+    fontFamily: 'Poppins_500Medium',
+  },
+  desktopBackRow: {
+    position: 'absolute',
+    top: 24,
+    left: 40,
+    zIndex: 10,
+  },
+  desktopBackBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderRadius: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  desktopBackText: { 
+    fontSize: 14, 
+    fontFamily: 'Poppins_500Medium', 
+    color: '#FFFFFF' 
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 20,
+    paddingBottom: 60,
+  },
+  scrollContentDesktop: {
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  formCard: {
+    width: '100%',
+    maxWidth: 600,
+    alignSelf: 'center',
+    borderRadius: 28,
+    paddingHorizontal: 24,
+    paddingVertical: 32,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.1,
+    shadowRadius: 32,
+    elevation: 8,
+  },
+  formCardDesktop: {
+    paddingHorizontal: 48,
+    paddingVertical: 48,
+  },
+  title: { 
+    fontSize: 28, 
+    fontFamily: 'Poppins_700Bold', 
+    marginBottom: 8, 
+    letterSpacing: -0.5 
+  },
+  subtitle: { 
+    fontSize: 15, 
+    fontFamily: 'Poppins_400Regular', 
+    lineHeight: 24, 
+    marginBottom: 32 
+  },
+  block: { 
+    marginBottom: 24 
+  },
+  sectionLabel: { 
+    fontSize: 12, 
+    fontFamily: 'Poppins_600SemiBold', 
+    textTransform: 'uppercase', 
+    letterSpacing: 1, 
+    marginBottom: 10 
+  },
+  popularRow: { 
+    flexDirection: 'row', 
+    flexWrap: 'wrap', 
+    gap: 8 
+  },
+  popularChip: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 6, 
+    borderWidth: 1.5, 
+    borderRadius: 18, 
+    paddingHorizontal: 12, 
+    paddingVertical: 8, 
+  },
+  popularChipText: { 
+    fontSize: 13, 
+    fontFamily: 'Poppins_500Medium', 
+  },
+  categorySection: { 
+    borderWidth: 1.5, 
+    borderRadius: 20, 
+    marginBottom: 16, 
+    padding: 16 
+  },
+  categoryHeader: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    marginBottom: 12 
+  },
+  categoryTitleWrap: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 12 
+  },
+  categoryDot: { 
+    width: 12, 
+    height: 12, 
+    borderRadius: 6 
+  },
+  categoryTitle: { 
+    fontSize: 16, 
+    fontFamily: 'Poppins_600SemiBold' 
+  },
+  categoryMeta: { 
+    fontSize: 13, 
+    fontFamily: 'Poppins_500Medium' 
+  },
+  grid: { 
+    flexDirection: 'row', 
+    flexWrap: 'wrap', 
+    gap: 8 
+  },
+  card: { 
+    width: '48%' as never, 
+    flexGrow: 1, 
+    paddingVertical: 14, 
+    paddingHorizontal: 12, 
+    borderRadius: 14, 
+    borderWidth: 1.5, 
+    alignItems: 'center', 
+    gap: 8, 
+    position: 'relative' 
+  },
+  iconCircle: { 
+    width: 44, 
+    height: 44, 
+    borderRadius: 22, 
+    alignItems: 'center', 
+    justifyContent: 'center' 
+  },
+  cardText: { 
+    fontSize: 13, 
+    fontFamily: 'Poppins_600SemiBold', 
+    textAlign: 'center' 
+  },
+  checkBadge: { 
+    position: 'absolute', 
+    top: 8, 
+    right: 8, 
+    width: 22, 
+    height: 22, 
+    borderRadius: 11, 
+    alignItems: 'center', 
+    justifyContent: 'center' 
+  },
+  spacer: {
+    height: 32,
+  },
+  footerInfo: {
+    marginBottom: 16,
+  },
+  selectedCount: { 
+    fontSize: 14, 
+    fontFamily: 'Poppins_500Medium', 
+    textAlign: 'center' 
+  },
+  submitBtn: { 
+    borderRadius: 16,
+    height: 56,
+  },
 });

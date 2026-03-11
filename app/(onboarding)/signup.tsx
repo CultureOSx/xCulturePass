@@ -22,6 +22,8 @@ import {
   signInWithPopup,
   signInWithCredential,
   OAuthProvider,
+  setPersistence,
+  browserLocalPersistence,
 } from 'firebase/auth';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
@@ -57,6 +59,7 @@ export default function SignUpScreen() {
     setError('');
     try {
       if (Platform.OS === 'web') {
+        await setPersistence(firebaseAuth, browserLocalPersistence);
         const provider = new GoogleAuthProvider();
         await signInWithPopup(firebaseAuth, provider);
       } else {
@@ -72,7 +75,7 @@ export default function SignUpScreen() {
       if (Platform.OS !== 'web') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
-      router.push('/(onboarding)/login');
+      router.replace('/(onboarding)/location');
     } catch (e: any) {
       const code = e?.code;
       if (!['auth/popup-closed-by-user', 'auth/cancelled-popup-request', '-5'].includes(code)) {
@@ -102,7 +105,7 @@ export default function SignUpScreen() {
       });
       await signInWithCredential(firebaseAuth, firebaseCredential);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      router.push('/(onboarding)/login');
+      router.replace('/(onboarding)/location');
     } catch (e: any) {
       if (e?.code !== 'ERR_REQUEST_CANCELED') {
         setError('Apple sign-up failed. Please try again.');
@@ -123,6 +126,9 @@ export default function SignUpScreen() {
 
     setLoading(true);
     try {
+      if (Platform.OS === 'web') {
+        await setPersistence(firebaseAuth, browserLocalPersistence);
+      }
       const credential = await createUserWithEmailAndPassword(firebaseAuth, normalizedEmail, password);
       // Try to immediately set the display name on the Firebase user object
       await updateProfile(credential.user, { displayName: normalizedName });
@@ -136,7 +142,7 @@ export default function SignUpScreen() {
       if (Platform.OS !== 'web') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
-      router.push('/(onboarding)/login');
+      router.replace('/(onboarding)/location');
     } catch (e: any) {
       const code = e?.code;
       if (code === 'auth/email-already-in-use') {

@@ -1,6 +1,6 @@
 import {
   View, Text, Pressable, StyleSheet, Platform,
-  TextInput, RefreshControl, FlatList, ScrollView, ActivityIndicator,
+  TextInput, RefreshControl, FlatList, ScrollView, ActivityIndicator, useColorScheme,
 } from 'react-native';
 import type { ViewStyle } from 'react-native';
 import { router } from 'expo-router';
@@ -13,9 +13,17 @@ import * as Haptics from 'expo-haptics';
 import { useQuery } from '@tanstack/react-query';
 import { queryClient } from '@/lib/query-client';
 import { useState, useMemo, useCallback } from 'react';
+import { BlurView } from 'expo-blur';
+import Animated, {
+  useSharedValue,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  interpolate,
+  Extrapolation,
+} from 'react-native-reanimated';
 import type { Profile } from '@shared/schema';
-import { FilterChipRow } from '@/components/FilterChip';
-import { EntityTypeColors, CultureTokens, shadows } from '@/constants/theme';
+import { FilterChipRow, FilterItem } from '@/components/FilterChip';
+import { EntityTypeColors, CultureTokens, shadows, gradients } from '@/constants/theme';
 import { useCouncil } from '@/hooks/useCouncil';
 import { useAuth } from '@/lib/auth';
 import { useLayout } from '@/hooks/useLayout';
@@ -34,13 +42,13 @@ const TYPE_META: Record<string, { color: string; icon: keyof typeof Ionicons.gly
 };
 
 const CATEGORIES = [
-  { id: 'all',          label: 'All',           icon: 'grid-outline' },
-  { id: 'community',    label: 'Communities',   icon: 'people-outline' },
-  { id: 'organisation', label: 'Organisations', icon: 'business-outline' },
-  { id: 'venue',        label: 'Venues',        icon: 'location-outline' },
-  { id: 'council',      label: 'Councils',      icon: 'shield-checkmark-outline' },
-  { id: 'artist',       label: 'Artists',       icon: 'musical-notes-outline' },
-  { id: 'business',     label: 'Businesses',    icon: 'storefront-outline' },
+  { id: 'all',          label: 'All',           icon: 'grid' },
+  { id: 'community',    label: 'Communities',   icon: 'people' },
+  { id: 'organisation', label: 'Organisations', icon: 'business' },
+  { id: 'venue',        label: 'Venues',        icon: 'location' },
+  { id: 'council',      label: 'Councils',      icon: 'shield-checkmark' },
+  { id: 'artist',       label: 'Artists',       icon: 'musical-notes' },
+  { id: 'business',     label: 'Businesses',    icon: 'storefront' },
 ];
 
 function fmt(num: number): string {
@@ -95,7 +103,7 @@ function FeaturedCard({ profile, colors, styles }: { profile: Profile; colors: R
 
       <View style={styles.fcBottom}>
         <View style={styles.fcMembers}>
-          <Ionicons name="people-outline" size={16} color={colors.textTertiary} />
+          <Ionicons name="people" size={16} color={colors.textTertiary} />
           <Text style={styles.fcMembersText}>{fmt(profile.membersCount ?? 0)}</Text>
         </View>
         <Pressable
@@ -153,7 +161,7 @@ function CommunityCard({ profile, colors, styles }: { profile: Profile; colors: 
           </View>
           {profile.city && (
             <View style={styles.lcLocationRow}>
-              <Ionicons name="location-outline" size={14} color={colors.textTertiary} />
+              <Ionicons name="location" size={14} color={colors.textTertiary} />
               <Text style={styles.lcLocationText} numberOfLines={1}>{profile.city}</Text>
             </View>
           )}
@@ -162,7 +170,7 @@ function CommunityCard({ profile, colors, styles }: { profile: Profile; colors: 
 
       <View style={styles.lcRight}>
         <View style={styles.lcMembersRow}>
-          <Ionicons name="people-outline" size={14} color={colors.textSecondary} />
+          <Ionicons name="people" size={14} color={colors.textSecondary} />
           <Text style={styles.lcMembersText}>{fmt(profile.membersCount ?? 0)}</Text>
         </View>
         <Pressable
@@ -172,7 +180,7 @@ function CommunityCard({ profile, colors, styles }: { profile: Profile; colors: 
             if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); 
             toggleJoinCommunity(profile.id); 
           }}
-          style={joined ? styles.lcJoinBtnJoined : styles.lcJoinBtnDefault}
+          style={joined ? styles.lcJoinBtnJoined : [styles.lcJoinBtnDefault, { backgroundColor: meta.color }]}
         >
           {joined ? (
             <Ionicons name="checkmark" size={18} color={CultureTokens.indigo} />
@@ -196,14 +204,13 @@ export default function CommunitiesScreen() {
   const { width, isDesktop, isTablet } = useLayout();
   const isDesktopWeb = isWeb && isDesktop;
   
-  const topInset    = isWeb ? (isDesktopWeb ? 32 : 16) : insets.top;
-  const bottomInset = isWeb ? 34 : insets.bottom;
-  const shellMaxWidth = isDesktopWeb ? 1120 : isTablet ? 840 : width;
+  const scheme = useColorScheme();
+  const isDark = scheme === 'dark';
   
-  const shellStyle: ViewStyle | undefined = isWeb || isTablet
-    ? { maxWidth: shellMaxWidth, width: '100%', alignSelf: 'center' as const }
-    : undefined;
-
+  const topInset = isWeb ? 0 : insets.top;
+  const bottomInset = insets.bottom;
+  const contentMaxWidth = isDesktop ? 1200 : isTablet ? 800 : width;
+  
   const [search,        setSearch]        = useState('');
   const [selectedType,  setSelectedType]  = useState('all');
   const [searchFocused, setSearchFocused] = useState(false);
@@ -213,6 +220,17 @@ export default function CommunitiesScreen() {
   const council = councilData?.council;
   const facilities = councilData?.facilities ?? [];
   const { isAuthenticated } = useAuth();
+
+  const scrollY = useSharedValue(0);
+  const scrollHandler = useAnimatedScrollHandler((event) => {
+    scrollY.value = event.contentOffset.y;
+  });
+  const headerBorderStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(scrollY.value, [0, 40], [0, 1], Extrapolation.CLAMP),
+  }));
+  const headerBlurStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(scrollY.value, [0, 80], [0, 1], Extrapolation.CLAMP),
+  }));
 
   const filteredProfiles = useMemo(() => {
     let profiles = allProfiles ?? [];
@@ -261,43 +279,12 @@ export default function CommunitiesScreen() {
     setSelectedType(id);
   }, []);
 
-  const renderItem = useCallback(({ item }: { item: Profile }) => <CommunityCard profile={item} colors={colors} styles={styles} />, [colors, styles]);
-  const keyExtractor = useCallback((item: Profile) => item.id, []);
-
-  const ListHeader = useMemo(() => (
-    <>
-      {featuredProfiles.length > 0 && !search.trim() && selectedType === 'all' && (
-        <View style={styles.featSection}>
-          <View style={[styles.sectionRow, { paddingHorizontal: isWeb ? 0 : 20 }]}>
-            <Ionicons name="star" size={20} color={CultureTokens.saffron} />
-            <Text style={styles.sectionTitle}>Featured Communities</Text>
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 20, paddingRight: 20, paddingLeft: isWeb ? 0 : 20 }}>
-            {featuredProfiles.map((p) => <FeaturedCard key={p.id} profile={p} colors={colors} styles={styles} />)}
-          </ScrollView>
-        </View>
-      )}
-      <View style={{ paddingHorizontal: isWeb ? 0 : 20, paddingBottom: 16, paddingTop: search.trim() || selectedType !== 'all' ? 8 : 12 }}>
-        <Text style={styles.resultsCount}>
-          {filteredProfiles.length} {filteredProfiles.length === 1 ? 'community' : 'communities'}
-        </Text>
-      </View>
-    </>
-  ), [featuredProfiles, filteredProfiles.length, search, selectedType, colors, styles]);
-
   if (isLoading) {
     return (
       <View style={[styles.container, { paddingTop: topInset }]}>
-        <View style={[shellStyle, styles.shellHorizontal]}>
-          <View style={styles.header}> 
-            <Text style={styles.title}>Explore</Text>
-          </View>
-        </View>
         <View style={styles.loadingWrap}>
-          <View style={styles.loadingCard}>
-            <ActivityIndicator size="large" color={CultureTokens.indigo} />
-            <Text style={styles.loadingText}>Discovering communities...</Text>
-          </View>
+          <ActivityIndicator size="large" color={CultureTokens.indigo} />
+          <Text style={styles.loadingText}>Discovering communities...</Text>
         </View>
       </View>
     );
@@ -305,130 +292,188 @@ export default function CommunitiesScreen() {
 
   return (
     <ErrorBoundary>
-      <View style={[styles.container, { paddingTop: topInset }]}>
-        <View style={[shellStyle, styles.shellHorizontal]}>
-          <View style={styles.header}> 
-            {!isDesktopWeb && (
+      <View style={[styles.container, { paddingTop: topInset, backgroundColor: colors.background }]}>
+
+        {/* Global Transparent Blur Header (Mobile Only) */}
+        {!(isWeb && isDesktop) && (
+          <View style={styles.topBar}>
+            {Platform.OS === 'ios' && (
+              <Animated.View style={[StyleSheet.absoluteFill, headerBlurStyle]} pointerEvents="none">
+                <BlurView intensity={90} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+              </Animated.View>
+            )}
+            <Animated.View style={[styles.topBarBorder, headerBorderStyle]} pointerEvents="none" />
+
+            <View style={styles.headerRow}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.title}>Explore</Text>
-                <Text style={styles.subtitle}> 
-                  {typeCounts.all ?? 0} active communities to discover
+                <Text style={[styles.headerTitle, { color: colors.text }]}>Explore</Text>
+                <Text style={[styles.headerSub, { color: colors.textSecondary }]}>{typeCounts.all ?? 0} active communities</Text>
+              </View>
+              <Pressable
+                onPress={() => { if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/submit' as never); }}
+                hitSlop={8}
+                style={({ pressed }) => [styles.addBtn, { backgroundColor: CultureTokens.indigo + '15', opacity: pressed ? 0.7 : 1 }]}
+              >
+                <Ionicons name="add" size={24} color={CultureTokens.indigo} />
+              </Pressable>
+            </View>
+          </View>
+        )}
+
+        <Animated.FlatList
+          data={[...filteredProfiles]} // Wrap to force clean render
+          keyExtractor={(item: Profile) => item.id}
+          renderItem={({ item }) => (
+            <View style={[
+              isDesktop && { maxWidth: contentMaxWidth, alignSelf: 'center', width: '100%' },
+              !isDesktop && { paddingHorizontal: 20 }
+            ]}>
+              <CommunityCard profile={item} colors={colors} styles={styles} />
+            </View>
+          )}
+          onScroll={isWeb ? undefined : scrollHandler}
+          scrollEventThrottle={16}
+          contentContainerStyle={[
+            { paddingBottom: isWeb ? 134 : bottomInset + 110 },
+            isDesktop && { paddingTop: 32 },
+            !isDesktop && !isWeb && { paddingTop: 16 }
+          ]}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={CultureTokens.indigo} />}
+          ListHeaderComponent={
+            <View style={isDesktop && { maxWidth: contentMaxWidth, alignSelf: 'center', width: '100%' }}>
+              
+              {/* Desktop Only Header */}
+              {isWeb && isDesktop && (
+                <View style={[styles.headerRow, { paddingHorizontal: 20, marginBottom: 24 }]}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.headerTitle, { color: colors.text, fontSize: 36 }]}>Explore Communities</Text>
+                    <Text style={[styles.headerSub, { color: colors.textSecondary, fontSize: 16 }]}>{typeCounts.all ?? 0} active communities, artists, and venues to discover.</Text>
+                  </View>
+                  <Pressable
+                    onPress={() => router.push('/submit' as never)}
+                    style={({ pressed }) => [styles.addBtn, { height: 48, width: 48, backgroundColor: CultureTokens.indigo + '15', opacity: pressed ? 0.7 : 1 }]}
+                  >
+                    <Ionicons name="add" size={24} color={CultureTokens.indigo} />
+                  </Pressable>
+                </View>
+              )}
+
+              <View style={[styles.shellHorizontal, isDesktop && { paddingHorizontal: 0 }]}>
+                {/* Search Bar */}
+                <View style={[
+                  styles.searchBar,
+                  searchFocused && styles.searchBarFocused,
+                ]}>
+                  <Ionicons name="search" size={22} color={searchFocused ? CultureTokens.indigo : colors.textTertiary} />
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder="Search communities, venues, artists…"
+                    placeholderTextColor={colors.textTertiary}
+                    value={search}
+                    onChangeText={setSearch}
+                    onFocus={() => setSearchFocused(true)}
+                    onBlur={() => setSearchFocused(false)}
+                    returnKeyType="search"
+                  />
+                  {search.length > 0 && (
+                    <Pressable onPress={() => setSearch('')} hitSlop={14} style={styles.clearSearchBtn}>
+                      <Ionicons name="close-circle" size={22} color={colors.textTertiary} />
+                    </Pressable>
+                  )}
+                </View>
+              </View>
+
+              <View style={[styles.shellHorizontal, isDesktop && { paddingHorizontal: 0 }]}>
+                {/* Civic Nudge */}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.councilBar, 
+                    pressed && !isWeb && { transform: [{ scale: 0.98 }] },
+                    pressed && isWeb && { opacity: 0.9 }
+                  ]}
+                  onPress={() => {
+                    if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    if (isAuthenticated) {
+                      router.push('/(tabs)/council');
+                      return;
+                    }
+                    router.push({ pathname: '/council/select', params: { next: '/(tabs)/council' } });
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={isAuthenticated ? 'Open My Council' : 'Choose My Council'}
+                >
+                  <View style={styles.councilIcon}> 
+                    <Ionicons name="business" size={22} color={CultureTokens.teal} />
+                  </View>
+                  <View style={styles.councilTextWrap}>
+                    <Text style={styles.councilTitle}>My Local Council</Text>
+                    <Text style={styles.councilSub}> 
+                      {council ? `${council.name} • ${facilities.length} spaces` : 'Connect with civic alerts & grants'}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color={CultureTokens.teal} />
+                </Pressable>
+              </View>
+
+              {/* Filter Chips */}
+              <View style={[styles.shellHorizontal, isDesktop && { paddingHorizontal: 0 }, { marginBottom: 12 }]}>
+                <FilterChipRow
+                  items={CATEGORIES.map((cat) => ({
+                    id: cat.id,
+                    label: cat.label,
+                    icon: cat.icon,
+                    color: cat.id === 'all' ? CultureTokens.indigo : (TYPE_META[cat.id]?.color ?? CultureTokens.indigo),
+                  }))}
+                  selectedId={selectedType}
+                  onSelect={handleSelectType}
+                  size="small"
+                />
+              </View>
+
+              {/* Featured Horizon */}
+              {featuredProfiles.length > 0 && !search.trim() && selectedType === 'all' && (
+                <View style={[styles.featSection, isDesktop && { paddingHorizontal: 0 }]}>
+                  <View style={[styles.sectionRow, isDesktop && { paddingHorizontal: 0 }]}>
+                    <Ionicons name="star" size={18} color={CultureTokens.saffron} />
+                    <Text style={styles.sectionTitle}>Featured</Text>
+                  </View>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.horizontalScroll, isDesktop && { paddingHorizontal: 0 }]}>
+                    {featuredProfiles.map((p) => <FeaturedCard key={p.id} profile={p} colors={colors} styles={styles} />)}
+                  </ScrollView>
+                </View>
+              )}
+
+              {/* List Header */}
+              <View style={[styles.sectionHeader, isDesktop && { paddingHorizontal: 0 }]}>
+                <Text style={styles.sectionTitle}>Directory</Text>
+                <Text style={styles.resultsCount}>
+                  {filteredProfiles.length} {filteredProfiles.length === 1 ? 'result' : 'results'}
                 </Text>
               </View>
-            )}
-            <Pressable
-              style={({ pressed }) => [styles.headerBtn, { opacity: pressed && isWeb ? 0.7 : pressed && !isWeb ? 0.9 : 1, transform: [{ scale: pressed && !isWeb ? 0.95 : 1 }] }]}
-              onPress={() => { if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/submit' as never); }}
-              accessibilityRole="button"
-              accessibilityLabel="Submit listing"
-            >
-              <Ionicons name="add" size={26} color={CultureTokens.indigo} />
-            </Pressable>
-          </View>
-        </View>
-
-        <View style={[shellStyle, styles.shellHorizontal]}> 
-          <Pressable
-            style={({ pressed }) => [
-              styles.councilBar, 
-              pressed && !isWeb && { transform: [{ scale: 0.98 }] },
-              pressed && isWeb && { opacity: 0.9 }
-            ]}
-            onPress={() => {
-              if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              if (isAuthenticated) {
-                router.push('/(tabs)/council');
-                return;
-              }
-              router.push({ pathname: '/council/select', params: { next: '/(tabs)/council' } });
-            }}
-            accessibilityRole="button"
-            accessibilityLabel={isAuthenticated ? 'Open My Council' : 'Choose My Council'}
-          >
-            <View style={styles.councilIcon}> 
-              <Ionicons name="business" size={24} color={CultureTokens.teal} />
             </View>
-            <View style={styles.councilTextWrap}>
-              <Text style={styles.councilTitle}>My Local Council</Text>
-              <Text style={styles.councilSub}> 
-                {council ? `${council.name} • ${facilities.length} spaces` : 'Connect with civic alerts & grants'}
-              </Text>
-              {!isAuthenticated && (
-                <Text style={styles.councilHint}>Select your community council</Text>
-              )}
-            </View>
-            <Ionicons name="chevron-forward" size={24} color={colors.textTertiary} />
-          </Pressable>
-        </View>
-
-        <View style={[shellStyle, styles.shellHorizontal]}> 
-          <View style={[
-            styles.searchBar,
-            searchFocused && styles.searchBarFocused,
-          ]}>
-            <Ionicons name="search" size={22} color={searchFocused ? CultureTokens.indigo : colors.textTertiary} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search communities, venues, artists…"
-              placeholderTextColor={colors.textTertiary}
-              value={search}
-              onChangeText={setSearch}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
-              returnKeyType="search"
-            />
-            {search.length > 0 && (
-              <Pressable onPress={() => setSearch('')} hitSlop={14} style={styles.clearSearchBtn}>
-                <Ionicons name="close-circle" size={22} color={colors.textTertiary} />
-              </Pressable>
-            )}
-          </View>
-        </View>
-
-        <View style={[shellStyle, styles.shellHorizontal]}> 
-          <FilterChipRow
-            items={CATEGORIES.map((cat) => ({
-              id: cat.id,
-              label: cat.label,
-              icon: cat.icon.replace('-outline', ''),
-              color: cat.id === 'all' ? CultureTokens.indigo : (TYPE_META[cat.id]?.color ?? CultureTokens.indigo),
-              count: typeCounts[cat.id] ?? 0,
-            }))}
-            selectedId={selectedType}
-            onSelect={handleSelectType}
-          />
-        </View>
-
-        <FlatList
-          data={filteredProfiles}
-          keyExtractor={keyExtractor}
-          renderItem={renderItem}
-          ListHeaderComponent={ListHeader}
-          style={shellStyle}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={CultureTokens.indigo} colors={[CultureTokens.indigo]} />
-          }
-          contentContainerStyle={{ paddingBottom: bottomInset + 140, paddingTop: 12 }}
-          showsVerticalScrollIndicator={false}
+          )}
           ListEmptyComponent={
-            <View style={[shellStyle, styles.emptyWrap]}>
-              <View style={styles.emptyIcon}>
-                <Ionicons name="search-outline" size={42} color={colors.textTertiary} />
+            <View style={[isDesktop && { maxWidth: contentMaxWidth, alignSelf: 'center', width: '100%' }, styles.emptyWrap, isDesktop && { paddingHorizontal: 0 }]}>
+              <View style={[styles.emptyStateCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+                <View style={styles.emptyIcon}>
+                  <Ionicons name="search-outline" size={42} color={colors.textTertiary} />
+                </View>
+                <Text style={styles.emptyTitle}>
+                  {search.length > 0 || selectedType !== 'all' ? 'No communities found' : 'No communities yet'}
+                </Text>
+                <Text style={styles.emptySub}>
+                  {search.length > 0 || selectedType !== 'all' ? 'Try adjusting your search criteria or filters.' : 'Discover and join communities here.'}
+                </Text>
+                {search.length > 0 && (
+                  <Pressable
+                    style={styles.clearBtn}
+                    onPress={() => { setSearch(''); setSelectedType('all'); }}
+                  >
+                    <Text style={styles.clearBtnText}>Clear all filters</Text>
+                  </Pressable>
+                )}
               </View>
-              <Text style={styles.emptyTitle}>
-                {search.length > 0 || selectedType !== 'all' ? 'No communities found' : 'No communities yet'}
-              </Text>
-              <Text style={styles.emptySub}>
-                {search.length > 0 || selectedType !== 'all' ? 'Try adjusting your search criteria or filters.' : 'Discover and join communities here.'}
-              </Text>
-              {search.length > 0 && (
-                <Pressable
-                  style={styles.clearBtn}
-                  onPress={() => { setSearch(''); setSelectedType('all'); }}
-                >
-                  <Text style={styles.clearBtnText}>Clear all filters</Text>
-                </Pressable>
-              )}
             </View>
           }
         />
@@ -441,69 +486,74 @@ export default function CommunitiesScreen() {
 // Styles Implementation
 // ---------------------------------------------------------------------------
 const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  shellHorizontal: { paddingHorizontal: isWeb ? 0 : 20 },
-  
-  loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  loadingCard: { backgroundColor: colors.surface, padding: 36, borderRadius: 24, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 16, elevation: 4, borderWidth: 1, borderColor: colors.borderLight },
-  loadingText: { marginTop: 20, fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: colors.text },
-  
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.borderLight },
-  title: { fontSize: 32, fontFamily: 'Poppins_700Bold', letterSpacing: -0.6, marginBottom: 4, color: colors.text },
-  subtitle: { fontSize: 15, fontFamily: 'Poppins_400Regular', color: colors.textSecondary },
-  headerBtn: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', borderWidth: 1, backgroundColor: 'rgba(44, 42, 114, 0.1)', borderColor: 'rgba(44, 42, 114, 0.25)' },
+  container: { flex: 1 },
+  shellHorizontal: { paddingHorizontal: 20 },
 
-  councilBar: { flexDirection: 'row', alignItems: 'center', marginTop: 20, marginBottom: 6, borderRadius: 20, borderWidth: 1, paddingHorizontal: 18, paddingVertical: 16, gap: 16, backgroundColor: colors.surface, borderColor: colors.borderLight, ...shadows.small },
-  councilIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(46, 196, 182, 0.15)' },
+  topBar: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16, zIndex: 100 },
+  topBarBorder: { position: 'absolute', bottom: 0, left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(255,255,255,0.08)' },
+  
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  headerTitle: { fontSize: 26, fontFamily: 'Poppins_700Bold', letterSpacing: -0.5, marginBottom: 2 },
+  headerSub: { fontSize: 14, fontFamily: 'Poppins_500Medium' },
+  addBtn: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
+  
+  loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
+  loadingText: { fontSize: 15, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
+
+  councilBar: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, padding: 18, borderRadius: 20, borderWidth: 1, gap: 14, backgroundColor: colors.surface, borderColor: CultureTokens.teal + '40' },
+  councilIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: CultureTokens.teal + '15' },
   councilTextWrap: { flex: 1 },
-  councilTitle: { fontSize: 17, fontFamily: 'Poppins_600SemiBold', marginBottom: 2, color: colors.text },
-  councilSub: { fontSize: 14, fontFamily: 'Poppins_400Regular', color: colors.textSecondary },
-  councilHint: { fontSize: 13, fontFamily: 'Poppins_400Regular', marginTop: 4, color: colors.textTertiary },
+  councilTitle: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', marginBottom: 2, color: colors.text },
+  councilSub: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: colors.textSecondary },
 
-  searchBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, paddingVertical: 14, gap: 14, borderRadius: 18, borderWidth: 1, marginBottom: 16, marginTop: 12, backgroundColor: colors.surface, borderColor: colors.borderLight },
+  searchBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, gap: 12, borderRadius: 16, borderWidth: 1, marginBottom: 16, backgroundColor: colors.surface, borderColor: colors.borderLight },
   searchBarFocused: { borderColor: CultureTokens.indigo },
-  searchInput: { flex: 1, fontSize: 17, fontFamily: 'Poppins_500Medium', padding: 0, height: 26, color: colors.text },
+  searchInput: { flex: 1, fontSize: 15, fontFamily: 'Poppins_500Medium', padding: 0, height: 24, color: colors.text },
   clearSearchBtn: { padding: 4 },
 
   featSection: { marginBottom: 24, marginTop: 12 },
-  sectionRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 20 },
+  sectionRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16, paddingHorizontal: 20 },
+  horizontalScroll: { gap: 16, paddingHorizontal: 20, paddingRight: 20 },
+
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16 },
   sectionTitle: { fontSize: 20, fontFamily: 'Poppins_700Bold', color: colors.text },
-  resultsCount: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.textTertiary },
+  resultsCount: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: colors.textTertiary },
 
-  emptyWrap: { alignItems: 'center', justifyContent: 'center', paddingVertical: 80, paddingHorizontal: 20, gap: 14 },
-  emptyIcon: { width: 88, height: 88, borderRadius: 44, alignItems: 'center', justifyContent: 'center', marginBottom: 12, borderWidth: 1, borderColor: colors.borderLight, backgroundColor: colors.surface },
-  emptyTitle: { fontSize: 20, fontFamily: 'Poppins_600SemiBold', color: colors.text },
-  emptySub: { fontSize: 16, fontFamily: 'Poppins_400Regular', textAlign: 'center', maxWidth: 300, color: colors.textSecondary },
-  clearBtn: { marginTop: 20, paddingHorizontal: 28, paddingVertical: 14, borderRadius: 24, backgroundColor: 'rgba(44, 42, 114, 0.1)' },
-  clearBtnText: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.indigo },
+  emptyWrap: { paddingHorizontal: 20 },
+  emptyStateCard: { padding: 40, borderRadius: 24, borderWidth: 1, borderStyle: 'dashed', alignItems: 'center', gap: 12, marginBottom: 40 },
+  emptyIcon: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', marginBottom: 8, backgroundColor: colors.background },
+  emptyTitle: { fontSize: 18, fontFamily: 'Poppins_600SemiBold', color: colors.text },
+  emptySub: { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', color: colors.textSecondary },
+  clearBtn: { marginTop: 16, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 20, backgroundColor: CultureTokens.indigo + '15' },
+  clearBtnText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.indigo },
 
-  fcCard: { width: 260, height: 210, borderRadius: 24, padding: 22, borderWidth: 1, overflow: 'hidden', gap: 14, backgroundColor: colors.surface, borderColor: colors.borderLight, ...shadows.medium },
+  fcCard: { width: 260, height: 210, borderRadius: 20, padding: 20, borderWidth: 1, overflow: 'hidden', gap: 12, backgroundColor: colors.surface, borderColor: colors.borderLight },
   fcTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  fcIconBox: { width: 56, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  fcVerifiedBadge: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(44, 42, 114, 0.15)' },
-  fcName: { fontSize: 18, fontFamily: 'Poppins_600SemiBold', lineHeight: 24, color: colors.text },
-  fcDesc: { fontSize: 14, fontFamily: 'Poppins_400Regular', lineHeight: 20, color: colors.textSecondary, marginTop: 4 },
+  fcIconBox: { width: 50, height: 50, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  fcVerifiedBadge: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: CultureTokens.indigo + '15' },
+  fcName: { fontSize: 17, fontFamily: 'Poppins_600SemiBold', lineHeight: 22, color: colors.text },
+  fcDesc: { fontSize: 13, fontFamily: 'Poppins_400Regular', lineHeight: 18, color: colors.textSecondary, marginTop: 4 },
   fcBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto', paddingTop: 10 },
-  fcMembers: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  fcMembersText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: colors.textTertiary },
-  fcJoinBtnDefault: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 16 },
-  fcJoinBtnJoined: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 16, backgroundColor: 'rgba(44, 42, 114, 0.1)', borderWidth: 1, borderColor: 'rgba(44, 42, 114, 0.25)' },
-  fcJoinTextDefault: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
+  fcMembers: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  fcMembersText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: colors.textTertiary },
+  fcJoinBtnDefault: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 },
+  fcJoinBtnJoined: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12, backgroundColor: CultureTokens.indigo + '15', borderWidth: 1, borderColor: CultureTokens.indigo + '30' },
+  fcJoinTextDefault: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
 
-  lcCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 20, padding: 18, marginBottom: 14, gap: 18, borderWidth: 1, backgroundColor: colors.surface, borderColor: colors.borderLight, ...shadows.small },
-  lcIconBox: { width: 64, height: 64, borderRadius: 18, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  lcCenter: { flex: 1, gap: 8, minWidth: 0 },
-  lcNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  lcName: { fontSize: 17, fontFamily: 'Poppins_600SemiBold', flexShrink: 1, color: colors.text },
-  lcMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  lcTypePill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10 },
-  lcTypePillText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', textTransform: 'capitalize' },
-  lcLocationRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 },
-  lcLocationText: { fontSize: 13, fontFamily: 'Poppins_400Regular', flexShrink: 1, color: colors.textTertiary },
-  lcRight: { alignItems: 'flex-end', gap: 12 },
-  lcMembersRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  lcMembersText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: colors.textSecondary },
-  lcJoinBtnDefault: { paddingHorizontal: 18, paddingVertical: 10, borderRadius: 18, alignItems: 'center', justifyContent: 'center', minWidth: 72, backgroundColor: CultureTokens.indigo },
-  lcJoinBtnJoined: { paddingHorizontal: 18, paddingVertical: 10, borderRadius: 18, alignItems: 'center', justifyContent: 'center', minWidth: 72, backgroundColor: 'rgba(44, 42, 114, 0.1)', borderWidth: 1, borderColor: 'rgba(44, 42, 114, 0.25)' },
-  lcJoinTextDefault: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
+  lcCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 20, padding: 18, marginBottom: 14, gap: 16, borderWidth: 1, backgroundColor: colors.surface, borderColor: colors.borderLight },
+  lcIconBox: { width: 56, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  lcCenter: { flex: 1, gap: 6, minWidth: 0 },
+  lcNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  lcName: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', flexShrink: 1, color: colors.text },
+  lcMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  lcTypePill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  lcTypePillText: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', textTransform: 'capitalize' },
+  lcLocationRow: { flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 1 },
+  lcLocationText: { fontSize: 12, fontFamily: 'Poppins_400Regular', flexShrink: 1, color: colors.textTertiary },
+  lcRight: { alignItems: 'flex-end', gap: 10 },
+  lcMembersRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  lcMembersText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: colors.textSecondary },
+  lcJoinBtnDefault: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 14, alignItems: 'center', justifyContent: 'center', minWidth: 64, backgroundColor: CultureTokens.indigo },
+  lcJoinBtnJoined: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 14, alignItems: 'center', justifyContent: 'center', minWidth: 64, backgroundColor: CultureTokens.indigo + '15', borderWidth: 1, borderColor: CultureTokens.indigo + '40' },
+  lcJoinTextDefault: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
 });

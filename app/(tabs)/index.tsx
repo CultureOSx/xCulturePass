@@ -7,8 +7,8 @@ import {
   Platform,
   RefreshControl,
   ActivityIndicator,
-  TextInput,
   useColorScheme,
+  Image,
 } from 'react-native';
 import { router, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -109,6 +109,16 @@ function cityToCoordinates(city?: string): { latitude: number; longitude: number
   const match = getPostcodesByPlace(city)[0];
   if (!match) return null;
   return { latitude: match.latitude, longitude: match.longitude };
+}
+
+function formatDate(dateStr: string): string {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length !== 3) return dateStr;
+  const day = parseInt(parts[2], 10);
+  const monthIndex = parseInt(parts[1], 10) - 1;
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${day} ${months[monthIndex] || ''}`;
 }
 
 export default function HomeScreen() {
@@ -245,7 +255,13 @@ export default function HomeScreen() {
     return allEvents.filter(e => e.venue).sort((a, b) => (b.attending || 0) - (a.attending || 0)).slice(0, 12);
   }, [nearYou, allEvents, distanceSortedEvents]);
 
-  const featuredEvent = allEvents.find((e) => e.isFeatured) || allEvents[0];
+  const featuredEvents = useMemo(() => {
+    const featured = allEvents.filter((e: EventData) => e.isFeatured);
+    // If not enough manually featured, top up randomly or from all pool to fill carousel
+    if (featured.length >= 3) return featured.slice(0, 5);
+    return [...featured, ...allEvents.filter((e: EventData) => !e.isFeatured)].slice(0, 5);
+  }, [allEvents]);
+
   const otherSections = sections.filter((s: any) => s.title !== 'Near You' && (s.type === 'events' || s.type === 'mixed'));
 
   const cultureCards = useMemo(() => {
@@ -270,11 +286,6 @@ export default function HomeScreen() {
   const contentMaxWidth = isDesktop ? 1200 : isTablet ? 800 : width;
   const cityCardWidth = Math.max(140, (width - 40 - (14 * (cityColumns - 1))) / cityColumns);
 
-  const signInRoute = useMemo(() => {
-    const redirectTo = pathname && pathname.startsWith('/') ? pathname : '/(tabs)';
-    return `/(onboarding)/login?redirectTo=${encodeURIComponent(redirectTo)}`;
-  }, [pathname]);
-
   const openNotifications = useCallback(() => {
     if (isAuthenticated) { pushSafe('/notifications'); return; }
     pushSafe('/(onboarding)/login?redirectTo=/notifications');
@@ -291,17 +302,20 @@ export default function HomeScreen() {
   return (
     <ErrorBoundary>
       <View style={[styles.container, { paddingTop: topInset }]}>
+        {/* Mobile Header */}
         {!(isWeb && isDesktop) && (
-          <View style={[styles.topBar, isWeb && { paddingHorizontal: 20, paddingTop: 16 }]}>
+          <View style={styles.topBar}>
             {Platform.OS === 'ios' && (
               <Animated.View style={[StyleSheet.absoluteFill, headerBlurStyle]} pointerEvents="none">
-                <BlurView intensity={80} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+                <BlurView intensity={90} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
               </Animated.View>
             )}
             <Animated.View style={[styles.topBarBorder, headerBorderStyle]} pointerEvents="none" />
 
             <View style={styles.brandBlock}>
-              <Ionicons name="globe-outline" size={24} color={CultureTokens.indigo} />
+              <View style={styles.logoWrap}>
+                <Ionicons name="compass" size={20} color="#FFFFFF" />
+              </View>
               <View>
                 <Text style={styles.brandName}>CulturePass</Text>
                 <Text style={styles.brandUrl}>Belong Anywhere</Text>
@@ -310,13 +324,10 @@ export default function HomeScreen() {
 
             <View style={styles.topBarRight}>
               <Pressable style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]} onPress={() => router.push('/search')}>
-                <Ionicons name="search" size={22} color={colors.text} />
-              </Pressable>
-              <Pressable style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]} onPress={() => pushSafe('/map')}>
-                <Ionicons name="map-outline" size={22} color={colors.text} />
+                <Ionicons name="search" size={20} color={colors.text} />
               </Pressable>
               <Pressable style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.7 }]} onPress={openNotifications}>
-                <Ionicons name="notifications-outline" size={22} color={colors.text} />
+                <Ionicons name="notifications" size={20} color={colors.text} />
                 {isAuthenticated && <View style={styles.notifDot} />}
               </Pressable>
             </View>
@@ -334,73 +345,23 @@ export default function HomeScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={CultureTokens.indigo} />}
         >
 
-
+          {/* Location Picker Row */}
           {isWeb && isDesktop ? (
             <View style={styles.heroSectionDesktop}>
               <View style={styles.heroDesktopLeft}>
-                <Text style={styles.heroSubtitleDesktop}>{timeGreeting}, {firstName}</Text>
-                <Pressable onPress={() => router.push('/allevents')}>
-                  <LinearGradient
-                    colors={gradients.culturepassBrandReversed}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={{ borderRadius: 12, paddingHorizontal: 16, paddingVertical: 8, alignSelf: 'center' }}
-                  >
-                    <Text style={styles.heroTitleDesktop}>WATS ON This Week.</Text>
-                  </LinearGradient>
-                </Pressable>
+                <Text style={styles.heroSubtitleDesktop}>{timeGreeting}, {firstName} 👋</Text>
+                <Text style={styles.heroTitleDesktop}>Explore {state.city || 'Australia'}</Text>
               </View>
+              <LocationPicker />
             </View>
           ) : (
-            <>
-              <View style={[styles.locationPickerRow, isDesktop && { paddingHorizontal: 0 }]}>
-                <LocationPicker />
-              </View>
-
-              {/* Hero Row / Header */}
-              <View style={[styles.heroSection, isDesktop && { paddingHorizontal: 0 }]}>
-                <Text style={styles.heroSubtitle}>{timeGreeting}, {firstName}</Text>
-                <Pressable onPress={() => router.push('/allevents')}>
-                  <LinearGradient
-                    colors={gradients.culturepassBrandReversed}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={{ borderRadius: 12, paddingHorizontal: 16, paddingVertical: 8, alignSelf: 'flex-start' }}
-                  >
-                    <Text style={styles.heroTitle}>WATS ON This Week.</Text>
-                  </LinearGradient>
-                </Pressable>
-              </View>
-            </>
-          )}
-
-          {/* First Nations Spotlight  */}
-          {land && (
-            <View style={[styles.landBanner, isDesktop && { marginHorizontal: 0 }]}>
-              <LinearGradient colors={['rgba(139,69,19,0.15)', 'rgba(139,69,19,0.05)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFillObject} />
-              <View style={styles.landBannerContent}>
-                <Ionicons name="earth" size={16} color="#D4A574" />
-                <Text style={styles.landBannerTitle}>You are on {land.landName}</Text>
-              </View>
-              <Text style={styles.landBannerSub}>Traditional Custodians: {land.traditionalCustodians}</Text>
+            <View style={[styles.locationPickerRow, { zIndex: 10 }]}>
+              <LocationPicker />
+              <Text style={styles.heroGreetingMobile}>{timeGreeting}, {firstName}</Text>
             </View>
           )}
 
-          {/* Civic / Council Alerts */}
-          {council && (
-            <View style={[styles.civicCard, isDesktop && { marginHorizontal: 0 }]}>
-              <View style={styles.civicCardHeader}>
-                <Ionicons name="shield-checkmark-outline" size={16} color={CultureTokens.indigo} />
-                <Text style={styles.civicCardTitle}>{council.name}</Text>
-              </View>
-              <Text style={styles.civicCardSub}>
-                {isCouncilVerified ? `Council Verified • LGA ${lgaCode}` : `LGA ${lgaCode ?? 'Unknown'}`}
-                {activeAlerts.length > 0 ? ` • ${activeAlerts.length} active alert${activeAlerts.length === 1 ? '' : 's'}` : ''}
-              </Text>
-            </View>
-          )}
-
-          {/* SuperApp Links */}
+          {/* SuperApp Quick Links */}
           <View style={styles.quickChipRow}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.quickChipScroll, isDesktop && { paddingHorizontal: 0 }]} style={{ flexGrow: 0 }}>
               {superAppSections.map((sec) => (
@@ -414,43 +375,122 @@ export default function HomeScreen() {
             </ScrollView>
           </View>
 
+          {/* Dynamic Hero Carousel */}
+          {featuredEvents.length > 0 && (
+            <View style={styles.carouselContainer}>
+              <ScrollView
+                horizontal
+                pagingEnabled={!isDesktop}
+                showsHorizontalScrollIndicator={false}
+                snapToInterval={isDesktop ? 800 + 16 : width}
+                decelerationRate="fast"
+                snapToAlignment="start"
+                contentContainerStyle={isDesktop ? { gap: 16, paddingHorizontal: 0 } : {}}
+              >
+                {featuredEvents.map((event, idx) => (
+                  <View key={event.id} style={{ width: isDesktop ? 800 : width, paddingHorizontal: isDesktop ? 0 : 20 }}>
+                    <Pressable
+                      onPress={() => router.push({ pathname: '/event/[id]', params: { id: event.id } })}
+                      style={({ pressed }) => [
+                        styles.heroCard,
+                        pressed && { opacity: 0.95, transform: [{ scale: 0.98 }] },
+                      ]}
+                    >
+                       <Image source={{ uri: event.imageUrl }} style={StyleSheet.absoluteFillObject} resizeMode='cover' />
+                       <LinearGradient colors={['transparent', 'transparent', 'rgba(11,11,20,0.85)', 'rgba(11,11,20,1)']} style={StyleSheet.absoluteFillObject} locations={[0, 0.4, 0.75, 1]} />
+                       <View style={styles.heroCardBadge}>
+                          <LinearGradient colors={gradients.culturepassBrand} start={{x:0,y:0}} end={{x:1,y:1}} style={StyleSheet.absoluteFillObject} />
+                          <Text style={styles.heroCardBadgeText}>FEATURED</Text>
+                       </View>
+                       <View style={styles.heroCardContent}>
+                          {(event.priceCents === 0 || event.isFree) ? (
+                            <View style={styles.heroCardPrice}>
+                              <Text style={styles.heroCardPriceText}>FREE</Text>
+                            </View>
+                          ) : event.priceLabel ? (
+                            <View style={[styles.heroCardPrice, { backgroundColor: CultureTokens.indigo }]}>
+                              <Text style={[styles.heroCardPriceText, { color: '#FFF' }]}>{event.priceLabel}</Text>
+                            </View>
+                          ) : null}
+                          <Text style={styles.heroCardDate}>{formatDate(event.date)}</Text>
+                          <Text style={styles.heroCardTitle} numberOfLines={2}>{event.title}</Text>
+                          <View style={styles.heroCardMeta}>
+                             <Ionicons name="location" size={14} color="rgba(255,255,255,0.7)" />
+                             <Text style={styles.heroCardLocation} numberOfLines={1}>{event.venue || event.city}</Text>
+                          </View>
+                       </View>
+                    </Pressable>
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* First Nations Spotlight */}
+          {land && (
+            <View style={[styles.landBanner, isDesktop && { marginHorizontal: 0 }]}>
+              <LinearGradient colors={['rgba(212,165,116,0.15)', 'rgba(212,165,116,0.05)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFillObject} />
+              <View style={styles.landBannerContent}>
+                <Ionicons name="earth" size={16} color="#D4A574" />
+                <Text style={styles.landBannerTitle}>You are on {land.landName}</Text>
+              </View>
+              <Text style={styles.landBannerSub}>Traditional Custodians: {land.traditionalCustodians}</Text>
+            </View>
+          )}
+
+          {/* Civic / Council Alerts */}
+          {council && (
+            <View style={[styles.civicCard, isDesktop && { marginHorizontal: 0 }]}>
+              <View style={styles.civicCardHeader}>
+                <Ionicons name="shield-checkmark" size={18} color={CultureTokens.indigo} />
+                <Text style={styles.civicCardTitle}>{council.name}</Text>
+              </View>
+              <Text style={styles.civicCardSub}>
+                {isCouncilVerified ? `Council Verified • LGA ${lgaCode}` : `LGA ${lgaCode ?? 'Unknown'}`}
+                {activeAlerts.length > 0 ? ` • ${activeAlerts.length} active alert${activeAlerts.length === 1 ? '' : 's'}` : ''}
+              </Text>
+            </View>
+          )}
+
           {discoverLoading && (
             <View style={styles.loadingWrap}>
               <ActivityIndicator size="large" color={CultureTokens.indigo} />
-              <Text style={styles.loadingText}>Personalising your feed...</Text>
+              <Text style={styles.loadingText}>Personalising feed...</Text>
             </View>
           )}
 
           {/* Empty Fallback */}
-          {!discoverLoading && !featuredEvent && popularEvents.length === 0 && allActivities.length === 0 && allCommunities.length === 0 && (
+          {!discoverLoading && featuredEvents.length === 0 && popularEvents.length === 0 && allActivities.length === 0 && allCommunities.length === 0 && (
             <View style={[styles.emptyStateCard, isDesktop && { marginHorizontal: 0 }]}> 
               <Ionicons name="compass-outline" size={42} color={colors.textTertiary} />
-              <Text style={styles.emptyStateTitle}>No events or activities found.</Text>
-              <Text style={styles.emptyStateSub}>Try changing your city, check council events, or pull to refresh.</Text>
+              <Text style={styles.emptyStateTitle}>No events right now</Text>
+              <Text style={styles.emptyStateSub}>Try changing your city or pull to refresh.</Text>
             </View>
           )}
 
-          {/* Feature Highlight */}
-          {featuredEvent && (
-            <View style={{ marginBottom: 32 }}>
-              <View style={[styles.sectionPad, isDesktop && { paddingHorizontal: 0 }]}>
-                <SectionHeader title="Cultural Highlight" subtitle="Don't miss this week" />
-              </View>
-              <View style={[isDesktop && { paddingHorizontal: 0 }]}>
-                <EventCard event={featuredEvent} highlight index={0} />
-              </View>
-            </View>
-          )}
-
-          {/* Popular / Near You Rail */}
+          {/* Popular Near You */}
           {popularEvents.length > 0 && (
             <View style={{ marginBottom: 32 }}>
               <View style={[styles.sectionPad, isDesktop && { paddingHorizontal: 0 }]}>
-                <SectionHeader title="Popular Near You" onSeeAll={() => router.push('/(tabs)/explore')} />
+                <SectionHeader title="Popular Near You" subtitle="Trending in your area" onSeeAll={() => router.push('/(tabs)/explore')} />
               </View>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.scrollRail, isDesktop && { paddingHorizontal: 0 }]} decelerationRate="fast" snapToInterval={254} snapToAlignment="start">
                 {popularEvents.map((event: any, i: number) => (
                   <EventCard key={event.id} event={event} index={i} />
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* Explore Culture */}
+          {cultureCards.length > 0 && (
+            <View style={{ marginBottom: 32 }}>
+              <View style={[styles.sectionPad, isDesktop && { paddingHorizontal: 0 }]}>
+                <SectionHeader title="Communities" subtitle="Connect with your culture" onSeeAll={() => router.push('/(tabs)/communities')} />
+              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.scrollRail, { gap: 12 }, isDesktop && { paddingHorizontal: 0 }]} decelerationRate="fast" snapToInterval={122} snapToAlignment="start">
+                {cultureCards.map((item) => (
+                  <CategoryCard key={item.id} item={item} onPress={() => router.push({ pathname: '/community/[id]', params: { id: item.id } })} />
                 ))}
               </ScrollView>
             </View>
@@ -487,20 +527,6 @@ export default function HomeScreen() {
             </View>
           )}
 
-          {/* Explore Culture */}
-          {cultureCards.length > 0 && (
-            <View style={{ marginBottom: 32 }}>
-              <View style={[styles.sectionPad, isDesktop && { paddingHorizontal: 0 }]}>
-                <SectionHeader title="Explore Your Culture" onSeeAll={() => router.push('/(tabs)/communities')} />
-              </View>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.scrollRail, { gap: 12 }, isDesktop && { paddingHorizontal: 0 }]} decelerationRate="fast" snapToInterval={122} snapToAlignment="start">
-                {cultureCards.map((item) => (
-                  <CategoryCard key={item.id} item={item} onPress={() => router.push({ pathname: '/community/[id]', params: { id: item.id } })} />
-                ))}
-              </ScrollView>
-            </View>
-          )}
-
           {/* Algorithmic Rails */}
           {otherSections.map((section: any) => (
             <View key={section.title} style={{ marginBottom: 32 }}>
@@ -513,7 +539,7 @@ export default function HomeScreen() {
                 ))}
               </ScrollView>
             </View>
-          ))}
+          )}
 
           {/* Browse Categories */}
           <View style={{ marginBottom: 32 }}>
@@ -545,62 +571,63 @@ export default function HomeScreen() {
 
 const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: colors.background, overflow: 'hidden' },
-  topBarBorder: { position: 'absolute', bottom: 0, left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: colors.borderLight },
+  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12, backgroundColor: 'transparent', zIndex: 100 },
+  topBarBorder: { position: 'absolute', bottom: 0, left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(255,255,255,0.05)' },
   brandBlock: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  brandName: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: colors.text, lineHeight: 22 },
-  brandUrl: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.indigo, lineHeight: 14, letterSpacing: 0.2 },
+  logoWrap: { width: 34, height: 34, borderRadius: 10, backgroundColor: CultureTokens.indigo, alignItems: 'center', justifyContent: 'center' },
+  brandName: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: colors.text, lineHeight: 18 },
+  brandUrl: { fontSize: 11, fontFamily: 'Poppins_500Medium', color: colors.textSecondary, lineHeight: 14, letterSpacing: 0.2 },
   
-  topBarRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  iconButton: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderRadius: 21, borderWidth: 1, borderColor: colors.borderLight },
+  topBarRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  iconButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderRadius: 20, borderWidth: 1, borderColor: colors.borderLight },
   notifDot: { position: 'absolute', top: 10, right: 10, width: 8, height: 8, borderRadius: 4, backgroundColor: CultureTokens.error, borderWidth: 1.5, borderColor: colors.surface },
   
-  locationPickerRow: { paddingHorizontal: 20, paddingTop: 16 },
+  locationPickerRow: { paddingHorizontal: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 16 },
+  heroGreetingMobile: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: colors.textSecondary, marginBottom: 10, marginRight: 2 },
   
-  guestAuthRow: { marginTop: 12, marginHorizontal: 20, padding: 14, borderRadius: 16, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight, gap: 12 },
-  guestAuthHint: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
-  guestAuthButtons: { flexDirection: 'row', gap: 12 },
-  guestAuthBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 12, paddingVertical: 12, borderWidth: 1 },
-  guestSignupBtn: { backgroundColor: 'transparent', borderColor: colors.borderLight },
-  guestSigninBtn: { backgroundColor: CultureTokens.indigo, borderColor: CultureTokens.indigo },
-  guestAuthBtnText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
-  guestSignupText: { color: colors.text },
-  guestSigninText: { color: '#FFFFFF' },
+  heroSectionDesktop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, paddingVertical: 18, paddingHorizontal: 20 },
+  heroDesktopLeft: { flexDirection: 'column' },
+  heroSubtitleDesktop: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: colors.textSecondary, letterSpacing: 0.2, marginBottom: 4 },
+  heroTitleDesktop: { fontSize: 28, fontFamily: 'Poppins_700Bold', lineHeight: 34, letterSpacing: -0.5, color: colors.text },
 
-  heroSection: { paddingHorizontal: 20, marginBottom: 20, marginTop: 12 },
-  heroSubtitle: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.saffron, marginBottom: 8, letterSpacing: 0.2 },
-  heroTitle: { fontSize: 26, fontFamily: 'Poppins_700Bold', lineHeight: 32, letterSpacing: -0.2, color: '#FFFFFF' },
-  heroSectionDesktop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, marginTop: 18 },
-  heroDesktopLeft: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  heroSubtitleDesktop: { fontSize: 18, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.saffron, letterSpacing: 0.2 },
-  heroTitleDesktop: { fontSize: 18, fontFamily: 'Poppins_700Bold', lineHeight: 24, letterSpacing: -0.2, color: '#FFFFFF' },
+  carouselContainer: { marginBottom: 32 },
+  heroCard: { height: 420, borderRadius: 24, overflow: 'hidden', backgroundColor: colors.surface, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+  heroCardBadge: { position: 'absolute', top: 16, left: 16, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, overflow: 'hidden' },
+  heroCardBadgeText: { fontSize: 11, fontFamily: 'Poppins_700Bold', color: '#FFF', letterSpacing: 1 },
+  heroCardContent: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 24, paddingTop: 40 },
+  heroCardPrice: { alignSelf: 'flex-start', backgroundColor: CultureTokens.gold, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, marginBottom: 8 },
+  heroCardPriceText: { fontSize: 11, fontFamily: 'Poppins_700Bold', color: '#1C1C1E', letterSpacing: 0.5 },
+  heroCardDate: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.saffron, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 },
+  heroCardTitle: { fontSize: 24, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', lineHeight: 30, marginBottom: 12 },
+  heroCardMeta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  heroCardLocation: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.7)', flex: 1 },
 
   landBanner: { borderRadius: 16, padding: 16, borderLeftWidth: 4, borderLeftColor: '#D4A574', marginHorizontal: 20, marginBottom: 20, overflow: 'hidden' },
   landBannerContent: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   landBannerTitle: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: '#D4A574' },
   landBannerSub: { fontSize: 12, fontFamily: 'Poppins_400Regular', color: '#8B7355', marginTop: 4, marginLeft: 24 },
 
-  civicCard: { marginHorizontal: 20, marginBottom: 20, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: colors.borderLight, backgroundColor: colors.surface },
+  civicCard: { marginHorizontal: 20, marginBottom: 24, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: colors.borderLight, backgroundColor: colors.surface },
   civicCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   civicCardTitle: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: colors.text },
   civicCardSub: { fontSize: 12, fontFamily: 'Poppins_400Regular', color: colors.textSecondary, marginTop: 6 },
 
-  quickChipRow: { marginBottom: 26 },
+  quickChipRow: { marginBottom: 24 },
   quickChipScroll: { paddingHorizontal: 20, gap: 10, paddingVertical: 4 },
 
-  sectionPad: { paddingHorizontal: 20 },
+  sectionPad: { paddingHorizontal: 20, marginBottom: 16 },
   scrollRail: { paddingHorizontal: 20, gap: 14 },
 
-  activityTile: { width: 240, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.borderLight, backgroundColor: colors.surface, gap: 8 },
-  activityCategory: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.saffron },
-  activityName: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: colors.text },
-  activityDescription: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: colors.textSecondary, minHeight: 40 },
-  activityMeta: { fontSize: 12, fontFamily: 'Poppins_500Medium', color: colors.textTertiary },
+  activityTile: { width: 240, borderRadius: 20, padding: 18, borderWidth: 1, borderColor: colors.borderLight, backgroundColor: colors.surface, gap: 8 },
+  activityCategory: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.saffron, textTransform: 'uppercase', letterSpacing: 0.5 },
+  activityName: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: colors.text, lineHeight: 22 },
+  activityDescription: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: colors.textSecondary, lineHeight: 18, minHeight: 40 },
+  activityMeta: { fontSize: 12, fontFamily: 'Poppins_500Medium', color: colors.textTertiary, marginTop: 4 },
 
   loadingWrap: { alignItems: 'center', paddingVertical: 50, gap: 16 },
   loadingText: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
 
-  emptyStateCard: { marginHorizontal: 20, padding: 32, borderRadius: 16, borderWidth: 1, borderColor: colors.borderLight, backgroundColor: colors.surface, alignItems: 'center', gap: 12 },
+  emptyStateCard: { marginHorizontal: 20, padding: 32, borderRadius: 16, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.borderLight, backgroundColor: colors.surface, alignItems: 'center', gap: 12, marginBottom: 40 },
   emptyStateTitle: { fontSize: 18, fontFamily: 'Poppins_600SemiBold', color: colors.text, textAlign: 'center' },
   emptyStateSub: { fontSize: 14, fontFamily: 'Poppins_400Regular', color: colors.textSecondary, textAlign: 'center' },
 

@@ -2,7 +2,7 @@ import "react-native-reanimated"; // <-- CRUCIAL FIX: Must be at the very top
 import { Buffer } from "buffer";
 
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-import { Stack } from "expo-router";
+import { Stack, useSegments, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as Sentry from '@sentry/react-native';
 import { PostHogProvider } from 'posthog-react-native';
@@ -130,6 +130,51 @@ function DataSync() {
     user?.subscriptionTier,
     state.isComplete,
   ]);  
+
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// AuthGuard — Global Route Protector
+// Handles phase 2 auth-guard redirect rules and prevents unauthenticated
+// users from bypassing login to access privileged areas.
+// ---------------------------------------------------------------------------
+function AuthGuard() {
+  const { user, isRestoring } = useAuth();
+  const segments = useSegments() as string[];
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isRestoring) return;
+
+    // Define strictly protected root-level screens
+    const protectedRoutes = [
+      'profile',
+      'tickets',
+      'payment',
+      'saved',
+      'settings',
+      'membership',
+      'submit',
+      'scanner',
+    ];
+
+    // Some (tabs) are fully open to guests (index, communities, map). 
+    // Others (like profile, perks, calendar) require login.
+    const isProtected = 
+      protectedRoutes.includes(segments[0] as string) || 
+      (segments[0] === '(tabs)' && (segments[1] === 'profile' || segments[1] === 'perks' || segments[1] === 'calendar' || segments[1] === 'dashboard'));
+
+    const inOnboardingGroup = segments[0] === '(onboarding)';
+
+    if (!user && isProtected) {
+      // Guests hitting a locked screen → route to login
+      router.replace('/(onboarding)/login');
+    } else if (user && inOnboardingGroup && segments[1] === 'login') {
+      // Authenticated users explicitly navigating to login → skip to tabs
+      router.replace('/(tabs)');
+    }
+  }, [user, segments, isRestoring, router]);
 
   return null;
 }
@@ -324,6 +369,7 @@ function RootLayoutContent() {
                   >
                     {/* Syncs auth user city/country → OnboardingContext */}
                     <DataSync />
+                    <AuthGuard />
                     {isWeb ? (
                       <WebShell>
                         <RootLayoutNav />

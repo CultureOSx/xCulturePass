@@ -21,13 +21,15 @@ import {
   signInWithPopup,
   signInWithCredential,
   OAuthProvider,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence,
 } from 'firebase/auth';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { SocialButton } from '@/components/ui/SocialButton';
 import { LinearGradient } from 'expo-linear-gradient';
-import { olympicColors } from '@/constants/theme';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useColors } from '@/hooks/useColors';
 import * as AppleAuthentication from 'expo-apple-authentication';
@@ -51,6 +53,9 @@ export default function LoginScreen() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
+
+  const isValid = email.trim().length > 0 && password.length >= 6;
 
   const validate = () => {
     if (!email.match(/^[^@]+@[^@]+\.[^@]+$/)) return 'Invalid email address';
@@ -150,6 +155,9 @@ export default function LoginScreen() {
     if (validationError) return setError(validationError);
     setLoading(true);
     try {
+      if (Platform.OS === 'web') {
+        await setPersistence(firebaseAuth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
+      }
       await signInWithEmailAndPassword(firebaseAuth, email, password);
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       postAuthRoute();
@@ -171,7 +179,7 @@ export default function LoginScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={olympicColors}
+        colors={gradients.culturepassBrand}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.gradientBg}
@@ -334,6 +342,13 @@ const styles = StyleSheet.create({
   container: { 
     flex: 1, 
     backgroundColor: 'transparent' 
+  },
+  gradientBg: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
   },
   keyboardAvoid: { 
     flex: 1 

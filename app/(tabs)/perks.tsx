@@ -1,5 +1,4 @@
-import { View, Text, Pressable, StyleSheet, ScrollView, Platform, Alert, Share, RefreshControl, ActivityIndicator } from 'react-native';
-import type { ViewStyle } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView, Platform, Alert, Share, RefreshControl, ActivityIndicator, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,6 +6,14 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { BlurView } from 'expo-blur';
+import Animated, {
+  useSharedValue,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  interpolate,
+  Extrapolation,
+} from 'react-native-reanimated';
 import { apiRequest, queryClient, getQueryFn } from '@/lib/query-client';
 import { api } from '@/lib/api';
 import { FilterChipRow, FilterItem } from '@/components/FilterChip';
@@ -16,6 +23,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useCouncil } from '@/hooks/useCouncil';
 import { useLayout } from '@/hooks/useLayout';
 import { CultureTokens, gradients } from '@/constants/theme';
+import { useColorScheme } from 'react-native';
 
 const isWeb = Platform.OS === 'web';
 
@@ -62,19 +70,20 @@ const CATEGORIES = [
 const filterItems: FilterItem[] = CATEGORIES.map(cat => ({ id: cat.id, label: cat.label, icon: cat.icon }));
 
 export default function PerksTabScreen() {
-  const insets   = useSafeAreaInsets();
+  const insets = useSafeAreaInsets();
   const { width, isDesktop, isTablet } = useLayout();
-  const colors   = useColors();
-  const isDesktopWeb = isWeb && isDesktop;
-  
-  const topInset = isWeb ? (isDesktop ? 72 : 0) : insets.top;
-  const shellMaxWidth = isWeb ? (isDesktop ? 1280 : isTablet ? 1040 : width) : width;
-  const shellStyle: ViewStyle | undefined = isWeb ? { maxWidth: shellMaxWidth, width: '100%', alignSelf: 'center' } : undefined;
+  const colors = useColors();
   const s = getStyles(colors);
   
+  const scheme = useColorScheme();
+  const isDark = scheme === 'dark';
+  
+  const topInset = isWeb ? 0 : insets.top;
+  const contentMaxWidth = isDesktop ? 1200 : isTablet ? 800 : width;
+
   const { userId } = useAuth();
   const { data: councilData } = useCouncil();
-  const openGrants = (councilData?.grants ?? []).filter((grant) => grant.status === 'open');
+  const openGrants = (councilData?.grants ?? []).filter((grant: {status: string}) => grant.status === 'open');
   
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [refreshing, setRefreshing] = useState(false);
@@ -90,6 +99,17 @@ export default function PerksTabScreen() {
     queryFn: getQueryFn({ on401: 'returnNull' }),
     enabled: !!userId,
   });
+
+  const scrollY = useSharedValue(0);
+  const scrollHandler = useAnimatedScrollHandler((event) => {
+    scrollY.value = event.contentOffset.y;
+  });
+  const headerBorderStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(scrollY.value, [0, 40], [0, 1], Extrapolation.CLAMP),
+  }));
+  const headerBlurStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(scrollY.value, [0, 80], [0, 1], Extrapolation.CLAMP),
+  }));
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -128,7 +148,7 @@ export default function PerksTabScreen() {
     if (perk.perkType === 'early_access')     return '48h Early';
     if (perk.perkType === 'vip_upgrade')      return 'VIP';
     if (perk.perkType === 'cashback')
-      return perk.discountPercent ? `${perk.discountPercent}%` : `$${((perk.discountFixedCents ?? 0) / 100).toFixed(0)}`;
+      return perk.discountPercent ? `${perk.discountPercent}% Cashback` : `$${((perk.discountFixedCents ?? 0) / 100).toFixed(0)} Cashback`;
     return 'Reward';
   };
 
@@ -169,172 +189,203 @@ export default function PerksTabScreen() {
     <ErrorBoundary>
       <View style={[s.container, { paddingTop: topInset, backgroundColor: colors.background }]}> 
 
-        {/* Header */}
-        <View style={[shellStyle, s.shellHorizontal]}>
-          <View style={s.headerRow}>
-            {!isDesktopWeb && (
-              <View style={{ flex: 1 }}>
-                <Text style={[s.headerTitle, { color: colors.text }]}>Perks</Text>
-                <Text style={[s.headerSub, { color: colors.textSecondary }]}>{activePerkCount} available rewards</Text>
-              </View>
+        {/* Global Transparent Blur Header (Mobile Only) */}
+        {!(isWeb && isDesktop) && (
+          <View style={s.topBar}>
+            {Platform.OS === 'ios' && (
+              <Animated.View style={[StyleSheet.absoluteFill, headerBlurStyle]} pointerEvents="none">
+                <BlurView intensity={90} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+              </Animated.View>
             )}
-            <Pressable
-              onPress={() => { if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/submit' as never); }}
-              hitSlop={8}
-              style={({ pressed }) => [s.addBtn, { backgroundColor: CultureTokens.indigo + '15', opacity: pressed ? 0.7 : 1 }]}
-              accessibilityRole="button"
-              accessibilityLabel="Submit a perk listing"
-            >
-              <Ionicons name="add" size={24} color={CultureTokens.indigo} />
-            </Pressable>
-          </View>
-        </View>
+            <Animated.View style={[s.topBarBorder, headerBorderStyle]} pointerEvents="none" />
 
-        <ScrollView
+            <View style={s.headerRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={[s.headerTitle, { color: colors.text }]}>Perks & Rewards</Text>
+                <Text style={[s.headerSub, { color: colors.textSecondary }]}>{activePerkCount} available to claim</Text>
+              </View>
+              <Pressable
+                onPress={() => { if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/submit' as never); }}
+                hitSlop={8}
+                style={({ pressed }) => [s.addBtn, { backgroundColor: CultureTokens.indigo + '15', opacity: pressed ? 0.7 : 1 }]}
+              >
+                <Ionicons name="add" size={24} color={CultureTokens.indigo} />
+              </Pressable>
+            </View>
+          </View>
+        )}
+
+        <Animated.ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: isWeb ? 134 : insets.bottom + 110 }}
+          onScroll={isWeb ? (e: any) => { scrollY.value = e.nativeEvent.contentOffset.y; } : scrollHandler}
+          scrollEventThrottle={16}
+          contentContainerStyle={[
+            { paddingBottom: isWeb ? 134 : insets.bottom + 110 },
+            isDesktop && { maxWidth: contentMaxWidth, alignSelf: 'center', width: '100%', paddingTop: 32 },
+            !isDesktop && !isWeb && { paddingTop: 16 }
+          ]}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={CultureTokens.indigo} />}
         >
-          <View style={shellStyle}>
-            {/* Hero banner */}
-            <View style={s.heroWrapper}>
-              <LinearGradient
-                colors={gradients.culturepassBrand}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={s.heroBanner}
+
+          {/* Desktop Only Header */}
+          {isWeb && isDesktop && (
+            <View style={[s.headerRow, { paddingHorizontal: 20, marginBottom: 24 }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={[s.headerTitle, { color: colors.text, fontSize: 36 }]}>Perks & Rewards</Text>
+                <Text style={[s.headerSub, { color: colors.textSecondary, fontSize: 16 }]}>{activePerkCount} exclusive perks available to claim.</Text>
+              </View>
+              <Pressable
+                onPress={() => router.push('/submit' as never)}
+                style={({ pressed }) => [s.addBtn, { height: 48, width: 48, backgroundColor: CultureTokens.indigo + '15', opacity: pressed ? 0.7 : 1 }]}
               >
-                <View style={[s.heroOrb, { backgroundColor: 'rgba(255,255,255,0.06)' }]} />
-                <View style={[s.heroIconWrap, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
-                  <Ionicons name="sparkles" size={32} color={CultureTokens.gold} />
-                </View>
-                <Text style={s.heroTitle}>CulturePass Perks</Text>
-                <Text style={s.heroSub}>Unlock exclusive rewards, discounts, and cultural experiences.</Text>
-                <View style={s.heroStats}> 
-                  <View style={[s.heroStatChip, { backgroundColor: CultureTokens.saffron }]}>
-                    <Text style={[s.heroStatNum, { color: '#0B0B14' }]}>{perks.length}</Text>
-                    <Text style={[s.heroStatLabel, { color: '#0B0B14' }]}>Total</Text>
-                  </View>
-                  <View style={[s.heroStatChip, { backgroundColor: CultureTokens.teal }]}>
-                    <Text style={[s.heroStatNum, { color: '#FFFFFF' }]}>{activePerkCount}</Text>
-                    <Text style={[s.heroStatLabel, { color: '#FFFFFF' }]}>Available</Text>
-                  </View>
-                  <View style={[s.heroStatChip, { backgroundColor: CultureTokens.coral }]}>
-                    <Text style={[s.heroStatNum, { color: '#FFFFFF', fontSize: 13, marginTop: 2 }]}>{membership?.tier?.toUpperCase() ?? 'FREE'}</Text>
-                    <Text style={[s.heroStatLabel, { color: '#FFFFFF' }]}>Tier</Text>
-                  </View>
-                </View>
-              </LinearGradient>
+                <Ionicons name="add" size={24} color={CultureTokens.indigo} />
+              </Pressable>
             </View>
+          )}
 
-            {/* Upgrade nudge */}
-            {!isPlusMember && (
-              <View style={s.listWrapper}>
-                <Pressable
-                  style={({ pressed }) => [s.upgradeBanner, { backgroundColor: colors.surface, borderColor: CultureTokens.indigo + '30', transform: [{ scale: pressed ? 0.98 : 1 }] }]}
-                  onPress={() => { if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/membership/upgrade' as never); }}
-                >
-                  <View style={[s.upgradeBannerIcon, { backgroundColor: CultureTokens.indigo + '15' }]}>
-                    <Ionicons name="star" size={20} color={CultureTokens.indigo} />
+          {/* Hero Premium Banner */}
+          <View style={[s.heroWrapper, isDesktop && { paddingHorizontal: 0, marginBottom: 32 }]}>
+            <LinearGradient
+              colors={gradients.culturepassBrandReversed}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={s.heroBanner}
+            >
+              <View style={[s.heroOrb, { backgroundColor: 'rgba(255,255,255,0.08)' }]} />
+              <View style={s.heroBannerTop}>
+                <View style={[s.heroIconWrap, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+                  <Ionicons name="gift" size={32} color={CultureTokens.gold} />
+                </View>
+                {!isPlusMember && (
+                  <View style={s.tierPill}>
+                    <Text style={s.tierPillText}>FREE TIER</Text>
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[s.upgradeBannerTitle, { color: colors.text }]}>Unlock Exclusive Perks</Text>
-                    <Text style={[s.upgradeBannerSub, { color: colors.textSecondary }]}>
-                      CulturePass+ members get access to premium deals.
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={18} color={CultureTokens.indigo} />
-                </Pressable>
+                )}
               </View>
-            )}
-
-            {/* Category chips */}
-            <View style={s.listWrapper}>
-              <FilterChipRow
-                items={filterItems}
-                selectedId={selectedCategory}
-                onSelect={handleSelectCategory}
-                size="small"
-              />
-            </View>
-
-            {/* Grants Nudge */}
-            {openGrants.length > 0 && (
-              <View style={[s.listWrapper, { marginTop: 12 }]}>
-                <Pressable 
-                  style={({ pressed }) => [s.upgradeBanner, { backgroundColor: colors.surface, borderColor: colors.info + '30', transform: [{ scale: pressed ? 0.98 : 1 }] }]}
-                  onPress={() => { if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/(tabs)/council'); }}
-                > 
-                  <View style={[s.upgradeBannerIcon, { backgroundColor: colors.info + '15' }]}> 
-                    <Ionicons name="library" size={20} color={colors.info} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[s.upgradeBannerTitle, { color: colors.text }]}>Cultural Funding Available</Text>
-                    <Text style={[s.upgradeBannerSub, { color: colors.textSecondary }]}> 
-                      {openGrants.length} local council grant{openGrants.length === 1 ? '' : 's'} open right now.
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={18} color={colors.info} />
-                </Pressable>
-              </View>
-            )}
-
-            {/* Section title */}
-            <View style={s.sectionHeader}>
-              <Text style={[s.sectionTitle, { color: colors.text }]}>
-                {selectedCategory === 'All' ? 'All Rewards' : CATEGORIES.find(c => c.id === selectedCategory)?.label ?? 'Perks'}
-              </Text>
-              {!isLoading && (
-                <Text style={[s.sectionCount, { color: colors.textTertiary }]}>
-                  {filteredPerks.length} {filteredPerks.length === 1 ? 'perk' : 'perks'}
-                </Text>
-              )}
-            </View>
-
-            {/* Perk list */}
-            <View style={s.list}>
-              {isLoading ? (
-                <View style={s.empty}>
-                  <ActivityIndicator size="large" color={CultureTokens.indigo} />
-                  <Text style={[s.emptyText, { color: colors.textSecondary }]}>Loading exclusive perks...</Text>
-                </View>
-              ) : filteredPerks.length === 0 ? (
-                <View style={[s.empty, { backgroundColor: colors.surface, borderColor: colors.borderLight, borderWidth: 1 }]}>
-                  <View style={[s.emptyIconBox, { backgroundColor: colors.background }]}>
-                    <Ionicons name="gift-outline" size={36} color={colors.textTertiary} />
-                  </View>
-                  <Text style={[s.emptyTitle, { color: colors.text }]}>No perks found</Text>
-                  <Text style={[s.emptyText, { color: colors.textSecondary }]}>Check back soon for new offers in this category.</Text>
-                </View>
-              ) : (
-                filteredPerks.map((perk) => (
-                  <PerkCard
-                    key={perk.id}
-                    perk={perk}
-                    colors={colors}
-                    redeemable={canRedeem(perk)}
-                    formattedValue={formatValue(perk)}
-                    onShare={() => handleSharePerk(perk)}
-                    onRedeem={() => {
-                      if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                      if (!canRedeem(perk) && perk.isMembershipRequired) {
-                        router.push('/membership/upgrade' as never);
-                      } else if (!userId) {
-                        Alert.alert('Sign in required', 'Please sign in to redeem this perk.');
-                        router.push('/(onboarding)/login' as never);
-                      } else {
-                        redeemMutation.mutate(perk.id);
-                      }
-                    }}
-                    isPending={redeemingPerkId === perk.id}
-                    resolveTypeColor={resolveTypeColor}
-                  />
-                ))
-              )}
-            </View>
-
+              <Text style={s.heroTitle}>Unlock Exclusive Offers</Text>
+              <Text style={s.heroSub}>Redeem partner discounts, VIP access, and cashback rewards at events.</Text>
+            </LinearGradient>
           </View>
-        </ScrollView>
+
+          {/* Upgrade Nudge Box */}
+          {!isPlusMember && (
+            <View style={[s.listWrapper, isDesktop && { paddingHorizontal: 0 }]}>
+              <Pressable
+                style={({ pressed }) => [s.upgradeBanner, { 
+                  backgroundColor: colors.surface, 
+                  borderColor: CultureTokens.indigo + '40', 
+                  transform: [{ scale: pressed ? 0.98 : 1 }] 
+                }]}
+                onPress={() => { if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/membership/upgrade' as never); }}
+              >
+                <View style={[s.upgradeBannerIcon, { backgroundColor: CultureTokens.indigo }]} >
+                  <Ionicons name="star" size={20} color="#FFFFFF" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[s.upgradeBannerTitle, { color: colors.text }]}>CulturePass+ Membership</Text>
+                  <Text style={[s.upgradeBannerSub, { color: colors.textSecondary }]}>
+                    Upgrade to unlock all premium tier rewards globally.
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={CultureTokens.indigo} />
+              </Pressable>
+            </View>
+          )}
+
+          {/* Council Grants Alert */}
+          {openGrants.length > 0 && (
+            <View style={[s.listWrapper, isDesktop && { paddingHorizontal: 0 }]}>
+              <Pressable 
+                style={({ pressed }) => [s.upgradeBanner, { 
+                  backgroundColor: colors.surface, 
+                  borderColor: CultureTokens.teal + '40', 
+                  transform: [{ scale: pressed ? 0.98 : 1 }],
+                  borderStyle: 'dashed' 
+                }]}
+                onPress={() => { if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/(tabs)/council'); }}
+              > 
+                <View style={[s.upgradeBannerIcon, { backgroundColor: CultureTokens.teal + '15' }]}> 
+                  <Ionicons name="library" size={20} color={CultureTokens.teal} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[s.upgradeBannerTitle, { color: colors.text }]}>Cultural Funding Available</Text>
+                  <Text style={[s.upgradeBannerSub, { color: colors.textSecondary }]}> 
+                    {openGrants.length} local council grant{openGrants.length === 1 ? '' : 's'} open right now.
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={CultureTokens.teal} />
+              </Pressable>
+            </View>
+          )}
+
+          {/* Category Filter Chips */}
+          <View style={[s.listWrapper, { marginBottom: 12 }, isDesktop && { paddingHorizontal: 0 }]}>
+            <FilterChipRow
+              items={filterItems}
+              selectedId={selectedCategory}
+              onSelect={handleSelectCategory}
+              size="small"
+            />
+          </View>
+
+          {/* Section Header */}
+          <View style={[s.sectionHeader, isDesktop && { paddingHorizontal: 0 }]}>
+            <Text style={[s.sectionTitle, { color: colors.text }]}>
+              {selectedCategory === 'All' ? 'All Rewards' : CATEGORIES.find(c => c.id === selectedCategory)?.label ?? 'Perks'}
+            </Text>
+            {!isLoading && (
+              <Text style={[s.sectionCount, { color: colors.textTertiary }]}>
+                {filteredPerks.length} {filteredPerks.length === 1 ? 'perk' : 'perks'}
+              </Text>
+            )}
+          </View>
+
+          {/* Perk Grid/List */}
+          <View style={[s.grid, isDesktop && { paddingHorizontal: 0 }]}>
+            {isLoading ? (
+              <View style={s.empty}>
+                <ActivityIndicator size="large" color={CultureTokens.indigo} />
+                <Text style={[s.emptyText, { color: colors.textSecondary, marginTop: 12 }]}>Loading exclusive perks...</Text>
+              </View>
+            ) : filteredPerks.length === 0 ? (
+              <View style={[s.emptyStateCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+                <View style={[s.emptyIconBox, { backgroundColor: colors.background }]}>
+                  <Ionicons name="gift-outline" size={36} color={colors.textTertiary} />
+                </View>
+                <Text style={[s.emptyTitle, { color: colors.text }]}>No perks found</Text>
+                <Text style={[s.emptyText, { color: colors.textSecondary }]}>Check back later for deals in this category.</Text>
+              </View>
+            ) : (
+              <View style={[s.gridWrapper, isDesktop && s.gridDesktop]}>
+                {filteredPerks.map((perk) => (
+                  <View key={perk.id} style={isDesktop ? s.gridCell : s.fullCell}>
+                    <PerkCard
+                      perk={perk}
+                      colors={colors}
+                      redeemable={canRedeem(perk)}
+                      formattedValue={formatValue(perk)}
+                      onShare={() => handleSharePerk(perk)}
+                      onRedeem={() => {
+                        if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                        if (!canRedeem(perk) && perk.isMembershipRequired) {
+                          router.push('/membership/upgrade' as never);
+                        } else if (!userId) {
+                          Alert.alert('Sign in required', 'Please sign in to redeem this perk.');
+                          router.push('/(onboarding)/login' as never);
+                        } else {
+                          redeemMutation.mutate(perk.id);
+                        }
+                      }}
+                      isPending={redeemingPerkId === perk.id}
+                      resolveTypeColor={resolveTypeColor}
+                    />
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+
+        </Animated.ScrollView>
       </View>
     </ErrorBoundary>
   );
@@ -371,8 +422,7 @@ function PerkCard({
 
   return (
     <View style={[s.perkCard, { backgroundColor: colors.surface, borderColor: needsUpgrade ? CultureTokens.indigo + '40' : colors.borderLight }]}>
-      {/* Decorative colored strip entirely governed by perk type */}
-      <View style={[s.cardStrip, { backgroundColor: typeColor }]} />
+      <View style={[s.cardStrip, { backgroundColor: needsUpgrade ? CultureTokens.indigo : typeColor }]} />
 
       <View style={s.cardContent}>
         <View style={s.perkTopRow}>
@@ -384,7 +434,7 @@ function PerkCard({
             <Text style={[s.perkTitle, { color: colors.text }]} numberOfLines={2}>{perk.title}</Text>
             <View style={s.providerRow}>
               <Ionicons name="business" size={14} color={colors.textTertiary} />
-              <Text style={[s.perkProvider, { color: colors.textSecondary }]}>{perk.providerName ?? 'CulturePass Alliance'}</Text>
+              <Text style={[s.perkProvider, { color: colors.textSecondary }]}>{perk.providerName ?? 'CulturePass App'}</Text>
             </View>
           </View>
 
@@ -424,7 +474,7 @@ function PerkCard({
           {!!perk.perUserLimit && (
             <View style={[s.metaTag, { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight }]}>
               <Ionicons name="person-outline" size={12} color={colors.textSecondary} />
-              <Text style={[s.metaTagText, { color: colors.textSecondary }]}>Max {perk.perUserLimit}/user</Text>
+              <Text style={[s.metaTagText, { color: colors.textSecondary }]}>Max {perk.perUserLimit}/account</Text>
             </View>
           )}
         </View>
@@ -446,7 +496,7 @@ function PerkCard({
             Platform.OS === 'web' && { cursor: (exhausted || isPending ? 'not-allowed' : 'pointer') as any },
             needsUpgrade && { backgroundColor: CultureTokens.indigo + '15', borderColor: CultureTokens.indigo + '40', borderWidth: 1 },
             exhausted    && { backgroundColor: colors.backgroundSecondary },
-            redeemable   && { backgroundColor: CultureTokens.indigo, opacity: pressed ? 0.85 : 1 },
+            redeemable   && { backgroundColor: typeColor, opacity: pressed ? 0.85 : 1 },
             isPending    && { opacity: 0.6 },
           ] as any)}
         >
@@ -465,7 +515,7 @@ function PerkCard({
             exhausted    && { color: colors.textTertiary },
             redeemable   && { color: '#FFFFFF' },
           ]}>
-            {isPending ? 'Processing...' : exhausted ? 'Fully Claimed' : needsUpgrade ? 'Upgrade to CulturePass+' : 'Redeem Now'}
+            {isPending ? 'Processing...' : exhausted ? 'Fully Claimed' : needsUpgrade ? 'Upgrade to CulturePass+' : 'Claim Reward'}
           </Text>
         </Pressable>
       </View>
@@ -473,30 +523,29 @@ function PerkCard({
   );
 }
 
-// ---------------------------------------------------------------------------
-// Styles
-// ---------------------------------------------------------------------------
 const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   container: { flex: 1 },
-  shellHorizontal: { paddingHorizontal: 20 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 },
-  headerTitle: { fontSize: 32, fontFamily: 'Poppins_700Bold', letterSpacing: -0.5, marginBottom: 2 },
-  headerSub: { fontSize: 14, fontFamily: 'Poppins_400Regular' },
-  addBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  
+  topBar: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16, zIndex: 100 },
+  topBarBorder: { position: 'absolute', bottom: 0, left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(255,255,255,0.08)' },
+  
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  headerTitle: { fontSize: 26, fontFamily: 'Poppins_700Bold', letterSpacing: -0.5, marginBottom: 2 },
+  headerSub: { fontSize: 14, fontFamily: 'Poppins_500Medium' },
+  addBtn: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
 
   heroWrapper: { paddingHorizontal: 20, marginBottom: 24, marginTop: 8 },
-  heroBanner: { borderRadius: 24, padding: 24, alignItems: 'center', overflow: 'hidden' },
-  heroOrb: { position: 'absolute', top: -50, right: -20, width: 180, height: 180, borderRadius: 90 },
-  heroIconWrap: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-  heroTitle: { fontSize: 24, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', marginBottom: 6, textAlign: 'center' },
-  heroSub: { fontSize: 14, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.85)', textAlign: 'center', marginBottom: 24, paddingHorizontal: 10 },
-  heroStats: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, width: '100%' },
-  heroStatChip: { alignItems: 'center', justifyContent: 'center', paddingVertical: 8, flex: 1, borderRadius: 14 },
-  heroStatNum: { fontSize: 16, fontFamily: 'Poppins_700Bold' },
-  heroStatLabel: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', marginTop: 1 },
+  heroBanner: { borderRadius: 28, padding: 28, overflow: 'hidden' },
+  heroOrb: { position: 'absolute', top: -40, right: -40, width: 220, height: 220, borderRadius: 110 },
+  heroBannerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
+  heroIconWrap: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center' },
+  tierPill: { backgroundColor: 'rgba(0,0,0,0.3)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)' },
+  tierPillText: { color: '#FFF', fontSize: 11, fontFamily: 'Poppins_700Bold', letterSpacing: 1 },
+  heroTitle: { fontSize: 28, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', marginBottom: 6, letterSpacing: -0.5 },
+  heroSub: { fontSize: 15, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.85)', lineHeight: 22 },
 
   listWrapper: { paddingHorizontal: 20 },
-  upgradeBanner: { flexDirection: 'row', alignItems: 'center', borderRadius: 16, padding: 16, borderWidth: 1, gap: 14, marginBottom: 16 },
+  upgradeBanner: { flexDirection: 'row', alignItems: 'center', borderRadius: 20, padding: 18, borderWidth: 1, gap: 14, marginBottom: 16 },
   upgradeBannerIcon: { width: 44, height: 44, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
   upgradeBannerTitle: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', marginBottom: 2 },
   upgradeBannerSub: { fontSize: 13, fontFamily: 'Poppins_400Regular' },
@@ -505,37 +554,44 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   sectionTitle: { fontSize: 20, fontFamily: 'Poppins_700Bold' },
   sectionCount: { fontSize: 14, fontFamily: 'Poppins_500Medium' },
 
-  list: { paddingHorizontal: 20 },
-  empty: { alignItems: 'center', justifyContent: 'center', paddingVertical: 80, gap: 12, borderRadius: 20 },
-  emptyIconBox: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  grid: { paddingHorizontal: 20 },
+  gridWrapper: { flexDirection: 'row', flexWrap: 'wrap', gap: 16 },
+  gridDesktop: { justifyContent: 'flex-start' },
+  fullCell: { width: '100%' },
+  gridCell: { flexBasis: '48%', flexGrow: 1 },
+
+  emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, gap: 12 },
+  emptyStateCard: { padding: 40, borderRadius: 24, borderWidth: 1, borderStyle: 'dashed', alignItems: 'center', gap: 12, marginBottom: 40 },
+  empty: { alignItems: 'center', justifyContent: 'center', paddingVertical: 80, gap: 12 },
+  emptyIconBox: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   emptyTitle: { fontSize: 18, fontFamily: 'Poppins_600SemiBold' },
-  emptyText: { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', maxWidth: 260 },
+  emptyText: { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center' },
 
   perkCard: { borderRadius: 20, marginBottom: 16, borderWidth: 1, overflow: 'hidden' },
   cardStrip: { position: 'absolute', top: 0, bottom: 0, left: 0, width: 6 },
-  cardContent: { padding: 18, paddingLeft: 20 },
-  perkTopRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 12 },
-  perkIconBox: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  cardContent: { padding: 20, paddingLeft: 24 },
+  perkTopRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 16 },
+  perkIconBox: { width: 50, height: 50, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   perkInfo: { flex: 1, justifyContent: 'center' },
-  perkTitle: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', lineHeight: 22, paddingRight: 8 },
+  perkTitle: { fontSize: 17, fontFamily: 'Poppins_600SemiBold', lineHeight: 22, paddingRight: 8 },
   providerRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
   perkProvider: { fontSize: 13, fontFamily: 'Poppins_500Medium' },
-  perkValueWrap: { alignItems: 'flex-end', gap: 8 },
-  perkValuePill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  perkValueWrap: { alignItems: 'flex-end', gap: 10 },
+  perkValuePill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
   perkValueText: { fontSize: 13, fontFamily: 'Poppins_700Bold' },
-  shareBtn: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  shareBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
 
-  perkDesc: { fontSize: 14, fontFamily: 'Poppins_400Regular', lineHeight: 21, marginBottom: 16 },
+  perkDesc: { fontSize: 14, fontFamily: 'Poppins_400Regular', lineHeight: 22, marginBottom: 20 },
 
   perkMetaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
-  metaTag: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, borderWidth: 1 },
+  metaTag: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, borderWidth: 1 },
   metaTagText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
 
-  progressWrap: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
+  progressWrap: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 18 },
   progressBar: { flex: 1, height: 6, borderRadius: 3, overflow: 'hidden', flexDirection: 'row' },
   progressFill: { height: '100%', borderRadius: 3 },
-  progressText: { fontSize: 12, fontFamily: 'Poppins_500Medium', minWidth: 80, textAlign: 'right' },
+  progressText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', minWidth: 80, textAlign: 'right' },
 
-  redeemBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 14, paddingVertical: 14 },
-  redeemBtnText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold' },
+  redeemBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 16, paddingVertical: 14 },
+  redeemBtnText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', letterSpacing: 0.3 },
 });

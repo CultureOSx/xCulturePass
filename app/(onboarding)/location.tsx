@@ -1,208 +1,467 @@
-import { View, Text, Pressable, StyleSheet, ScrollView, Platform, ActivityIndicator, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  ScrollView,
+  Platform,
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  useWindowDimensions,
+} from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useColors } from '@/hooks/useColors';
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { getQueryFn } from '@/lib/query-client';
-import type { LocationEntry } from '@/lib/api';
+import { useLocations } from '@/hooks/useLocations';
 import { useNearestCity } from '@/hooks/useNearestCity';
+import { Button } from '@/components/ui/Button';
+import { LinearGradient } from 'expo-linear-gradient';
+import { CultureTokens, gradients } from '@/constants/theme';
+import * as Haptics from 'expo-haptics';
 
 export default function LocationScreen() {
-  const insets   = useSafeAreaInsets();
+  const insets = useSafeAreaInsets();
+  const colors = useColors();
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === 'web' && width >= 1024;
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
-  const colors   = useColors();
+
   const { state, setCountry, setCity } = useOnboarding();
-  const [selectedCountry, setSelectedCountry] = useState(state.country);
-  const [selectedCity,    setSelectedCity]    = useState(state.city);
-
-  const { data, isLoading } = useQuery<{ locations: LocationEntry[]; acknowledgementOfCountry: string }>({
-    queryKey: ['/api/locations'],
-    queryFn: getQueryFn({ on401: 'returnNull' }),
-    staleTime: Infinity,
-  });
-
-  const locationList             = data?.locations ?? [];
-  const acknowledgementOfCountry = data?.acknowledgementOfCountry ?? '';
-  const effectiveCountry         = selectedCountry || (locationList.length === 1 ? locationList[0].country : selectedCountry);
-  const selectedLocation         = locationList.find(l => l.country === effectiveCountry);
-
+  const { states, citiesByState, getStateForCity, isLoading: locationsLoading, error: locationsError } = useLocations();
   const { detect, status: detectStatus } = useNearestCity();
   const isDetecting = detectStatus === 'requesting';
 
-  const handleCountrySelect = (country: string) => { setSelectedCountry(country); setSelectedCity(''); };
+  const [step, setStep] = useState<'state' | 'city'>('state');
+  const [pendingState, setPendingState] = useState('');
+
+  useEffect(() => {
+    if (state.city) {
+      const stateCode = getStateForCity(state.city);
+      if (stateCode) {
+        setPendingState(stateCode);
+        setStep('city');
+      }
+    }
+  }, [state.city, getStateForCity]);
+
+  const selectState = (stateCode: string) => {
+    if (Platform.OS !== 'web') Haptics.selectionAsync();
+    setPendingState(stateCode);
+    setStep('city');
+  };
+
+  const selectCity = (city: string) => {
+    if (Platform.OS !== 'web') Haptics.selectionAsync();
+    setCountry('Australia');
+    setCity(city);
+  };
 
   const handleDetectLocation = async () => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const r = await detect();
     if (r) {
-      setSelectedCountry('Australia');
-      setSelectedCity(r.city);
-      return;
-    }
-
-    if (detectStatus === 'denied') {
-      Alert.alert('Location Permission Required', 'Please allow location access to detect your city automatically, or select it manually below.');
-    } else if (detectStatus === 'unavailable') {
-      Alert.alert('Location Services Off', 'Turn on location services to auto-detect your city, or select it manually below.');
-    } else if (detectStatus === 'error') {
-      Alert.alert('Could Not Detect Location', 'We could not detect your city. Please choose your city manually.');
+      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setCountry('Australia');
+      setCity(r.city);
+      const stateCode = getStateForCity(r.city);
+      if (stateCode) {
+        setPendingState(stateCode);
+        setStep('city');
+      }
+    } else {
+      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      
+      // We skip the alert on requesting as we just failed
+      if (detectStatus === 'denied') {
+        Alert.alert('Location Permission Required', 'Please allow location access to detect your city automatically, or select it manually below.');
+      } else if (detectStatus === 'unavailable') {
+        Alert.alert('Location Services Off', 'Turn on location services to auto-detect your city, or select it manually below.');
+      } else {
+        Alert.alert('Could Not Detect Location', 'We could not detect your city. Please choose your city manually.');
+      }
     }
   };
 
   const handleNext = () => {
-    if (effectiveCountry && selectedCity) {
-      setCountry(effectiveCountry);
-      setCity(selectedCity);
-      router.push({ pathname: '/council/select', params: { next: '/(onboarding)/communities' } });
+    if (state.country && state.city) {
+      router.replace('/(onboarding)/communities');
       return;
     }
-
-    Alert.alert('Select Location', 'Please choose both your country and city to continue.');
+    Alert.alert('Select Location', 'Please choose your state and city to continue.');
   };
 
+  const pendingStateMeta = states.find(s => s.code === pendingState);
+  const citiesToShow = pendingState ? (citiesByState[pendingState] ?? []) : [];
+
   return (
-    <View style={[s.container, { paddingTop: topInset, backgroundColor: colors.background }]}>
-      <View style={s.header}>
-        <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/(onboarding)/signup'))} hitSlop={12}>
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
-        </Pressable>
-        <Text style={[s.step, { color: colors.textSecondary }]}>1 of 4</Text>
-      </View>
+    <View style={styles.container}>
+      <LinearGradient
+        colors={gradients.culturepassBrand}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0.95 }}
+        style={StyleSheet.absoluteFillObject}
+      />
 
-      <ScrollView style={s.content} showsVerticalScrollIndicator={false}>
-        <Text style={[s.title, { color: colors.text }]}>Where are you?</Text>
-        <Text style={[s.subtitle, { color: colors.textSecondary }]}>
-          Select your country and city to discover events and communities near you.
-        </Text>
+      {isDesktop && (
+        <View style={styles.desktopBackRow}>
+          <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/(onboarding)/signup')} hitSlop={8} style={[styles.desktopBackBtn, { backgroundColor: colors.surface + '26' }]}>
+            <Ionicons name="chevron-back" size={18} color="#FFFFFF" />
+            <Text style={styles.desktopBackText}>Back</Text>
+          </Pressable>
+        </View>
+      )}
 
-        {/* GPS detect button */}
-        <Pressable
-          style={[s.detectBtn, { backgroundColor: colors.primarySoft, borderColor: colors.primary, opacity: isDetecting ? 0.7 : 1 }]}
-          onPress={handleDetectLocation}
-          disabled={isDetecting}
+      {!isDesktop && (
+        <View style={[styles.mobileHeader, { paddingTop: topInset }]}>
+          <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/(onboarding)/signup'))} hitSlop={12}>
+            <Ionicons name="chevron-back" size={28} color="#FFFFFF" />
+          </Pressable>
+          <Text style={[styles.stepText, { color: '#FFFFFF' }]}>1 of 3</Text>
+        </View>
+      )}
+
+      <KeyboardAvoidingView 
+        style={styles.keyboardAvoid} 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+        keyboardVerticalOffset={0}
+      >
+        <ScrollView 
+          showsVerticalScrollIndicator={false} 
+          keyboardShouldPersistTaps="handled" 
+          contentContainerStyle={[
+            styles.scrollContent,
+            isDesktop && styles.scrollContentDesktop,
+            !isDesktop && { paddingTop: 20 }
+          ]}
         >
-          {isDetecting
-            ? <ActivityIndicator size="small" color={colors.primary} />
-            : <Ionicons name="navigate" size={18} color={colors.primary} />}
-          <Text style={[s.detectBtnText, { color: colors.primary }]}>
-            {isDetecting ? 'Detecting…' : 'Detect My Location'}
-          </Text>
-        </Pressable>
+          <View style={[
+            styles.formCard, 
+            { backgroundColor: colors.surface },
+            isDesktop && styles.formCardDesktop
+          ]}>
+            <Text style={[styles.title, { color: colors.text }]}>
+              {step === 'state' ? 'Where are you?' : 'Select your city'}
+            </Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+              {step === 'state' 
+                ? 'Select your state to discover culture near you.' 
+                : 'Choose your home city for local recommendations.'}
+            </Text>
 
-        {isLoading ? (
-          <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
-        ) : (
-          <>
-            {/* Country selection */}
-            <Text style={[s.sectionLabel, { color: colors.textSecondary }]}>Country</Text>
-            <View style={s.grid}>
-              {locationList.map((loc) => {
-                const isSelected = effectiveCountry === loc.country;
-                return (
-                  <Pressable
-                    key={loc.countryCode}
-                    style={[
-                      s.countryCard,
-                      { backgroundColor: colors.surface, borderColor: colors.borderLight },
-                      isSelected && { borderColor: colors.primary, backgroundColor: colors.primaryGlow },
-                    ]}
-                    onPress={() => handleCountrySelect(loc.country)}
-                  >
-                    <Ionicons name="earth" size={24} color={isSelected ? colors.primary : colors.textSecondary} />
-                    <Text style={[s.countryText, { color: isSelected ? colors.primary : colors.text }]}>
-                      {loc.country}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
+            {step === 'state' ? (
+              <View>
+                <Pressable
+                  style={[
+                    styles.detectBtn,
+                    {
+                      backgroundColor: colors.primarySoft,
+                      borderColor: colors.primary,
+                      opacity: isDetecting ? 0.7 : 1,
+                    },
+                  ]}
+                  onPress={handleDetectLocation}
+                  disabled={isDetecting}
+                >
+                  {isDetecting ? (
+                    <ActivityIndicator size="small" color={colors.primary} />
+                  ) : (
+                    <Ionicons name="navigate" size={18} color={colors.primary} />
+                  )}
+                  <Text style={[styles.detectBtnText, { color: colors.primary }]}>
+                    {isDetecting ? 'Detecting location…' : 'Use My Location'}
+                  </Text>
+                </Pressable>
 
-            {/* City selection */}
-            {selectedLocation && (
-              <>
-                <Text style={[s.sectionLabel, { color: colors.textSecondary }]}>City</Text>
-                <View style={s.cityGrid}>
-                  {selectedLocation.cities.map((city) => {
-                    const isSelected = selectedCity === city;
+                {locationsLoading && (
+                  <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 20 }} />
+                )}
+                
+                {!!locationsError && (
+                  <View style={[styles.errorBanner, { backgroundColor: CultureTokens.error + '1A' }]}>
+                    <Ionicons name="alert-circle-outline" size={18} color={CultureTokens.error} />
+                    <Text style={[styles.errorText, { color: CultureTokens.error }]}>Failed to load locations.</Text>
+                  </View>
+                )}
+
+                <View style={styles.grid}>
+                  {states.map((s) => (
+                    <Pressable
+                      key={s.code}
+                      style={[
+                        styles.stateCard,
+                        {
+                          backgroundColor: colors.surface,
+                          borderColor: colors.borderLight,
+                        },
+                      ]}
+                      onPress={() => selectState(s.code)}
+                    >
+                      <Text style={styles.stateEmoji}>{s.emoji}</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.stateName, { color: colors.text }]}>
+                          {s.name}
+                        </Text>
+                        <Text style={[styles.cityCount, { color: colors.textSecondary }]}>
+                          {s.cities.length} cities
+                        </Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            ) : (
+              <View>
+                <Pressable
+                  onPress={() => setStep('state')}
+                  style={styles.backToStateRow}
+                >
+                  <Ionicons name="arrow-back" size={16} color={colors.primary} />
+                  <Text style={[styles.backToStateText, { color: colors.primary }]}>
+                    Back to states
+                  </Text>
+                </Pressable>
+
+                <View style={styles.selectedStateRow}>
+                  <Text style={styles.stateEmojiLarge}>{pendingStateMeta?.emoji}</Text>
+                  <Text style={[styles.selectedStateText, { color: colors.text }]}>
+                    {pendingStateMeta?.name}
+                  </Text>
+                </View>
+
+                <View style={styles.cityGrid}>
+                  {citiesToShow.map((city) => {
+                    const isActive = state.city === city;
                     return (
                       <Pressable
                         key={city}
                         style={[
-                          s.cityChip,
-                          { backgroundColor: colors.surface, borderColor: colors.borderLight },
-                          isSelected && { backgroundColor: colors.primary, borderColor: colors.primary },
+                          styles.cityCard,
+                          {
+                            backgroundColor: isActive ? colors.primary : colors.surface,
+                            borderColor: isActive ? colors.primary : colors.borderLight,
+                          },
                         ]}
-                        onPress={() => setSelectedCity(city)}
+                        onPress={() => selectCity(city)}
                       >
-                        <Ionicons name="location" size={15} color={isSelected ? colors.textInverse : colors.textSecondary} />
-                        <Text style={[s.cityText, { color: isSelected ? colors.textInverse : colors.text }]}>{city}</Text>
+                        <Ionicons
+                          name="location"
+                          size={18}
+                          color={isActive ? '#FFF' : colors.primary}
+                        />
+                        <Text style={[styles.cityName, { color: isActive ? '#FFF' : colors.text }]}>
+                          {city}
+                        </Text>
+                        {isActive && (
+                          <Ionicons name="checkmark-circle" size={18} color="#FFF" />
+                        )}
                       </Pressable>
                     );
                   })}
                 </View>
-              </>
+              </View>
             )}
 
-            {/* Acknowledgement of Country */}
-            {effectiveCountry === 'Australia' && acknowledgementOfCountry ? (
-              <View style={s.acknowledgementWrap}>
-                <View style={[s.acknowledgementBanner, { backgroundColor: colors.warning + '14', borderLeftColor: colors.warning }]}> 
-                  <View style={s.acknowledgementHeader}>
-                    <Ionicons name="earth" size={22} color={colors.warning} />
-                    <Text style={[s.acknowledgementTitle, { color: colors.text }]}>Acknowledgement of Country</Text>
-                  </View>
-                  <Text style={[s.acknowledgementText, { color: colors.textSecondary }]}>{acknowledgementOfCountry}</Text>
-                </View>
-              </View>
-            ) : null}
-          </>
-        )}
-        <View style={{ height: 120 }} />
-      </ScrollView>
+            <View style={styles.spacer} />
 
-      <View style={[s.footer, { paddingBottom: Platform.OS === 'web' ? 34 : insets.bottom + 16, backgroundColor: colors.background }]}>
-        <Pressable
-          style={[s.nextBtn, { backgroundColor: colors.primary }, (!effectiveCountry || !selectedCity) && { opacity: 0.4 }]}
-          onPress={handleNext}
-          disabled={!effectiveCountry || !selectedCity}
-        >
-          <Text style={[s.nextBtnText, { color: colors.textInverse }]}>Continue</Text>
-          <Ionicons name="arrow-forward" size={20} color={colors.textInverse} />
-        </Pressable>
-      </View>
+            <Button
+              variant="primary"
+              size="lg"
+              fullWidth
+              rightIcon="arrow-forward"
+              disabled={!state.country || !state.city}
+              onPress={handleNext}
+              style={styles.submitBtn}
+            >
+              Continue
+            </Button>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }
 
-const s = StyleSheet.create({
-  container:    { flex: 1 },
-  header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
-  step:         { fontSize: 14, fontFamily: 'Poppins_500Medium' },
-  content:      { flex: 1, paddingHorizontal: 20 },
-  title:        { fontSize: 28, fontFamily: 'Poppins_700Bold', marginTop: 8 },
-  subtitle:     { fontSize: 15, fontFamily: 'Poppins_400Regular', marginTop: 8, lineHeight: 22, marginBottom: 24 },
-  sectionLabel: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12, marginTop: 8 },
-
-  grid:         { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 },
-  countryCard:  { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 14, borderRadius: 14, borderWidth: 1.5, minWidth: '47%' as never, flexGrow: 1 },
-  countryText:  { fontSize: 15, fontFamily: 'Poppins_500Medium', flexShrink: 1 },
-
-  cityGrid:     { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 },
-  cityChip:     { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 24, borderWidth: 1.5 },
-  cityText:     { fontSize: 14, fontFamily: 'Poppins_500Medium' },
-
-  acknowledgementWrap:  { marginTop: 12, marginBottom: 8 },
-  acknowledgementBanner:{ borderRadius: 16, padding: 16, borderLeftWidth: 4 },
-  acknowledgementHeader:{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 10 },
-  acknowledgementTitle: { fontSize: 15, fontFamily: 'Poppins_700Bold', flex: 1 },
-  acknowledgementText:  { fontSize: 13, fontFamily: 'Poppins_400Regular', lineHeight: 20 },
-
-  footer:       { paddingHorizontal: 20, paddingTop: 12 },
-  nextBtn:      { borderRadius: 16, paddingVertical: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  nextBtnText:  { fontSize: 17, fontFamily: 'Poppins_600SemiBold' },
-
-  detectBtn:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, borderRadius: 14, borderWidth: 1.5, paddingVertical: 14, marginBottom: 24 },
-  detectBtnText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold' },
+const styles = StyleSheet.create({
+  container: { 
+    flex: 1, 
+    backgroundColor: 'transparent' 
+  },
+  keyboardAvoid: { 
+    flex: 1 
+  },
+  mobileHeader: { 
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20, 
+    paddingBottom: 12 
+  },
+  stepText: {
+    fontSize: 14,
+    fontFamily: 'Poppins_500Medium',
+  },
+  desktopBackRow: {
+    position: 'absolute',
+    top: 24,
+    left: 40,
+    zIndex: 10,
+  },
+  desktopBackBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderRadius: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  desktopBackText: { 
+    fontSize: 14, 
+    fontFamily: 'Poppins_500Medium', 
+    color: '#FFFFFF' 
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 20,
+    paddingBottom: 60,
+  },
+  scrollContentDesktop: {
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  formCard: {
+    width: '100%',
+    maxWidth: 480,
+    alignSelf: 'center',
+    borderRadius: 28,
+    paddingHorizontal: 24,
+    paddingVertical: 32,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.1,
+    shadowRadius: 32,
+    elevation: 8,
+  },
+  formCardDesktop: {
+    paddingHorizontal: 48,
+    paddingVertical: 48,
+  },
+  title: { 
+    fontSize: 28, 
+    fontFamily: 'Poppins_700Bold', 
+    marginBottom: 8, 
+    letterSpacing: -0.5 
+  },
+  subtitle: { 
+    fontSize: 15, 
+    fontFamily: 'Poppins_400Regular', 
+    lineHeight: 24, 
+    marginBottom: 24 
+  },
+  detectBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    paddingVertical: 14,
+    marginBottom: 24,
+  },
+  detectBtnText: {
+    fontSize: 15,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  errorBanner: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 10, 
+    paddingVertical: 12, 
+    paddingHorizontal: 16, 
+    borderRadius: 14, 
+    marginBottom: 24 
+  },
+  errorText: { 
+    flex: 1, 
+    fontSize: 14, 
+    fontFamily: 'Poppins_500Medium', 
+  },
+  grid: {
+    gap: 12,
+  },
+  stateCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1.5,
+  },
+  stateEmoji: {
+    fontSize: 26,
+  },
+  stateName: {
+    fontSize: 15,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  cityCount: {
+    fontSize: 12,
+    fontFamily: 'Poppins_400Regular',
+    marginTop: 1,
+  },
+  backToStateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 16,
+  },
+  backToStateText: {
+    fontSize: 14,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  selectedStateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 24,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderColor: 'rgba(150, 150, 150, 0.2)',
+  },
+  stateEmojiLarge: {
+    fontSize: 32,
+  },
+  selectedStateText: {
+    fontSize: 20,
+    fontFamily: 'Poppins_700Bold',
+  },
+  cityGrid: {
+    gap: 10,
+  },
+  cityCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1.5,
+  },
+  cityName: {
+    flex: 1,
+    fontSize: 15,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  spacer: {
+    height: 32,
+  },
+  submitBtn: { 
+    borderRadius: 16,
+    height: 56,
+  },
 });
