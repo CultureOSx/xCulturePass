@@ -1,6 +1,6 @@
 import * as admin from 'firebase-admin';
-import * as fs from 'fs';
 import * as path from 'path';
+import { COUNCILS_CSV } from './data/councilData';
 
 // Helpers for dates and images
 const soon = (days: number) => {
@@ -163,11 +163,9 @@ export async function performMegaSeed(db: admin.firestore.Firestore) {
 
     // 4. Councils Parse
     let COUNCILS: any[] = [];
-    const councilCsvPath = path.resolve(__dirname, './data/AllCouncilsList.csv');
-    if (fs.existsSync(councilCsvPath)) {
-      const content = fs.readFileSync(councilCsvPath, 'utf8');
-      
-      const lines = content.split('\\n')
+    const content = COUNCILS_CSV;
+    
+    const lines = content.split(/[\\r\\n]+/)
                     .map((l: string) => l.trim())
                     .filter((l: string) => l.length > 5 && !l.includes(',GM_SAL') && !l.startsWith('Table'));
       
@@ -193,9 +191,6 @@ export async function performMegaSeed(db: admin.firestore.Firestore) {
 
       console.log(`[Seed] Found ${COUNCILS.length} Councils in CSV.`);
       await commitBatches(COUNCILS, 'profiles', '', true);
-    } else {
-      console.log('NOTICE: AllCouncilsList.csv not found at ' + councilCsvPath);
-    }
 
     console.log('\\n✅ ** MEGA SEED COMPLETED **');
     return { success: true, events: EVENTS.length, communities: COMMUNITIES.length, businesses: BUSINESSES.length, users: USERS.length, councils: COUNCILS.length };
