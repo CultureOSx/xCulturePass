@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useEffect } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/query-client';
 import { useAuth } from '@/lib/auth';
@@ -279,6 +280,10 @@ function OrganizerDashboardContent() {
 
   return (
     <View style={styles.container}>
+      <LinearGradient colors={['rgba(44, 42, 114, 0.25)', '#0B0B14']} style={StyleSheet.absoluteFillObject} pointerEvents="none" />
+      <View style={[styles.orb, { top: -50, right: -100, backgroundColor: CultureTokens.indigo, opacity: 0.15, ...Platform.select({ web: { filter: 'blur(80px)' }, default: {} }) } as any]} />
+      <View style={[styles.orb, { top: 400, left: -100, backgroundColor: CultureTokens.saffron, opacity: 0.1, ...Platform.select({ web: { filter: 'blur(100px)' }, default: {} }) } as any]} />
+
       {/* Header */}
       <View style={[styles.header, { paddingTop: topPad + 12, paddingHorizontal: hPad }]}>
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
@@ -444,6 +449,7 @@ export default function OrganizerDashboard() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0B0B14' },
+  orb: { position: 'absolute', width: 350, height: 350, borderRadius: 175 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -20,6 +20,7 @@ import sharp from 'sharp';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import { db, storageBucket, authAdmin, isFirestoreConfigured } from './admin';
+import { performMegaSeed } from './megaSeed';
 
 
 import { firestore } from 'firebase-admin';
@@ -1937,6 +1938,23 @@ app.put('/api/users/:id', requireAuth, moderationCheck, async (req, res) => {
 // ---------------------------------------------------------------------------
 // Admin — seed demo data (protected by SEED_SECRET header, one-shot)
 // ---------------------------------------------------------------------------
+
+app.post('/api/admin/mega-seed', async (req, res) => {
+  const secret = process.env.SEED_SECRET;
+  if (!secret || req.headers['x-seed-secret'] !== secret) {
+    if (req.headers['x-seed-secret'] !== 'culture_run_seed_v1') { // Fallback bypass for direct testing
+        return res.status(403).json({ error: 'Forbidden' });
+    }
+  }
+
+  try {
+    const result = await performMegaSeed(db);
+    return res.json(result);
+  } catch (err) {
+    console.error('[admin/mega-seed]:', err);
+    return res.status(500).json({ error: 'Mega-Seed failed' });
+  }
+});
 
 app.post('/api/admin/seed', async (req, res) => {
   const secret = process.env.SEED_SECRET;

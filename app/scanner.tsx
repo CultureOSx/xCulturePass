@@ -9,6 +9,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Vibration,
+  StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -290,6 +291,9 @@ export default function ScannerScreen() {
   return (
     <AuthGuard icon="scan-outline" title="Scanner" message="Sign in to scan CulturePass QR cards and manage contacts.">
     <View style={[s.container, { paddingTop: topInset }]}>
+      <LinearGradient colors={['rgba(44, 42, 114, 0.25)', '#0B0B14']} style={StyleSheet.absoluteFillObject} pointerEvents="none" />
+      <View style={{ position: 'absolute', top: -50, right: -100, width: 350, height: 350, borderRadius: 175, backgroundColor: CultureTokens.indigo, opacity: 0.15, ...Platform.select({ web: { filter: 'blur(80px)' }, default: {} }) } as any} />
+      <View style={{ position: 'absolute', top: 400, left: -100, width: 350, height: 350, borderRadius: 175, backgroundColor: CultureTokens.saffron, opacity: 0.1, ...Platform.select({ web: { filter: 'blur(100px)' }, default: {} }) } as any} />
 
       {/* Header */}
       <View style={s.header}>

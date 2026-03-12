@@ -7,6 +7,7 @@ import { CultureTokens } from '@/constants/theme';
 import { useState, useMemo } from 'react';
 import * as Haptics from 'expo-haptics';
 import { FilterChipRow, FilterItem } from '@/components/FilterChip';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export interface CategoryFilter {
   label: string;
@@ -81,6 +82,7 @@ export default function BrowsePage({
   if (isLoading) {
     return (
       <View style={[styles.container, { paddingTop: topInset }]}>
+        <LinearGradient colors={['rgba(44,42,114,0.15)', 'transparent']} style={StyleSheet.absoluteFillObject} pointerEvents="none" />
         <Header title={title} accentColor={accentColor} accentIcon={accentIcon} />
         <View style={styles.loadingWrap}>
           <ActivityIndicator size="large" color={accentColor} />
@@ -92,6 +94,12 @@ export default function BrowsePage({
 
   return (
     <View style={[styles.container, { paddingTop: topInset }]}>
+      <LinearGradient colors={['rgba(44,42,114,0.15)', 'transparent']} style={StyleSheet.absoluteFillObject} pointerEvents="none" />
+      
+      {/* Decorative Orbs */}
+      <View style={[styles.orb, { top: -100, right: -100, backgroundColor: accentColor, opacity: 0.15, ...Platform.select({ web: { filter: 'blur(80px)' }, default: {} }) } as any]} />
+      <View style={[styles.orb, { top: 400, left: -100, backgroundColor: CultureTokens.saffron, opacity: 0.1, ...Platform.select({ web: { filter: 'blur(100px)' }, default: {} }) } as any]} />
+
       <Header title={title} accentColor={accentColor} accentIcon={accentIcon} />
 
       <ScrollView
@@ -116,7 +124,7 @@ export default function BrowsePage({
             >
               {promotedItems.map((item, i) => (
                 <View key={item.id}>
-                  <Pressable style={styles.promoCard} onPress={() => {
+                  <Pressable style={({ pressed }) => [styles.promoCard, { transform: [{ scale: pressed ? 0.98 : 1 }] }]} onPress={() => {
                     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     onItemPress(item);
                   }}>
@@ -242,7 +250,7 @@ function Header({ title, accentColor, accentIcon }: { title: string; accentColor
     <View style={styles.header}>
       <Pressable
         onPress={() => { if (router.canGoBack()) router.back(); else router.replace('/'); }}
-        style={styles.backBtn}
+        style={({ pressed }) => [styles.backBtn, pressed && { backgroundColor: 'rgba(255,255,255,0.1)' }]}
         hitSlop={12}
       >
         <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
@@ -254,7 +262,7 @@ function Header({ title, accentColor, accentIcon }: { title: string; accentColor
         <Text style={styles.headerTitle}>{title}</Text>
       </View>
       <Pressable
-        style={styles.backBtn}
+        style={({ pressed }) => [styles.backBtn, pressed && { backgroundColor: 'rgba(255,255,255,0.1)' }]}
         hitSlop={12}
         onPress={() => router.push('/search')}
       >
@@ -268,6 +276,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0B0B14',
+  },
+  orb: {
+    position: 'absolute',
+    width: 350,
+    height: 350,
+    borderRadius: 175,
   },
   header: {
     flexDirection: 'row',

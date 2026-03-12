@@ -9,9 +9,10 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
 import { api, type ActivityData } from '@/lib/api';
 import type { EventData, Community, Profile } from '@/shared/schema';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { CultureTokens } from '@/constants/theme';
+import { CultureTokens, gradients } from '@/constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAlgoliaSearch } from '@/hooks/useAlgolia';
+import { BlurView } from 'expo-blur';
 
 const isWeb = Platform.OS === 'web';
 
@@ -64,7 +65,6 @@ export default function SearchScreen() {
     city: state.city,
   });
 
-  // Use Algolia hits for events if configured
   const eventsToUse = useMemo(() => {
     return (algoliaEvents as any[])?.length > 0 ? algoliaEvents : [];
   }, [algoliaEvents]);
@@ -222,10 +222,15 @@ export default function SearchScreen() {
     <ErrorBoundary>
       <View style={[s.container, { paddingTop: topInset }]}>
         <LinearGradient 
-          colors={['rgba(44, 42, 114, 0.15)', 'transparent']} 
+          colors={['rgba(44, 42, 114, 0.4)', 'rgba(11, 11, 20, 1)']} 
           style={StyleSheet.absoluteFillObject} 
           pointerEvents="none" 
         />
+        
+        {/* Decorative Orbs */}
+        <View style={[s.orb, { top: -100, right: -50, backgroundColor: CultureTokens.indigo, opacity: 0.3, filter: 'blur(80px)' } as any]} />
+        <View style={[s.orb, { top: 300, left: -100, backgroundColor: CultureTokens.saffron, opacity: 0.15, filter: 'blur(100px)' } as any]} />
+
         <View style={[s.shell, isDesktop && s.desktopShell]}>
           <View style={s.header}>
             <Pressable 
@@ -235,32 +240,40 @@ export default function SearchScreen() {
             >
               <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
             </Pressable>
-            <View style={[s.searchBar, { borderColor: searchFocused ? CultureTokens.indigo : 'rgba(255,255,255,0.1)' }]}>
-              <Ionicons name="search" size={20} color={searchFocused ? CultureTokens.indigo : 'rgba(255,255,255,0.4)'} />
-              <TextInput
-                style={s.searchInput}
-                placeholder="Search events, restaurants, movies..."
-                placeholderTextColor="rgba(255,255,255,0.4)"
-                value={query}
-                onChangeText={setQuery}
-                onFocus={() => setSearchFocused(true)}
-                onBlur={() => setSearchFocused(false)}
-                autoFocus
-                returnKeyType="search"
-                selectionColor={CultureTokens.indigo}
-              />
-              {query.length > 0 && (
-                <Pressable onPress={() => setQuery('')} hitSlop={10} style={{ padding: 4 }}>
-                  <Ionicons name="close-circle" size={20} color="rgba(255,255,255,0.4)" />
-                </Pressable>
+            
+            <View style={s.searchBarContainer}>
+              {Platform.OS === 'ios' || isWeb ? (
+                <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
+              ) : (
+                <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(255,255,255,0.08)' }]} />
               )}
+              <View style={[s.searchBarInner, { borderColor: searchFocused ? CultureTokens.indigo : 'rgba(255,255,255,0.1)' }]}>
+                <Ionicons name="search" size={20} color={searchFocused ? CultureTokens.indigo : 'rgba(255,255,255,0.5)'} />
+                <TextInput
+                  style={s.searchInput}
+                  placeholder="Search events, restaurants, movies..."
+                  placeholderTextColor="rgba(255,255,255,0.5)"
+                  value={query}
+                  onChangeText={setQuery}
+                  onFocus={() => setSearchFocused(true)}
+                  onBlur={() => setSearchFocused(false)}
+                  autoFocus
+                  returnKeyType="search"
+                  selectionColor={CultureTokens.indigo}
+                />
+                {query.length > 0 && (
+                  <Pressable onPress={() => setQuery('')} hitSlop={10} style={{ padding: 4 }}>
+                    <Ionicons name="close-circle" size={20} color="rgba(255,255,255,0.5)" />
+                  </Pressable>
+                )}
+              </View>
             </View>
           </View>
 
           {query.length > 0 && allResults.length > 0 && (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.typeRow} style={{ flexGrow: 0 }}>
               <Pressable
-                style={[s.typeChip, { backgroundColor: selectedType === 'all' ? CultureTokens.indigo : 'rgba(255,255,255,0.05)', borderColor: selectedType === 'all' ? CultureTokens.indigo : 'rgba(255,255,255,0.1)' }]}
+                style={[s.typeChip, { backgroundColor: selectedType === 'all' ? CultureTokens.indigo : 'rgba(255,255,255,0.06)', borderColor: selectedType === 'all' ? CultureTokens.indigo : 'rgba(255,255,255,0.1)' }]}
                 onPress={() => { if(!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setSelectedType('all'); }}
               >
                 <Text style={[s.typeChipText, { color: selectedType === 'all' ? '#FFFFFF' : 'rgba(255,255,255,0.6)' }]}>All ({typeCounts.all})</Text>
@@ -376,10 +389,12 @@ export default function SearchScreen() {
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0B0B14' },
   shell: { flex: 1 },
+  orb: { position: 'absolute', width: 400, height: 400, borderRadius: 200 },
   desktopShell: { maxWidth: 800, width: '100%', alignSelf: 'center' },
   header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingVertical: 12 },
   backBtn: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  searchBar: { flex: 1, flexDirection: 'row', alignItems: 'center', borderRadius: 16, paddingHorizontal: 16, gap: 10, borderWidth: 1, height: 48, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.05)' },
+  searchBarContainer: { flex: 1, borderRadius: 16, height: 48, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.02)' },
+  searchBarInner: { flex: 1, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, gap: 10, borderWidth: 1, height: '100%' },
   searchInput: { flex: 1, fontSize: 16, fontFamily: 'Poppins_500Medium', paddingVertical: 0, minWidth: 0, color: '#FFFFFF' },
   
   typeRow: { paddingHorizontal: 20, gap: 10, paddingBottom: 16, paddingTop: 4 },
