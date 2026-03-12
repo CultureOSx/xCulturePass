@@ -160,7 +160,7 @@ export default function InterestsScreen() {
           <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/(onboarding)/communities'))} hitSlop={12}>
             <Ionicons name="chevron-back" size={28} color="#FFFFFF" />
           </Pressable>
-          <Text style={styles.stepText}>3 of 3</Text>
+          <Text style={styles.stepText}>4 of 4</Text>
         </View>
       )}
 

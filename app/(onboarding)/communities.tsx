@@ -98,7 +98,7 @@ export default function CommunitiesScreen() {
           <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/(onboarding)/location'))} hitSlop={12}>
             <Ionicons name="chevron-back" size={28} color="#FFFFFF" />
           </Pressable>
-          <Text style={styles.stepText}>2 of 3</Text>
+          <Text style={styles.stepText}>2 of 4</Text>
         </View>
       )}
 

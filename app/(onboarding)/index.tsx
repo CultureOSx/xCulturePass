@@ -1,26 +1,28 @@
-import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Platform, useWindowDimensions, ScrollView } from 'react-native';
 import { router, usePathname } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors } from '@/constants/theme';
+import { CultureTokens, gradients } from '@/constants/theme';
 import { useCallback } from 'react';
 import { Button } from '@/components/ui/Button';
 import { SocialButton } from '@/components/ui/SocialButton';
 import { useOnboarding } from '@/contexts/OnboardingContext';
-import { useColors } from '@/hooks/useColors';
+import { BlurView } from 'expo-blur';
 
 const FEATURES = [
-  { icon: 'calendar' as const, color: Colors.primary, bg: Colors.primaryGlow, text: 'Discover cultural events near you' },
-  { icon: 'people' as const, color: Colors.secondary, bg: 'rgba(238,51,78,0.12)', text: 'Join vibrant communities' },
-  { icon: 'gift' as const, color: Colors.accent, bg: 'rgba(252,177,49,0.12)', text: 'Unlock exclusive member perks' },
+  { icon: 'calendar' as const, color: CultureTokens.saffron, bg: 'rgba(255, 140, 66, 0.15)', text: 'Discover cultural events near you' },
+  { icon: 'people' as const, color: CultureTokens.coral, bg: 'rgba(255, 94, 91, 0.15)', text: 'Join vibrant communities' },
+  { icon: 'gift' as const, color: CultureTokens.gold, bg: 'rgba(255, 200, 87, 0.15)', text: 'Unlock exclusive member perks' },
 ];
 
 export default function WelcomeScreen() {
   const insets = useSafeAreaInsets();
-  const colors = useColors();
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === 'web' && width >= 1024;
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
+  
   const { completeOnboarding } = useOnboarding();
   const pathname = usePathname();
 
@@ -35,156 +37,149 @@ export default function WelcomeScreen() {
   }, [completeOnboarding]);
 
   return (
-    <View style={styles.container}>
-      {/* Hero gradient background */}
+    <View style={s.container}>
       <LinearGradient
-        colors={['#001028', '#00305A', '#0081C8']}
+        colors={gradients.culturepassBrandReversed}
         start={{ x: 0, y: 0 }}
-        end={{ x: 0.6, y: 1 }}
-        style={StyleSheet.absoluteFill}
+        end={{ x: 1, y: 1 }}
+        style={s.gradientBg}
       />
 
-      {/* Decorative orbs */}
-      <View style={[styles.orb, styles.orbTop]} />
-      <View style={[styles.orb, styles.orbMid]} />
-      <View style={[styles.orb, styles.orbBottom]} />
+      {/* Decorative Orbs */}
+      <View style={[s.orb, { top: -100, right: -50, backgroundColor: CultureTokens.indigo, opacity: 0.5, ...Platform.select({ web: { filter: 'blur(50px)' }, default: {} }) } as any]} />
+      <View style={[s.orb, { bottom: -50, left: -50, backgroundColor: CultureTokens.saffron, opacity: 0.3, ...Platform.select({ web: { filter: 'blur(50px)' }, default: {} }) } as any]} />
 
-      <View style={[styles.topSection, { paddingTop: topInset + 48 }]}>
-        <View style={styles.logoRow}>
-          <View style={styles.logoContainer}>
-            <Ionicons name="earth" size={40} color={colors.textInverse} />
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          s.scrollContent,
+          isDesktop && s.scrollContentDesktop,
+          { paddingTop: isDesktop ? 60 : topInset + 40, paddingBottom: bottomInset + 30 }
+        ]}
+      >
+        <View style={[s.cardContainer, isDesktop && s.cardContainerDesktop]}>
+          {Platform.OS === 'ios' || Platform.OS === 'web' ? (
+            <BlurView intensity={isDesktop ? 60 : 40} tint="dark" style={[StyleSheet.absoluteFill, s.cardBlur]} />
+          ) : (
+            <View style={[StyleSheet.absoluteFill, s.cardBlur, { backgroundColor: 'rgba(11, 11, 20, 0.85)' }]} />
+          )}
+
+          <View style={s.cardContent}>
+            <View style={s.headerBlock}>
+              <View style={s.logoContainer}>
+                <Ionicons name="earth" size={40} color="#FFFFFF" />
+              </View>
+              <Text style={s.title}>CulturePass</Text>
+              <Text style={s.tagline}>Belong Anywhere</Text>
+              <Text style={s.subtitle}>
+                Connecting global communities through events, culture, perks & shared identity. Powered by #CulturePass.
+              </Text>
+            </View>
+
+            <View style={s.featureList}>
+              {FEATURES.map((f, i) => (
+                <View key={i} style={s.featureRow}>
+                  <View style={[s.featureIcon, { backgroundColor: f.bg }]}>
+                    <Ionicons name={f.icon} size={20} color={f.color} />
+                  </View>
+                  <Text style={s.featureText}>{f.text}</Text>
+                </View>
+              ))}
+            </View>
+
+            <View style={s.spacer} />
+
+            <View style={s.actionStack}>
+              <Button
+                variant="primary"
+                size="lg"
+                fullWidth
+                rightIcon="arrow-forward"
+                onPress={goToSignup}
+                style={{ backgroundColor: CultureTokens.saffron }}
+              >
+                Create Account
+              </Button>
+
+              <Button
+                variant="outline"
+                size="lg"
+                fullWidth
+                onPress={goToLogin}
+                style={{ borderColor: 'rgba(255,255,255,0.2)' }}
+                labelStyle={{ color: '#FFFFFF' }}
+              >
+                I already have an account
+              </Button>
+
+              <View style={s.socialDivider}>
+                <View style={s.divLine} />
+                <Text style={s.divText}>or continue with</Text>
+                <View style={s.divLine} />
+              </View>
+
+              <View style={s.socialRow}>
+                <SocialButton provider="google" onPress={goToLocationViaGoogle} />
+                <SocialButton provider="apple" onPress={goToLocationViaApple} />
+              </View>
+
+              <Pressable 
+                onPress={handleSkip} 
+                style={({ pressed }) => [s.skipBtn, pressed && { opacity: 0.7 }]}
+              >
+                <Text style={s.skipText}>Skip and explore</Text>
+                <Ionicons name="arrow-forward" size={14} color="rgba(255,255,255,0.6)" />
+              </Pressable>
+            </View>
           </View>
         </View>
-
-        <Text style={[styles.title, { color: colors.textInverse }]}>CulturePass App</Text>
-        <Text style={[styles.tagline, { color: colors.textInverse + '8C' }]}>Belong Anywhere</Text>
-        <Text style={[styles.subtitle, { color: colors.textInverse + 'A6' }]}>
-          Connecting global communities through events, culture, perks &amp; shared identity. Powered by #CulturePassApp. #CultureOS.
-        </Text>
-
-        <View style={styles.featureList}>
-          {FEATURES.map((f) => (
-            <View key={f.text} style={styles.featureRow}>
-              <View style={[styles.featureIcon, { backgroundColor: f.bg }]}>
-                <Ionicons name={f.icon} size={18} color={f.color} />
-              </View>
-              <Text style={[styles.featureText, { color: colors.textInverse + 'D9' }]}>{f.text}</Text>
-            </View>
-          ))}
-        </View>
-      </View>
-
-      <View style={[styles.bottomSection, { paddingBottom: bottomInset + 16 }]}>
-        <Button
-          variant="primary"
-          size="lg"
-          fullWidth
-          rightIcon="arrow-forward"
-          onPress={goToSignup}
-        >
-          Create Account
-        </Button>
-
-        <Button
-          variant="outline"
-          size="lg"
-          fullWidth
-          onPress={goToLogin}
-        >
-          I already have an account
-        </Button>
-
-        <View style={styles.socialDivider}>
-          <View style={styles.divLine} />
-          <Text style={styles.divText}>or continue with</Text>
-          <View style={styles.divLine} />
-        </View>
-
-        <View style={styles.socialRow}>
-          <SocialButton provider="google" onPress={goToLocationViaGoogle} />
-          <SocialButton provider="apple" onPress={goToLocationViaApple} />
-        </View>
-
-        <Pressable 
-          onPress={handleSkip} 
-          style={({ pressed }) => [styles.skipButton, pressed && { opacity: 0.7 }]} 
-          accessible 
-          accessibilityLabel="Skip onboarding"
-        >
-          <Text style={[styles.skipText, { color: colors.textInverse + '66' }]}>Skip and explore</Text>
-          <Ionicons name="arrow-forward" size={14} color={colors.textInverse + '66'} />
-        </Pressable>
-      </View>
+      </ScrollView>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#001028' },
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#0B0B14' },
+  gradientBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.8 },
+  orb: { position: 'absolute', width: 300, height: 300, borderRadius: 150 },
+  
+  scrollContent: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 20 },
+  scrollContentDesktop: { paddingVertical: 60 },
+  
+  cardContainer: { width: '100%', maxWidth: 500, alignSelf: 'center', borderRadius: 32, overflow: 'hidden' },
+  cardContainerDesktop: { maxWidth: 560 },
+  cardBlur: { borderRadius: 32, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  cardContent: { padding: 32 },
 
-  orb: { position: 'absolute', borderRadius: 300 },
-  orbTop: {
-    width: 300, height: 300,
-    top: -80, right: -80,
-    backgroundColor: 'rgba(0,129,200,0.25)',
-  },
-  orbMid: {
-    width: 200, height: 200,
-    top: '35%', left: -60,
-    backgroundColor: 'rgba(238,51,78,0.18)',
-  },
-  orbBottom: {
-    width: 180, height: 180,
-    bottom: '20%', right: -50,
-    backgroundColor: 'rgba(252,177,49,0.16)',
-  },
-
-  topSection: { flex: 1, alignItems: 'center', paddingHorizontal: 32 },
-
-  logoRow: { marginBottom: 28 },
+  headerBlock: { alignItems: 'center', marginBottom: 28 },
   logoContainer: {
-    width: 88, height: 88, borderRadius: 28,
-    backgroundColor: 'rgba(0,129,200,0.30)',
+    width: 80, height: 80, borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.1)',
     alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: 'rgba(64,168,232,0.60)',
+    marginBottom: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)',
   },
+  title: { fontSize: 36, fontFamily: 'Poppins_700Bold', letterSpacing: -0.5, color: '#FFFFFF' },
+  tagline: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', letterSpacing: 2, textTransform: 'uppercase', color: CultureTokens.saffron, marginTop: 4 },
+  subtitle: { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', color: 'rgba(255,255,255,0.7)', marginTop: 12, lineHeight: 22 },
 
-  title: {
-    fontSize: 38, fontFamily: 'Poppins_700Bold',
-    letterSpacing: -0.5,
-  },
-  tagline: {
-    fontSize: 14, fontFamily: 'Poppins_500Medium',
-    marginTop: 6, letterSpacing: 1.5,
-    textTransform: 'uppercase',
-  },
-  subtitle: {
-    fontSize: 15, fontFamily: 'Poppins_400Regular',
-    textAlign: 'center', marginTop: 16, lineHeight: 24, paddingHorizontal: 8,
-  },
-
-  featureList: { marginTop: 28, gap: 14, width: '100%' },
+  featureList: { gap: 12, marginBottom: 16 },
   featureRow: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12,
-    borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 16, padding: 12,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)',
   },
-  featureIcon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  featureText: { fontSize: 14, fontFamily: 'Poppins_500Medium', flex: 1 },
+  featureIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  featureText: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.9)', flex: 1 },
 
-  bottomSection: { paddingHorizontal: 24, gap: 10 },
+  spacer: { height: 24 },
+  actionStack: { gap: 12 },
 
-  socialDivider: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 4 },
-  divLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(255,255,255,0.15)' },
-  divText: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.4)' },
-
+  socialDivider: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 },
+  divLine: { flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.1)' },
+  divText: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.5)' },
   socialRow: { flexDirection: 'row', gap: 12 },
 
-  skipButton: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 6, paddingVertical: 12,
-  },
-  skipText: { fontSize: 14, fontFamily: 'Poppins_500Medium' },
+  skipBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingTop: 16, paddingBottom: 8 },
+  skipText: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.6)' },
 });
