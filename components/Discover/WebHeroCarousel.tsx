@@ -63,7 +63,7 @@ function WebHeroCarousel({ events }: WebHeroCarouselProps) {
         style={StyleSheet.absoluteFillObject}
       />
       <View style={styles.webHeroCatBadge}>
-        <Text style={[styles.webHeroCatBadgeText, { color: colors.text }]}>{event.communityTag || event.category || 'Featured'}</Text>
+        <Text style={[styles.webHeroCatBadgeText, { color: colors.text }]}>{event.communityId || event.category || 'Featured'}</Text>
       </View>
       {isDesktopW && events.length > 1 && (
         <View style={[StyleSheet.absoluteFillObject, styles.webHeroArrowContainer]}>

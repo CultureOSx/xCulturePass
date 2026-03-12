@@ -102,8 +102,8 @@ function DirectoryCard({ profile, colors, styles }: { profile: Profile; colors: 
             <Text style={styles.cardCategory}>
               {profile.category ?? profile.entityType}
             </Text>
-            {profile.culturePassId ? (
-              <Text style={styles.cpidLabel}>{profile.culturePassId}</Text>
+            {(profile as any).culturePassId ? (
+              <Text style={styles.cpidLabel}>{(profile as any).culturePassId}</Text>
             ) : null}
           </View>
 

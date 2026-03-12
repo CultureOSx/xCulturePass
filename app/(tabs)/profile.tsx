@@ -89,9 +89,9 @@ export default function ProfileScreen() {
 
   const tier = membership?.tier ?? 'free';
   const TIER = {
-    free:    { bg: colors.surface,         text: colors.textSecondary,  icon: 'shield-outline' },
-    plus:    { bg: CultureTokens.info,     text: '#FFFFFF',             icon: 'star'            },
-    premium: { bg: CultureTokens.gold,     text: '#000000',             icon: 'diamond'         },
+    free:    { bg: 'rgba(255,255,255,0.1)',   text: '#FFFFFF',             icon: 'shield-outline' },
+    plus:    { bg: CultureTokens.info,        text: '#FFFFFF',             icon: 'star'            },
+    premium: { bg: CultureTokens.gold,        text: '#0B0B14',             icon: 'diamond'         },
   } as Record<string, { bg: string; text: string; icon: string }>;
   const tierStyle = TIER[tier] ?? TIER.free;
 
@@ -162,7 +162,7 @@ export default function ProfileScreen() {
   if (userLoading) {
     return (
       <ErrorBoundary>
-        <View style={[{ flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' }]}> 
+        <View style={[{ flex: 1, backgroundColor: '#0B0B14', alignItems: 'center', justifyContent: 'center' }]}> 
           <ActivityIndicator size="large" color={CultureTokens.indigo} />
         </View>
       </ErrorBoundary>
@@ -174,7 +174,7 @@ export default function ProfileScreen() {
 
   return (
     <ErrorBoundary>
-      <View style={[{ flex: 1, backgroundColor: colors.background }]}>
+      <View style={[{ flex: 1, backgroundColor: '#0B0B14' }]}>
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 110 }}
@@ -190,18 +190,27 @@ export default function ProfileScreen() {
               end={{ x: 1, y: 0.95 }}
               style={StyleSheet.absoluteFillObject}
             />
+            {/* The gradient fades into the background color for a seamless transition */}
+            <LinearGradient
+              colors={['transparent', '#0B0B14']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+              style={StyleSheet.absoluteFillObject}
+            />
             
             {!isDesktopWeb && (
               <View style={[styles.headerTopBar, { paddingTop: topInset + 16 }]}>
-                <Pressable style={styles.iconBtn} onPress={handleShare}>
-                  <BlurView intensity={20} tint="light" style={StyleSheet.absoluteFill} />
+                <Pressable style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.7 }]} onPress={handleShare}>
+                  {Platform.OS === 'ios' && <BlurView intensity={20} tint="light" style={StyleSheet.absoluteFill} />}
+                  <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(255,255,255,0.1)' }]} />
                   <Ionicons name="share-outline" size={20} color="#FFFFFF" />
                 </Pressable>
                 
                 <Text style={styles.headerTitle}>My Identity</Text>
                 
-                <Pressable style={styles.iconBtn} onPress={() => router.push('/notifications')}>
-                  <BlurView intensity={20} tint="light" style={StyleSheet.absoluteFill} />
+                <Pressable style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.7 }]} onPress={() => router.push('/notifications')}>
+                  {Platform.OS === 'ios' && <BlurView intensity={20} tint="light" style={StyleSheet.absoluteFill} />}
+                  <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(255,255,255,0.1)' }]} />
                   <Ionicons name="notifications-outline" size={20} color="#FFFFFF" />
                   {unreadCount > 0 && <View style={[styles.notifDot, { backgroundColor: CultureTokens.error }]} />}
                 </Pressable>
@@ -211,18 +220,18 @@ export default function ProfileScreen() {
             <View style={styles.avatarSection}>
               <View style={styles.avatarWrapper}>
                 {user?.avatarUrl ? (
-                  <Image source={{ uri: user.avatarUrl }} style={{ width: AvatarTokens.size.xl, height: AvatarTokens.size.xl, borderRadius: AvatarTokens.radius }} />
+                  <Image source={{ uri: user.avatarUrl }} style={{ width: AvatarTokens.size.xl, height: AvatarTokens.size.xl, borderRadius: AvatarTokens.radius, borderWidth: 2, borderColor: 'rgba(255,255,255,0.2)' }} />
                 ) : (
-                  <View style={[styles.avatarFallback, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+                  <View style={[styles.avatarFallback, { backgroundColor: 'rgba(255,255,255,0.2)', borderWidth: 2, borderColor: 'rgba(255,255,255,0.3)' }]}>
                     <Text style={styles.avatarInitials}>{initials}</Text>
                   </View>
                 )}
                 
                 <Pressable
-                  style={[styles.editBadge, { backgroundColor: colors.surface }]}
+                  style={({ pressed }) => [styles.editBadge, pressed && { transform: [{ scale: 0.9 }] }]}
                   onPress={() => router.push('/profile/edit')}
                 >
-                  <Ionicons name="camera" size={14} color={colors.text} />
+                  <Ionicons name="camera" size={14} color="#FFFFFF" />
                 </Pressable>
               </View>
 
@@ -244,7 +253,7 @@ export default function ProfileScreen() {
 
               {user?.bio && <Text style={styles.bio} numberOfLines={2}>{user.bio}</Text>}
 
-              <View style={[styles.completenessBox, { backgroundColor: 'rgba(0,0,0,0.2)' }]}>
+              <View style={[styles.completenessBox, { backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }]}>
                 <View style={styles.completenessHeader}>
                   <Text style={styles.completenessLabel}>Profile Completeness</Text>
                   <Text style={[styles.completenessPercent, { color: completenessColor }]}>{profileCompleteness}%</Text>
@@ -260,7 +269,11 @@ export default function ProfileScreen() {
             {/* Upgrade CTA */}
             {nextTier && (
               <Pressable
-                style={[styles.calloutCard, { backgroundColor: nextTier.color + '1A', borderColor: nextTier.color + '33' }]}
+                style={({ pressed }) => [
+                  styles.calloutCard, 
+                  { backgroundColor: nextTier.color + '1A', borderColor: nextTier.color + '40' },
+                  pressed && { opacity: 0.8, transform: [{ scale: 0.98 }] }
+                ]}
                 onPress={() => { if(Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/membership/upgrade'); }}
               >
                 <View style={[styles.calloutIconWrap, { backgroundColor: nextTier.color }]}>
@@ -277,69 +290,72 @@ export default function ProfileScreen() {
             {/* Quick Actions Grid */}
             <View style={styles.quickGrid}>
               {[
-                { icon: 'qr-code-outline', label: 'My QR', color: CultureTokens.indigo, action: () => router.push('/profile/qr') },
+                { icon: 'qr-code-outline', label: 'My QR', color: '#8898FF', action: () => router.push('/profile/qr') },
                 { icon: 'wallet-outline', label: 'Wallet', color: CultureTokens.success, action: () => router.push('/payment/wallet') },
                 { icon: 'ticket-outline', label: 'Tickets', color: CultureTokens.saffron, action: () => router.push('/tickets') },
                 { icon: 'bookmark-outline', label: 'Saved', color: CultureTokens.coral, action: () => router.push('/saved') },
               ].map((item, idx) => (
                 <Pressable 
                   key={idx} 
-                  style={[styles.quickBox, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                  style={({ pressed }) => [
+                    styles.quickBox, 
+                    pressed && { backgroundColor: 'rgba(255,255,255,0.06)', transform: [{ scale: 0.98 }] }
+                  ]}
                   onPress={() => { if(Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); item.action(); }}
                 >
-                  <View style={[styles.quickIconCircle, { backgroundColor: item.color + '1A' }]}>
+                  <View style={[styles.quickIconCircle, { backgroundColor: item.color + '1A', borderWidth: 1, borderColor: item.color + '40' }]}>
                     <Ionicons name={item.icon as any} size={22} color={item.color} />
                   </View>
-                  <Text style={[styles.quickBoxLabel, { color: colors.text }]}>{item.label}</Text>
+                  <Text style={styles.quickBoxLabel}>{item.label}</Text>
                 </Pressable>
               ))}
             </View>
 
             {/* Application Sections */}
             <View style={styles.sectionBlock}>
-              <Text style={[styles.sectionHeading, { color: colors.text }]}>General</Text>
-              <View style={[styles.menuContainer, { backgroundColor: colors.surface }]}>
-                <MenuItem icon="person-outline" label="Edit Profile" color={colors.textSecondary} onPress={() => router.push('/profile/edit')} colors={colors} />
-                <MenuItem icon="people-outline" label="My Communities" value={`${joinedCommunities.length} Active`} color={colors.textSecondary} onPress={() => router.push('/(tabs)/communities')} colors={colors} />
-                <MenuItem icon="star-outline" label="My Perks" color={colors.textSecondary} showDivider={false} onPress={() => router.push('/perks')} colors={colors} />
+              <Text style={styles.sectionHeading}>General</Text>
+              <View style={styles.menuContainer}>
+                <MenuItem icon="person-outline" label="Edit Profile" color="#FFFFFF" onPress={() => router.push('/profile/edit')} colors={colors} />
+                <MenuItem icon="people-outline" label="My Communities" value={`${joinedCommunities.length} Active`} color="#FFFFFF" onPress={() => router.push('/(tabs)/communities')} colors={colors} />
+                <MenuItem icon="star-outline" label="My Perks" color="#FFFFFF" showDivider={false} onPress={() => router.push('/perks')} colors={colors} />
               </View>
             </View>
 
             {isAdmin && (
               <View style={styles.sectionBlock}>
-                <Text style={[styles.sectionHeading, { color: colors.text }]}>Administration</Text>
-                <View style={[styles.menuContainer, { backgroundColor: colors.surface }]}>
-                  <MenuItem icon="shield-checkmark-outline" label="Role" value={role === 'platformAdmin' ? 'Platform Admin' : 'Admin'} color={CultureTokens.info} onPress={() => {}} colors={colors} />
-                  <MenuItem icon="people-circle-outline" label="Users Database" color={CultureTokens.error} onPress={() => router.push('/admin/users' as never)} colors={colors} />
-                  <MenuItem icon="business-outline" label="Council Management" color={CultureTokens.indigo} showDivider={false} onPress={() => router.push('/admin/council-management' as never)} colors={colors} />
+                <Text style={styles.sectionHeading}>Administration</Text>
+                <View style={[styles.menuContainer, { borderColor: CultureTokens.error + '40', borderWidth: 1 }]}>
+                  <MenuItem icon="shield-checkmark-outline" label="Role" value={role === 'platformAdmin' ? 'Platform Admin' : 'Admin'} color="#FFFFFF" onPress={() => {}} colors={colors} />
+                  <MenuItem icon="people-circle-outline" label="Users Database" color="#FFFFFF" onPress={() => router.push('/admin/users' as never)} colors={colors} />
+                  <MenuItem icon="business-outline" label="Council Management" color="#FFFFFF" showDivider={false} onPress={() => router.push('/admin/council-management' as never)} colors={colors} />
                 </View>
               </View>
             )}
 
             <View style={styles.sectionBlock}>
-              <Text style={[styles.sectionHeading, { color: colors.text }]}>Settings</Text>
-              <View style={[styles.menuContainer, { backgroundColor: colors.surface }]}>
-                <MenuItem icon="card-outline" label="Payment Methods" color={colors.textSecondary} onPress={() => router.push('/payment/methods')} colors={colors} />
-                <MenuItem icon="receipt-outline" label="Payment History" color={colors.textSecondary} onPress={() => router.push('/payment/transactions')} colors={colors} />
-                <MenuItem icon="help-buoy-outline" label="Help & Support" color={colors.textSecondary} onPress={() => router.push('/settings/help')} colors={colors} />
-                <MenuItem icon="document-text-outline" label="Legal Center" color={colors.textSecondary} showDivider={false} onPress={() => router.push('/legal/terms')} colors={colors} />
+              <Text style={styles.sectionHeading}>Settings</Text>
+              <View style={styles.menuContainer}>
+                <MenuItem icon="card-outline" label="Payment Methods" color="#FFFFFF" onPress={() => router.push('/payment/methods')} colors={colors} />
+                <MenuItem icon="receipt-outline" label="Payment History" color="#FFFFFF" onPress={() => router.push('/payment/transactions')} colors={colors} />
+                <MenuItem icon="help-buoy-outline" label="Help & Support" color="#FFFFFF" onPress={() => router.push('/settings/help')} colors={colors} />
+                <MenuItem icon="document-text-outline" label="Legal Center" color="#FFFFFF" showDivider={false} onPress={() => router.push('/legal/terms')} colors={colors} />
               </View>
             </View>
 
             {/* Footer Buttons */}
             <View style={styles.footerRow}>
-              <Pressable style={[styles.dangerBtn, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={handleSignOut}>
+              <Pressable style={({ pressed }) => [styles.dangerBtn, pressed && { opacity: 0.8 }]} onPress={handleSignOut}>
                 <Ionicons name="log-out-outline" size={18} color={CultureTokens.error} />
                 <Text style={[styles.dangerBtnText, { color: CultureTokens.error }]}>Sign Out</Text>
               </Pressable>
               
-              <Pressable style={[styles.dangerBtn, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={handleReset}>
+              <Pressable style={({ pressed }) => [styles.dangerBtn, pressed && { opacity: 0.8 }]} onPress={handleReset}>
                 <Ionicons name="trash-outline" size={18} color={CultureTokens.error} />
                 <Text style={[styles.dangerBtnText, { color: CultureTokens.error }]}>Reset Data</Text>
               </Pressable>
             </View>
             
-            <Text style={[styles.versionLabel, { color: colors.textTertiary }]}>CulturePass v1.0.0</Text>
+            <Text style={styles.versionLabel}>CulturePass v1.0.0</Text>
           </View>
         </ScrollView>
       </View>
@@ -354,25 +370,29 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   heroCard: {
-    paddingBottom: 32,
-    borderBottomLeftRadius: 36,
-    borderBottomRightRadius: 36,
+    paddingBottom: 40,
     overflow: 'hidden',
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+    marginBottom: 16,
   },
   headerTopBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingBottom: 16,
+    paddingBottom: 24,
+    zIndex: 10,
   },
   iconBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   headerTitle: {
     fontSize: 16,
@@ -383,21 +403,27 @@ const styles = StyleSheet.create({
   },
   notifDot: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    top: 10,
+    right: 10,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
     borderWidth: 1.5,
-    borderColor: '#FFFFFF',
+    borderColor: '#0B0B14',
   },
   avatarSection: {
     alignItems: 'center',
     paddingHorizontal: 24,
+    zIndex: 2,
   },
   avatarWrapper: {
     position: 'relative',
-    marginBottom: 16,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 8,
   },
   avatarFallback: {
     width: AvatarTokens.size.xl,
@@ -407,7 +433,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarInitials: {
-    fontSize: 28,
+    fontSize: 32,
     fontFamily: 'Poppins_700Bold',
     color: '#FFFFFF',
   },
@@ -420,11 +446,9 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 4,
+    backgroundColor: '#1E1E2D',
+    borderWidth: 2,
+    borderColor: '#0B0B14',
   },
   name: {
     fontSize: 26,
@@ -450,7 +474,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 100,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderWidth: 1, 
+    borderColor: 'rgba(255,255,255,0.15)'
   },
   tagText: {
     fontSize: 12,
@@ -460,7 +486,7 @@ const styles = StyleSheet.create({
   bio: {
     fontSize: 14,
     fontFamily: 'Poppins_400Regular',
-    color: 'rgba(255,255,255,0.9)',
+    color: 'rgba(255,255,255,0.8)',
     textAlign: 'center',
     marginTop: 16,
     lineHeight: 22,
@@ -469,7 +495,7 @@ const styles = StyleSheet.create({
     width: '100%',
     marginTop: 24,
     padding: 16,
-    borderRadius: 16,
+    borderRadius: 20,
   },
   completenessHeader: {
     flexDirection: 'row',
@@ -490,7 +516,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 6,
     borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(255,255,255,0.1)',
     overflow: 'hidden',
   },
   completenessBar: {
@@ -498,9 +524,10 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   contentMatrix: {
-    paddingTop: 24,
+    paddingTop: 12, // Adjusted padding
     paddingHorizontal: 20,
     gap: 24,
+    zIndex: 2, // Ensure it's above any overflowing background elements
   },
   calloutCard: {
     flexDirection: 'row',
@@ -527,7 +554,7 @@ const styles = StyleSheet.create({
   calloutSub: {
     fontSize: 13,
     fontFamily: 'Poppins_400Regular',
-    color: '#8D8D8D',
+    color: 'rgba(255,255,255,0.6)',
   },
   quickGrid: {
     flexDirection: 'row',
@@ -540,8 +567,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 20,
-    borderRadius: 20,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.03)',
     borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   quickIconCircle: {
     width: 48,
@@ -554,6 +583,7 @@ const styles = StyleSheet.create({
   quickBoxLabel: {
     fontSize: 13,
     fontFamily: 'Poppins_600SemiBold',
+    color: '#FFFFFF'
   },
   sectionBlock: {
     gap: 12,
@@ -562,10 +592,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Poppins_700Bold',
     paddingLeft: 4,
+    color: '#FFFFFF'
   },
   menuContainer: {
-    borderRadius: 20,
+    borderRadius: 24,
     overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)'
   },
   footerRow: {
     flexDirection: 'row',
@@ -578,8 +612,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     paddingVertical: 14,
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
+    backgroundColor: 'rgba(255,255,255,0.03)', 
+    borderColor: 'rgba(255,255,255,0.1)'
   },
   dangerBtnText: {
     fontSize: 14,
@@ -590,5 +626,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Poppins_400Regular',
     marginTop: 8,
+    color: 'rgba(255,255,255,0.4)',
   },
 });

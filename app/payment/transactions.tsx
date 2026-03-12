@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
-import { useColors } from '@/hooks/useColors';
+import { CultureTokens } from '@/constants/theme';
 import { api, type WalletTransaction } from '@/lib/api';
 
 function getTypeIcon(type: WalletTransaction['type']): string {
@@ -23,32 +23,32 @@ function formatDate(dateStr: string) {
   return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
-interface TxItemProps { item: WalletTransaction; colors: ReturnType<typeof useColors> }
+interface TxItemProps { item: WalletTransaction }
 
-function TransactionItem({ item, colors }: TxItemProps) {
+function TransactionItem({ item }: TxItemProps) {
   const isCredit = item.type === 'topup' || item.type === 'refund' || item.type === 'cashback';
-  const amountColor = isCredit ? colors.success : colors.error;
+  const amountColor = isCredit ? CultureTokens.success : CultureTokens.coral;
 
   const statusColor =
-    item.status === 'completed' ? colors.success :
-    item.status === 'pending'   ? colors.warning :
-    item.status === 'failed'    ? colors.error   : colors.textSecondary;
+    item.status === 'completed' ? CultureTokens.success :
+    item.status === 'pending'   ? CultureTokens.gold :
+    item.status === 'failed'    ? CultureTokens.coral : 'rgba(255,255,255,0.5)';
 
   return (
-    <View style={[s.txCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-      <View style={[s.txIcon, { backgroundColor: amountColor + '12' }]}>
+    <View style={s.txCard}>
+      <View style={[s.txIcon, { backgroundColor: amountColor + '15' }]}>
         <Ionicons name={getTypeIcon(item.type) as never} size={22} color={amountColor} />
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={[s.txDescription, { color: colors.text }]} numberOfLines={1}>
+        <Text style={s.txDescription} numberOfLines={1}>
           {item.description || (isCredit ? 'Wallet Credit' : 'Payment')}
         </Text>
         <View style={s.txMeta}>
-          <Text style={[s.txDate, { color: colors.text }]}>{formatDate(item.createdAt)}</Text>
+          <Text style={s.txDate}>{formatDate(item.createdAt)}</Text>
           {item.category && (
             <>
-              <Text style={[s.txDot, { color: colors.textSecondary }]}>·</Text>
-              <Text style={[s.txCategory, { color: colors.textSecondary }]}>{item.category}</Text>
+              <Text style={s.txDot}>·</Text>
+              <Text style={s.txCategory}>{item.category}</Text>
             </>
           )}
         </View>
@@ -69,7 +69,6 @@ export default function TransactionsScreen() {
   const insets      = useSafeAreaInsets();
   const topInset    = Platform.OS === 'web' ? 0 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
-  const colors      = useColors();
   const { userId, isAuthenticated } = useAuth();
 
   const { data: transactions = [], isLoading } = useQuery<WalletTransaction[]>({
@@ -80,38 +79,38 @@ export default function TransactionsScreen() {
 
   if (!isAuthenticated || !userId) {
     return (
-      <View style={[s.container, { paddingTop: topInset, backgroundColor: colors.background }]}>
+      <View style={[s.container, { paddingTop: topInset }]}>
         <View style={s.header}>
           <Pressable
             onPress={() => router.back()}
-            style={[s.backBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+            style={s.backBtn}
           >
-            <Ionicons name="chevron-back" size={24} color={colors.text} />
+            <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
           </Pressable>
-          <Text style={[s.headerTitle, { color: colors.text }]}>Transactions</Text>
-          <View style={{ width: 40 }} />
+          <Text style={s.headerTitle}>Transactions</Text>
+          <View style={{ width: 44 }} />
         </View>
         
         <View style={s.scrollContainer}>
-          <View style={[s.emptyIcon, { backgroundColor: colors.primaryGlow }]}>
-            <Ionicons name="globe" size={52} color={colors.primary} />
+          <View style={s.authEmptyIcon}>
+            <Ionicons name="globe" size={52} color={CultureTokens.indigo} />
           </View>
-          <Text style={[s.emptyTitle, { color: colors.text, fontSize: 20 }]}>Sign In to View Transactions</Text>
-          <Text style={[s.emptySubtitle, { color: colors.text, marginTop: 8 }]}> 
+          <Text style={s.authEmptyTitle}>Sign In to View Transactions</Text>
+          <Text style={s.authEmptySubtitle}> 
             Your wallet and transaction history are available after signing in. Create an account or sign in to manage your payments and cashback rewards.
           </Text>
           <Pressable
-            style={[s.signInBtn, { backgroundColor: colors.primary, marginTop: 24 }]}
+            style={s.signInBtn}
             onPress={() => router.push('/(onboarding)/login')}
           >
-            <Ionicons name="arrow-forward" size={18} color={colors.textInverse} style={{ marginRight: 8 }} />
-            <Text style={[s.signInBtnText, { color: colors.textInverse }]}>Sign In Now</Text>
+            <Ionicons name="arrow-forward" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
+            <Text style={s.signInBtnText}>Sign In Now</Text>
           </Pressable>
           <Pressable
-            style={[s.backHomeBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight, borderWidth: 1, marginTop: 12 }]}
+            style={s.backHomeBtn}
             onPress={() => router.replace('/')}
           >
-            <Text style={[s.backHomeBtnText, { color: colors.text }]}>Back to Discovery</Text>
+            <Text style={s.backHomeBtnText}>Back to Discovery</Text>
           </Pressable>
         </View>
       </View>
@@ -122,29 +121,29 @@ export default function TransactionsScreen() {
   const spent  = transactions.filter(t => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0);
 
   return (
-    <View style={[s.container, { paddingTop: topInset, backgroundColor: colors.background }]}>
+    <View style={[s.container, { paddingTop: topInset }]}>
       <View style={s.header}>
         <Pressable
           onPress={() => router.back()}
-          style={[s.backBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+          style={s.backBtn}
         >
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
+          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
         </Pressable>
-        <Text style={[s.headerTitle, { color: colors.text }]}>Transaction History</Text>
-        <View style={{ width: 40 }} />
+        <Text style={s.headerTitle}>Transaction History</Text>
+        <View style={{ width: 44 }} />
       </View>
 
       {transactions.length > 0 && (
         <View style={s.summaryRow}>
-          <View style={[s.summaryCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-            <Ionicons name="arrow-down-circle" size={18} color={colors.success} />
-            <Text style={[s.summaryLabel, { color: colors.text }]}>Income</Text>
-            <Text style={[s.summaryAmount, { color: colors.success }]}>+${income.toFixed(2)}</Text>
+          <View style={s.summaryCard}>
+            <Ionicons name="arrow-down-circle" size={20} color={CultureTokens.success} />
+            <Text style={s.summaryLabel}>Income</Text>
+            <Text style={[s.summaryAmount, { color: CultureTokens.success }]}>+${income.toFixed(2)}</Text>
           </View>
-          <View style={[s.summaryCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-            <Ionicons name="arrow-up-circle" size={18} color={colors.error} />
-            <Text style={[s.summaryLabel, { color: colors.text }]}>Spent</Text>
-            <Text style={[s.summaryAmount, { color: colors.error }]}>-${spent.toFixed(2)}</Text>
+          <View style={s.summaryCard}>
+            <Ionicons name="arrow-up-circle" size={20} color={CultureTokens.coral} />
+            <Text style={s.summaryLabel}>Spent</Text>
+            <Text style={[s.summaryAmount, { color: CultureTokens.coral }]}>-${spent.toFixed(2)}</Text>
           </View>
         </View>
       )}
@@ -152,22 +151,22 @@ export default function TransactionsScreen() {
       <FlatList
         data={transactions}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <TransactionItem item={item} colors={colors} />}
+        renderItem={({ item }) => <TransactionItem item={item} />}
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: bottomInset + 20, flexGrow: 1 }}
         showsVerticalScrollIndicator={false}
         scrollEnabled={transactions.length > 0}
         ListEmptyComponent={
           isLoading ? (
             <View style={s.emptyState}>
-              <ActivityIndicator color={colors.primary} />
+              <ActivityIndicator color={CultureTokens.indigo} />
             </View>
           ) : (
             <View style={s.emptyState}>
-              <View style={[s.emptyIcon, { backgroundColor: colors.backgroundSecondary }]}>
-                <Ionicons name="receipt-outline" size={48} color={colors.textSecondary} />
+              <View style={s.emptyIcon}>
+                <Ionicons name="receipt-outline" size={48} color="rgba(255,255,255,0.4)" />
               </View>
-              <Text style={[s.emptyTitle, { color: colors.text }]}>No Transactions Yet</Text>
-              <Text style={[s.emptySubtitle, { color: colors.text }]}>Your booking and payment history will appear here</Text>
+              <Text style={s.emptyTitle}>No Transactions Yet</Text>
+              <Text style={s.emptySubtitle}>Your booking and payment history will appear here</Text>
             </View>
           )
         }
@@ -177,32 +176,36 @@ export default function TransactionsScreen() {
 }
 
 const s = StyleSheet.create({
-  container:    { flex: 1 },
-  header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
-  backBtn:      { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-  headerTitle:  { fontSize: 18, fontFamily: 'Poppins_700Bold' },
-  scrollContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20, paddingVertical: 40 },
-  summaryRow:   { flexDirection: 'row', paddingHorizontal: 20, gap: 12, marginBottom: 16 },
-  summaryCard:  { flex: 1, borderRadius: 14, padding: 14, alignItems: 'center', gap: 6, borderWidth: 1 },
-  summaryLabel: { fontSize: 12, fontFamily: 'Poppins_500Medium' },
-  summaryAmount:{ fontSize: 16, fontFamily: 'Poppins_700Bold' },
-  txCard:       { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 14, padding: 14, marginBottom: 10, borderWidth: 1 },
-  txIcon:       { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  txDescription:{ fontSize: 15, fontFamily: 'Poppins_600SemiBold' },
-  txMeta:       { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 },
-  txDate:       { fontSize: 12, fontFamily: 'Poppins_400Regular' },
-  txDot:        { fontSize: 12 },
-  txCategory:   { fontSize: 12, fontFamily: 'Poppins_500Medium' },
-  txRight:      { alignItems: 'flex-end', gap: 4 },
+  container:    { flex: 1, backgroundColor: '#0B0B14' },
+  header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12, zIndex: 10 },
+  backBtn:      { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  headerTitle:  { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+  scrollContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 40 },
+  summaryRow:   { flexDirection: 'row', paddingHorizontal: 20, gap: 14, marginBottom: 20 },
+  summaryCard:  { flex: 1, borderRadius: 16, padding: 16, alignItems: 'center', gap: 6, borderWidth: 1, backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.1)' },
+  summaryLabel: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.7)' },
+  summaryAmount:{ fontSize: 18, fontFamily: 'Poppins_700Bold' },
+  txCard:       { flexDirection: 'row', alignItems: 'center', gap: 14, borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.1)' },
+  txIcon:       { width: 46, height: 46, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  txDescription:{ fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
+  txMeta:       { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+  txDate:       { fontSize: 12, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.6)' },
+  txDot:        { fontSize: 12, color: 'rgba(255,255,255,0.4)' },
+  txCategory:   { fontSize: 12, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.6)' },
+  txRight:      { alignItems: 'flex-end', gap: 6 },
   txAmount:     { fontSize: 16, fontFamily: 'Poppins_700Bold' },
-  statusBadge:  { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
-  statusText:   { fontSize: 10, fontFamily: 'Poppins_600SemiBold', textTransform: 'capitalize' as const },
-  emptyState:   { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40, paddingTop: 20 },
-  emptyIcon:    { width: 100, height: 100, borderRadius: 50, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
-  emptyTitle:   { fontSize: 20, fontFamily: 'Poppins_700Bold', marginBottom: 8 },
-  emptySubtitle:{ fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 21 },
-  signInBtn:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 14, borderRadius: 12, width: '100%', marginHorizontal: 20 },
-  signInBtnText:{ fontSize: 15, fontFamily: 'Poppins_600SemiBold' },
-  backHomeBtn:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, width: '100%', marginHorizontal: 20 },
-  backHomeBtnText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold' },
+  statusBadge:  { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  statusText:   { fontSize: 11, fontFamily: 'Poppins_600SemiBold', textTransform: 'capitalize' as const },
+  emptyState:   { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40, paddingTop: 40 },
+  emptyIcon:    { width: 100, height: 100, borderRadius: 50, alignItems: 'center', justifyContent: 'center', marginBottom: 20, backgroundColor: 'rgba(255,255,255,0.02)' },
+  emptyTitle:   { fontSize: 20, fontFamily: 'Poppins_700Bold', marginBottom: 8, color: '#FFFFFF' },
+  emptySubtitle:{ fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, color: 'rgba(255,255,255,0.6)' },
+  
+  authEmptyIcon: { width: 100, height: 100, borderRadius: 50, alignItems: 'center', justifyContent: 'center', marginBottom: 24, backgroundColor: CultureTokens.indigo + '15' },
+  authEmptyTitle:{ fontSize: 20, fontFamily: 'Poppins_700Bold', marginBottom: 8, color: '#FFFFFF', textAlign: 'center' },
+  authEmptySubtitle:{ fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, color: 'rgba(255,255,255,0.6)', marginBottom: 32 },
+  signInBtn:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 16, borderRadius: 14, width: '100%', backgroundColor: CultureTokens.indigo },
+  signInBtnText:{ fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
+  backHomeBtn:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 16, borderRadius: 14, width: '100%', marginTop: 12, backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  backHomeBtnText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
 });

@@ -14,7 +14,7 @@ interface EventCardProps {
     venue?: string;
     city?: string;
     imageUrl?: string;
-    communityTag?: string;
+    communityId?: string;
     attending?: number;
     priceLabel?: string;
     isFeatured?: boolean;
@@ -59,9 +59,9 @@ function CardContent({ event, highlight }: Pick<EventCardProps, 'event' | 'highl
           </View>
         )}
       </View>
-      {event.communityTag ? (
+      {event.communityId ? (
         <View style={styles.culturePill}>
-          <Text style={styles.culturePillText}>{event.communityTag}</Text>
+          <Text style={styles.culturePillText}>{event.communityId}</Text>
         </View>
       ) : null}
       {typeof event.distanceKm === 'number' ? (

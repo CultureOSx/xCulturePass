@@ -351,7 +351,7 @@ async function request<T>(
 const auth = {
   me: () =>
     request<User>('GET', 'api/auth/me'),
-  register: (payload: { displayName?: string; username?: string; city?: string; state?: string; postcode?: number; country?: string }) =>
+  register: (payload: { displayName?: string; username?: string; city?: string; state?: string; postcode?: number; country?: string; role?: 'user' | 'organizer' }) =>
     request<User>('POST', 'api/auth/register', payload),
 };
 
@@ -362,6 +362,7 @@ export interface EventListParams {
   city?: string;
   country?: string;
   category?: string;
+  communityId?: string;
   page?: number;
   pageSize?: number;
   search?: string;
@@ -373,6 +374,7 @@ const events = {
     if (params.city) qs.set('city', params.city);
     if (params.country) qs.set('country', params.country);
     if (params.category) qs.set('category', params.category);
+    if (params.communityId) qs.set('communityId', params.communityId);
     if (params.page != null) qs.set('page', String(params.page));
     if (params.pageSize != null) qs.set('pageSize', String(params.pageSize));
     if (params.search) qs.set('search', params.search);

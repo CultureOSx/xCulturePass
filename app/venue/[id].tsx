@@ -17,19 +17,19 @@ import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useQuery } from "@tanstack/react-query";
-import { Colors } from "@/constants/theme";
-import { useColors } from "@/hooks/useColors";
+import { CultureTokens } from "@/constants/theme";
 import SocialLinksBar from "@/components/SocialLinksBar";
 import * as Haptics from "expo-haptics";
 import type { Profile } from "@shared/schema";
 import { api } from "@/lib/api";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export default function VenueDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
-  const colors = useColors();
   const navigation = useNavigation();
-  const webTopInset = Platform.OS === "web" ? 0 : 0;
+  const topInset = Platform.OS === "web" ? 0 : insets.top;
+  const bottomInset = Platform.OS === "web" ? 34 : insets.bottom;
 
   const goBack = useCallback(() => {
     if (navigation.canGoBack()) {
@@ -68,380 +68,465 @@ export default function VenueDetailScreen() {
 
   const openDirections = useCallback(() => {
     if (!profile) return;
-    const addr = profile.address || [profile.city, profile.country].filter(Boolean).join(", ");
-    if (!addr) return;
-    Linking.openURL(`https://maps.google.com/?q=${encodeURIComponent(addr)}`);
+    const locationText = [profile.address, profile.city, profile.country].filter(Boolean).join(', ');
+    const hasCoordinates = !!((profile as any).location?.lat && (profile as any).location?.lng) || !!((profile as any).latitude && (profile as any).longitude);
+
+    if (hasCoordinates) {
+      const lat = (profile as any).location?.lat || (profile as any).latitude;
+      const lng = (profile as any).location?.lng || (profile as any).longitude;
+      Linking.openURL(`https://maps.google.com/?q=${lat},${lng}`);
+    } else if (locationText) {
+      Linking.openURL(`https://maps.google.com/?q=${encodeURIComponent(locationText)}`);
+    }
   }, [profile]);
 
   if (isLoading) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.background }]}> 
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
+      <ErrorBoundary>
+        <View style={[styles.container, { paddingTop: topInset, justifyContent: "center", alignItems: "center" }]}> 
+          <ActivityIndicator size="large" color={CultureTokens.teal} />
         </View>
-      </View>
+      </ErrorBoundary>
     );
   }
 
   if (!profile) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.background }]}> 
-        <View style={styles.loadingContainer}>
-          <Ionicons name="alert-circle" size={48} color={colors.textTertiary} />
-          <Text style={[styles.errorText, { color: colors.textSecondary }]}>Venue not found</Text>
-          <Pressable onPress={goBack} style={styles.backLinkBtn}>
-            <Text style={[styles.backLinkText, { color: colors.primary }]}>Go Back</Text>
-          </Pressable>
+      <ErrorBoundary>
+        <View style={[styles.container, { paddingTop: topInset }]}> 
+          <View style={styles.loadingContainer}>
+            <Ionicons name="alert-circle" size={48} color="rgba(255,255,255,0.4)" />
+            <Text style={styles.errorText}>Venue not found</Text>
+            <Pressable onPress={goBack} style={styles.backLinkBtn}>
+              <Text style={styles.backLinkText}>Go Back</Text>
+            </Pressable>
+          </View>
         </View>
-      </View>
+      </ErrorBoundary>
     );
   }
 
-  const heroImage = profile.coverImageUrl || (profile.images && profile.images.length > 0 ? profile.images[0] : null) || profile.avatarUrl;
+  const heroImage = profile.coverImageUrl || profile.avatarUrl || ((profile as any).images && (profile as any).images.length > 0 ? (profile as any).images[0] : null);
   const location = [profile.city, profile.country].filter(Boolean).join(", ");
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }] }>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
-      >
-        <View style={styles.heroContainer}>
-          {heroImage ? (
-            <Image source={{ uri: heroImage }} style={styles.heroImage} contentFit="cover" transition={300} />
-          ) : (
+    <ErrorBoundary>
+      <View style={styles.container}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: bottomInset + 80 }}
+        >
+          <View style={styles.heroContainer}>
+            {heroImage ? (
+              <Image source={{ uri: heroImage }} style={styles.heroImage} contentFit="cover" transition={300} />
+            ) : (
+              <LinearGradient
+                colors={[CultureTokens.teal, '#0B0B14']}
+                style={styles.heroImage}
+              />
+            )}
             <LinearGradient
-              colors={[Colors.light.secondary, Colors.light.primary]}
-              style={styles.heroImage}
+              colors={["rgba(11,11,20,0.2)", "transparent", "#0B0B14"]}
+              locations={[0, 0.4, 1]}
+              style={styles.heroGradient}
             />
-          )}
-          <LinearGradient
-            colors={["rgba(0,0,0,0.5)", "transparent", "rgba(0,0,0,0.7)"]}
-            locations={[0, 0.4, 1]}
-            style={styles.heroGradient}
-          />
-          <View style={[styles.heroTopBar, { top: insets.top + webTopInset + 8 }]}>
-            <Pressable onPress={goBack} style={styles.heroBtn}>
-              <Ionicons name="chevron-back" size={22} color={colors.textInverse} />
-            </Pressable>
-            <View style={{ flexDirection: "row", gap: 10 }}>
-              <Pressable onPress={handleShare} style={styles.heroBtn}>
-                <Ionicons name="share-outline" size={22} color={colors.textInverse} />
+            <View style={[styles.heroTopBar, { top: topInset + 12 }]}>
+              <Pressable onPress={goBack} style={styles.heroBtn}>
+                <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
               </Pressable>
-              {profile.address && (
-                <Pressable onPress={openDirections} style={styles.heroBtn}>
-                  <Ionicons name="navigate" size={22} color={colors.textInverse} />
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <Pressable onPress={handleShare} style={styles.heroBtn}>
+                  <Ionicons name="share-outline" size={22} color="#FFFFFF" />
                 </Pressable>
+                {profile.address && (
+                  <Pressable onPress={openDirections} style={styles.heroBtn}>
+                    <Ionicons name="navigate" size={22} color="#FFFFFF" />
+                  </Pressable>
+                )}
+              </View>
+            </View>
+            <View style={styles.heroInfo}>
+              {profile.isVerified && (
+                <View style={styles.verifiedBadge}>
+                  <Ionicons name="checkmark-circle" size={14} color={CultureTokens.success} />
+                  <Text style={styles.verifiedBadgeText}>Verified</Text>
+                </View>
               )}
+              <Text style={styles.heroTitle}>{profile.name}</Text>
+              {location ? (
+                <View style={styles.heroLocationRow}>
+                  <Ionicons name="location" size={16} color="rgba(255,255,255,0.8)" />
+                  <Text style={styles.heroLocation}>{location}</Text>
+                </View>
+              ) : null}
             </View>
           </View>
-          <View style={styles.heroInfo}>
-            {profile.isVerified && (
-              <View style={styles.verifiedBadge}>
-                <Ionicons name="checkmark-circle" size={14} color={Colors.light.success} />
-                <Text style={styles.verifiedBadgeText}>Verified</Text>
-              </View>
-            )}
-            <Text style={[styles.heroTitle, { color: colors.textInverse }]}>{profile.name}</Text>
-            {location ? (
-              <View style={styles.heroLocationRow}>
-                <Ionicons name="location-outline" size={16} color={colors.textInverse} />
-                <Text style={styles.heroLocation}>{location}</Text>
-              </View>
-            ) : null}
-          </View>
-        </View>
 
-        <View style={styles.content}>
-          <View style={styles.statsRow}>
-            <View style={styles.statCard}>
-              <Ionicons name="people" size={22} color={Colors.light.secondary} />
-              <Text style={styles.statValue}>{profile.followersCount ?? 0}</Text>
-              <Text style={styles.statLabel}>Followers</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Ionicons name="star" size={22} color={Colors.light.accent} />
-              <Text style={styles.statValue}>{profile.rating ? profile.rating.toFixed(1) : "—"}</Text>
-              <Text style={styles.statLabel}>Rating</Text>
-            </View>
-            {profile.membersCount != null && profile.membersCount > 0 && (
+          <View style={styles.content}>
+            <View style={styles.statsRow}>
               <View style={styles.statCard}>
-                <Ionicons name="person-add" size={22} color={Colors.light.primary} />
-                <Text style={styles.statValue}>{profile.membersCount}</Text>
-                <Text style={styles.statLabel}>Members</Text>
+                <View style={[styles.statIconBox, { backgroundColor: CultureTokens.indigo + '15' }]}>
+                  <Ionicons name="people" size={20} color={CultureTokens.indigo} />
+                </View>
+                <View style={styles.statInfo}>
+                  <Text style={styles.statValue}>{profile.followersCount ?? 0}</Text>
+                  <Text style={styles.statLabel}>Followers</Text>
+                </View>
+              </View>
+              <View style={styles.statCard}>
+                <View style={[styles.statIconBox, { backgroundColor: CultureTokens.gold + '15' }]}>
+                  <Ionicons name="star" size={20} color={CultureTokens.gold} />
+                </View>
+                <View style={styles.statInfo}>
+                  <Text style={styles.statValue}>{profile.rating ? profile.rating.toFixed(1) : "—"}</Text>
+                  <Text style={styles.statLabel}>Rating</Text>
+                </View>
+              </View>
+              {profile.membersCount != null && profile.membersCount > 0 && (
+                <View style={styles.statCard}>
+                  <View style={[styles.statIconBox, { backgroundColor: CultureTokens.teal + '15' }]}>
+                    <Ionicons name="person-add" size={20} color={CultureTokens.teal} />
+                  </View>
+                  <View style={styles.statInfo}>
+                    <Text style={styles.statValue}>{profile.membersCount}</Text>
+                    <Text style={styles.statLabel}>Members</Text>
+                  </View>
+                </View>
+              )}
+            </View>
+
+            {(profile as any).culturePassId && (
+              <View style={styles.cpidRow}>
+                <Ionicons name="finger-print" size={16} color={CultureTokens.indigo} />
+                <Text style={styles.cpidText}>{(profile as any).culturePassId}</Text>
+              </View>
+            )}
+
+            {profile.address && (
+              <Pressable onPress={openDirections} style={styles.addressCard}>
+                <View style={styles.addressIconBox}>
+                  <Ionicons name="location" size={20} color={CultureTokens.teal} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.addressText}>{profile.address}</Text>
+                </View>
+                <View style={styles.directionsBtn}>
+                  <Ionicons name="navigate" size={16} color="#0B0B14" />
+                  <Text style={styles.directionsBtnText}>Directions</Text>
+                </View>
+              </Pressable>
+            )}
+
+            {(profile.bio || profile.description) && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>About</Text>
+                <Text style={styles.descriptionText}>{profile.bio || profile.description}</Text>
+              </View>
+            )}
+
+            {profile.tags && profile.tags.length > 0 && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Tags</Text>
+                <View style={styles.tagsGrid}>
+                  {profile.tags.map((tag, idx) => (
+                    <View key={idx} style={styles.tagChip}>
+                      <Text style={styles.tagText}>{tag}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {profile.openingHours && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Opening Hours</Text>
+                <View style={styles.hoursCard}>
+                  <Text style={styles.hoursText}>{profile.openingHours}</Text>
+                </View>
+              </View>
+            )}
+
+            {((profile as any).email || profile.contactEmail || profile.phone || profile.website) && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Contact</Text>
+                {((profile as any).email || profile.contactEmail) && (
+                  <Pressable
+                    style={styles.contactRow}
+                    onPress={() => Linking.openURL(`mailto:${(profile as any).email || profile.contactEmail}`)}
+                  >
+                    <View style={styles.contactIconBox}>
+                      <Ionicons name="mail" size={18} color={CultureTokens.indigo} />
+                    </View>
+                    <Text style={styles.contactText}>{(profile as any).email || profile.contactEmail}</Text>
+                  </Pressable>
+                )}
+                {profile.phone && (
+                  <Pressable
+                    style={styles.contactRow}
+                    onPress={() => Linking.openURL(`tel:${profile.phone}`)}
+                  >
+                    <View style={styles.contactIconBox}>
+                      <Ionicons name="call" size={18} color={CultureTokens.indigo} />
+                    </View>
+                    <Text style={styles.contactText}>{profile.phone}</Text>
+                  </Pressable>
+                )}
+                {profile.website && (
+                  <Pressable
+                    style={styles.contactRow}
+                    onPress={() => Linking.openURL(profile.website!)}
+                  >
+                    <View style={styles.contactIconBox}>
+                      <Ionicons name="globe" size={18} color={CultureTokens.indigo} />
+                    </View>
+                    <Text style={styles.contactText}>{profile.website}</Text>
+                  </Pressable>
+                )}
+              </View>
+            )}
+
+            {(profile.socialLinks && Object.values(profile.socialLinks).some(Boolean)) && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Follow Us</Text>
+                <SocialLinksBar socialLinks={profile.socialLinks} website={profile.website} />
               </View>
             )}
           </View>
-
-          {profile.culturePassId && (
-            <View style={styles.cpidRow}>
-              <Ionicons name="finger-print" size={16} color={Colors.light.secondary} />
-              <Text style={styles.cpidText}>{profile.culturePassId}</Text>
-            </View>
-          )}
-
-          {profile.address && (
-            <Pressable onPress={openDirections} style={styles.addressCard}>
-              <Ionicons name="location" size={20} color={Colors.light.primary} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.addressText}>{profile.address}</Text>
-              </View>
-              <View style={styles.directionsBtn}>
-                <Ionicons name="navigate" size={18} color={colors.textInverse} />
-                <Text style={[styles.directionsBtnText, { color: colors.textInverse }]}>Directions</Text>
-              </View>
-            </Pressable>
-          )}
-
-          {(profile.bio || profile.description) && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>About</Text>
-              <Text style={styles.descriptionText}>{profile.bio || profile.description}</Text>
-            </View>
-          )}
-
-          {profile.tags && profile.tags.length > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Tags</Text>
-              <View style={styles.tagsGrid}>
-                {profile.tags.map((tag, idx) => (
-                  <View key={idx} style={styles.tagChip}>
-                    <Text style={styles.tagText}>{tag}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
-
-          {profile.openingHours && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Opening Hours</Text>
-              <Text style={styles.descriptionText}>{profile.openingHours}</Text>
-            </View>
-          )}
-
-          {(profile.email || profile.phone || profile.website) && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Contact</Text>
-              {profile.email && (
-                <Pressable
-                  style={styles.contactRow}
-                  onPress={() => Linking.openURL(`mailto:${profile.email}`)}
-                >
-                  <Ionicons name="mail-outline" size={20} color={Colors.light.secondary} />
-                  <Text style={styles.contactText}>{profile.email}</Text>
-                </Pressable>
-              )}
-              {profile.phone && (
-                <Pressable
-                  style={styles.contactRow}
-                  onPress={() => Linking.openURL(`tel:${profile.phone}`)}
-                >
-                  <Ionicons name="call-outline" size={20} color={Colors.light.secondary} />
-                  <Text style={styles.contactText}>{profile.phone}</Text>
-                </Pressable>
-              )}
-              {profile.website && (
-                <Pressable
-                  style={styles.contactRow}
-                  onPress={() => Linking.openURL(profile.website!)}
-                >
-                  <Ionicons name="globe-outline" size={20} color={Colors.light.secondary} />
-                  <Text style={styles.contactText}>{profile.website}</Text>
-                </Pressable>
-              )}
-            </View>
-          )}
-
-          {(profile.socialLinks && Object.values(profile.socialLinks).some(Boolean)) && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Follow Us</Text>
-              <SocialLinksBar socialLinks={profile.socialLinks} website={profile.website} />
-            </View>
-          )}
-        </View>
-      </ScrollView>
-    </View>
+        </ScrollView>
+      </View>
+    </ErrorBoundary>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.light.background },
-  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", gap: 12 },
-  errorText: { fontFamily: "Poppins_500Medium", fontSize: 16, color: Colors.light.textSecondary },
-  backLinkBtn: { marginTop: 12, padding: 12 },
-  backLinkText: { fontFamily: "Poppins_600SemiBold", fontSize: 14, color: Colors.light.primary },
+  container: { flex: 1, backgroundColor: '#0B0B14' },
+  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", gap: 16 },
+  errorText: { fontFamily: "Poppins_500Medium", fontSize: 16, color: "rgba(255,255,255,0.6)" },
+  backLinkBtn: { marginTop: 12, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12, backgroundColor: CultureTokens.teal + '15' },
+  backLinkText: { fontFamily: "Poppins_600SemiBold", fontSize: 14, color: CultureTokens.teal },
 
-  heroContainer: { height: 320, position: "relative" },
+  heroContainer: { height: 340, position: "relative" },
   heroImage: { width: "100%", height: "100%" },
   heroGradient: { ...StyleSheet.absoluteFillObject },
   heroTopBar: {
     position: "absolute",
-    left: 16,
-    right: 16,
+    left: 20,
+    right: 20,
     flexDirection: "row",
     justifyContent: "space-between",
+    zIndex: 10,
   },
   heroBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: "rgba(0,0,0,0.35)",
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
     justifyContent: "center",
     alignItems: "center",
   },
   heroInfo: {
     position: "absolute",
-    bottom: 20,
-    left: 16,
-    right: 16,
+    bottom: 24,
+    left: 20,
+    right: 20,
+    zIndex: 2,
   },
   verifiedBadge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(255,255,255,0.1)",
     paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 16,
+    paddingVertical: 6,
+    borderRadius: 12,
     gap: 6,
     alignSelf: "flex-start",
-    marginBottom: 8,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.15)",
   },
   verifiedBadgeText: {
-    fontFamily: "Poppins_500Medium",
+    fontFamily: "Poppins_600SemiBold",
     fontSize: 12,
-    color: Colors.light.success,
+    color: CultureTokens.success,
   },
   heroTitle: {
     fontFamily: "Poppins_700Bold",
-    fontSize: 26,
-    marginBottom: 4,
+    fontSize: 28,
+    color: "#FFFFFF",
+    marginBottom: 6,
+    letterSpacing: -0.5,
   },
-  heroLocationRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  heroLocationRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   heroLocation: {
-    fontFamily: "Poppins_400Regular",
-    fontSize: 14,
-    color: "rgba(255,255,255,0.85)",
+    fontFamily: "Poppins_500Medium",
+    fontSize: 15,
+    color: "rgba(255,255,255,0.8)",
   },
 
-  content: { padding: 16 },
+  content: { padding: 20 },
 
   statsRow: {
     flexDirection: "row",
-    gap: 10,
-    marginBottom: 16,
+    gap: 12,
+    marginBottom: 20,
   },
   statCard: {
     flex: 1,
-    backgroundColor: Colors.light.surface,
-    borderRadius: 14,
+    flexDirection: 'row',
+    backgroundColor: "rgba(255,255,255,0.03)",
+    borderRadius: 16,
     padding: 14,
     alignItems: "center",
+    gap: 12,
     borderWidth: 1,
-    borderColor: Colors.light.borderLight,
+    borderColor: "rgba(255,255,255,0.1)",
   },
+  statIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  statInfo: { gap: 2 },
   statValue: {
     fontFamily: "Poppins_700Bold",
-    fontSize: 20,
-    color: Colors.light.text,
-    marginTop: 6,
+    fontSize: 16,
+    color: "#FFFFFF",
   },
   statLabel: {
-    fontFamily: "Poppins_400Regular",
+    fontFamily: "Poppins_500Medium",
     fontSize: 12,
-    color: Colors.light.textSecondary,
+    color: "rgba(255,255,255,0.5)",
   },
 
   cpidRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    backgroundColor: Colors.light.secondary + "10",
-    borderRadius: 12,
+    gap: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: CultureTokens.indigo + "15",
+    borderRadius: 14,
     alignSelf: "flex-start",
-    marginBottom: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: CultureTokens.indigo + "30",
   },
   cpidText: {
     fontFamily: "Poppins_600SemiBold",
-    fontSize: 13,
-    color: Colors.light.secondary,
+    fontSize: 14,
+    color: CultureTokens.indigo,
   },
 
   addressCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.light.surface,
-    borderRadius: 14,
-    padding: 14,
-    gap: 12,
+    backgroundColor: "rgba(255,255,255,0.03)",
+    borderRadius: 16,
+    padding: 16,
+    gap: 14,
     borderWidth: 1,
-    borderColor: Colors.light.borderLight,
-    marginBottom: 20,
+    borderColor: "rgba(255,255,255,0.1)",
+    marginBottom: 24,
+  },
+  addressIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: CultureTokens.teal + "15",
+    alignItems: "center",
+    justifyContent: "center",
   },
   addressText: {
     fontFamily: "Poppins_400Regular",
     fontSize: 14,
-    color: Colors.light.text,
-    lineHeight: 20,
+    color: "#FFFFFF",
+    lineHeight: 22,
   },
   directionsBtn: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.light.secondary,
+    backgroundColor: CultureTokens.teal,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 10,
+    borderRadius: 12,
     gap: 6,
   },
   directionsBtnText: {
-    fontFamily: "Poppins_600SemiBold",
+    fontFamily: "Poppins_700Bold",
     fontSize: 13,
+    color: "#0B0B14",
   },
 
-  section: { marginBottom: 24 },
+  section: { marginBottom: 28 },
   sectionTitle: {
     fontFamily: "Poppins_700Bold",
     fontSize: 18,
-    color: Colors.light.text,
-    marginBottom: 12,
+    color: "#FFFFFF",
+    marginBottom: 14,
   },
   descriptionText: {
     fontFamily: "Poppins_400Regular",
     fontSize: 15,
-    color: Colors.light.textSecondary,
+    color: "rgba(255,255,255,0.7)",
     lineHeight: 24,
   },
 
   tagsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    gap: 10,
   },
   tagChip: {
-    backgroundColor: Colors.light.surfaceElevated,
-    paddingHorizontal: 12,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
   },
   tagText: {
     fontFamily: "Poppins_500Medium",
     fontSize: 13,
-    color: Colors.light.text,
+    color: "#FFFFFF",
+  },
+
+  hoursCard: {
+    backgroundColor: "rgba(255,255,255,0.03)",
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  hoursText: {
+    fontFamily: "Poppins_400Regular",
+    fontSize: 15,
+    color: "rgba(255,255,255,0.8)",
+    lineHeight: 24,
   },
 
   contactRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 10,
-    gap: 12,
+    paddingVertical: 12,
+    gap: 14,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.light.borderLight,
+    borderBottomColor: "rgba(255,255,255,0.05)",
+  },
+  contactIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: CultureTokens.indigo + "15",
+    alignItems: "center",
+    justifyContent: "center",
   },
   contactText: {
-    fontFamily: "Poppins_400Regular",
-    fontSize: 14,
-    color: Colors.light.secondary,
+    fontFamily: "Poppins_500Medium",
+    fontSize: 15,
+    color: "#FFFFFF",
   },
 });

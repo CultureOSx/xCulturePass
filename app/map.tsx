@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
-import { Colors } from '@/constants/theme';
+import { CultureTokens } from '@/constants/theme';
 import { api } from '@/lib/api';
 import { useState, useMemo } from 'react';
 import * as Haptics from 'expo-haptics';
@@ -68,17 +68,18 @@ function WebCityList({ cityGroups, selectedCity, onSelectCity, onEventPress }: {
   const totalEvents = Object.values(cityGroups).reduce((sum, group) => sum + group.count, 0);
 
   return (
-    <View style={{ flex: 1 }}>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: selectedCity ? 220 : 40 }}>
+    <View style={{ flex: 1, backgroundColor: '#0B0B14' }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, gap: 12, paddingBottom: selectedCity ? 240 : 40 }} showsVerticalScrollIndicator={false}>
         <View style={webStyles.mapInfo}>
           <View style={webStyles.mapIconWrap}>
-            <Ionicons name="map" size={28} color={Colors.primary} />
+            <Ionicons name="map" size={32} color={CultureTokens.indigo} />
           </View>
           <Text style={webStyles.mapInfoTitle}>Events by City</Text>
           <Text style={webStyles.mapInfoSub}>
             {Object.keys(cityGroups).length} cities · {totalEvents} cultural events
           </Text>
         </View>
+        
         {Object.entries(cityGroups).map(([city, group]) => (
           <Pressable
             key={city}
@@ -90,14 +91,14 @@ function WebCityList({ cityGroups, selectedCity, onSelectCity, onEventPress }: {
           >
             <View style={webStyles.cityLeft}>
               <View style={[webStyles.cityDot, selectedCity === city && webStyles.cityDotActive]}>
-                <Ionicons name="location" size={18} color={selectedCity === city ? '#FFF' : Colors.primary} />
+                <Ionicons name="location" size={20} color={selectedCity === city ? '#0B0B14' : CultureTokens.indigo} />
               </View>
               <View>
                 <Text style={webStyles.cityName}>{city}</Text>
                 <Text style={webStyles.cityCount}>{group.count} event{group.count !== 1 ? 's' : ''}</Text>
               </View>
             </View>
-            <Ionicons name={selectedCity === city ? 'chevron-up' : 'chevron-forward'} size={18} color="#636366" />
+            <Ionicons name={selectedCity === city ? 'chevron-up' : 'chevron-down'} size={20} color={selectedCity === city ? CultureTokens.indigo : 'rgba(255,255,255,0.4)'} />
           </Pressable>
         ))}
       </ScrollView>
@@ -110,10 +111,10 @@ function WebCityList({ cityGroups, selectedCity, onSelectCity, onEventPress }: {
               <Text style={webStyles.panelCount}>{selectedEvents.length} events</Text>
             </View>
             <Pressable onPress={() => onSelectCity(null)} hitSlop={10} style={Platform.OS === 'web' ? { cursor: 'pointer' as any } : undefined}>
-              <Ionicons name="close-circle" size={26} color="#636366" />
+              <Ionicons name="close-circle" size={28} color="rgba(255,255,255,0.4)" />
             </Pressable>
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 14 }}>
             {selectedEvents.map((event) => (
               <Pressable
                 key={event.id}
@@ -123,8 +124,8 @@ function WebCityList({ cityGroups, selectedCity, onSelectCity, onEventPress }: {
                 {event.imageUrl ? (
                   <Image source={{ uri: event.imageUrl }} style={styles.eventImage} resizeMode="cover" />
                 ) : (
-                  <View style={[styles.eventImage, { backgroundColor: Colors.primary + '20', alignItems: 'center', justifyContent: 'center' }]}>
-                    <Ionicons name="calendar" size={24} color={Colors.primary} />
+                  <View style={[styles.eventImage, { backgroundColor: CultureTokens.indigo + '15', alignItems: 'center', justifyContent: 'center' }]}>
+                    <Ionicons name="calendar-outline" size={32} color={CultureTokens.indigo} />
                   </View>
                 )}
                 <View style={styles.eventInfo}>
@@ -132,7 +133,7 @@ function WebCityList({ cityGroups, selectedCity, onSelectCity, onEventPress }: {
                   <Text style={styles.eventTitle} numberOfLines={2}>{event.title}</Text>
                   {event.venue && (
                     <View style={styles.eventMeta}>
-                      <Ionicons name="location-outline" size={11} color="#8E8E93" />
+                      <Ionicons name="location-outline" size={12} color="rgba(255,255,255,0.5)" />
                       <Text style={styles.eventVenue} numberOfLines={1}>{event.venue}</Text>
                     </View>
                   )}
@@ -190,16 +191,16 @@ export default function MapScreen() {
   return (
     <View style={[styles.container, { paddingTop: topInset }]}>
       <View style={styles.header}>
-        <Pressable onPress={() => { if (router.canGoBack()) router.back(); else router.replace('/'); }} style={styles.backBtn} hitSlop={10}>
-          <Ionicons name="chevron-back" size={24} color={Colors.text} />
+        <Pressable onPress={() => { if (router.canGoBack()) router.back(); else router.replace('/'); }} style={styles.backBtn} hitSlop={12}>
+          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
         </Pressable>
         <Text style={styles.headerTitle}>Events Map</Text>
-        <View style={{ width: 40 }} />
+        <View style={{ width: 44 }} />
       </View>
 
       {isLoading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.primary} />
+          <ActivityIndicator size="large" color={CultureTokens.indigo} />
           <Text style={styles.loadingText}>Loading events...</Text>
         </View>
       ) : Platform.OS === 'web' ? (
@@ -227,174 +228,184 @@ export default function MapScreen() {
 const webStyles = StyleSheet.create({
   mapInfo: {
     alignItems: 'center',
-    paddingVertical: 20,
-    gap: 8,
+    paddingVertical: 32,
+    gap: 10,
   },
   mapIconWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: 18,
-    backgroundColor: Colors.primary + '15',
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    backgroundColor: CultureTokens.indigo + '15',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
+    marginBottom: 8,
   },
   mapInfoTitle: {
-    fontSize: 22,
+    fontSize: 24,
     fontFamily: 'Poppins_700Bold',
-    color: Colors.text,
+    color: '#FFFFFF',
+    letterSpacing: -0.3,
   },
   mapInfoSub: {
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: 'Poppins_400Regular',
-    color: '#636366',
+    color: 'rgba(255,255,255,0.6)',
   },
   cityRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 20,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   cityRowActive: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.primary + '10',
+    borderColor: CultureTokens.indigo + '50',
+    backgroundColor: CultureTokens.indigo + '15',
   },
   cityLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 14,
   },
   cityDot: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: Colors.primary + '15',
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: CultureTokens.indigo + '20',
     alignItems: 'center',
     justifyContent: 'center',
   },
   cityDotActive: {
-    backgroundColor: Colors.primary,
+    backgroundColor: CultureTokens.indigo,
   },
   cityName: {
     fontSize: 16,
     fontFamily: 'Poppins_600SemiBold',
-    color: Colors.text,
+    color: '#FFFFFF',
+    marginBottom: 2,
   },
   cityCount: {
-    fontSize: 12,
-    fontFamily: 'Poppins_400Regular',
-    color: '#636366',
+    fontSize: 13,
+    fontFamily: 'Poppins_500Medium',
+    color: 'rgba(255,255,255,0.6)',
   },
   bottomPanel: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: Colors.background,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    backgroundColor: 'rgba(11,11,20,0.95)',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.06)',
-    paddingTop: 16,
-    paddingBottom: 50,
+    borderTopColor: 'rgba(255,255,255,0.1)',
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderLeftColor: 'rgba(255,255,255,0.05)',
+    borderRightColor: 'rgba(255,255,255,0.05)',
+    paddingTop: 20,
+    paddingBottom: 40,
   },
   panelHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    marginBottom: 12,
+    paddingHorizontal: 20,
+    marginBottom: 16,
   },
   panelCity: {
-    fontSize: 18,
+    fontSize: 20,
     fontFamily: 'Poppins_700Bold',
-    color: Colors.text,
+    color: '#FFFFFF',
+    marginBottom: 2,
   },
   panelCount: {
-    fontSize: 12,
-    fontFamily: 'Poppins_400Regular',
-    color: '#636366',
+    fontSize: 13,
+    fontFamily: 'Poppins_500Medium',
+    color: 'rgba(255,255,255,0.5)',
   },
 });
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: '#0B0B14',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingVertical: 12,
   },
   backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.surface,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: {
     fontSize: 18,
-    fontFamily: 'Poppins_600SemiBold',
-    color: Colors.text,
+    fontFamily: 'Poppins_700Bold',
+    color: '#FFFFFF',
   },
   loadingContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
+    gap: 16,
   },
   loadingText: {
-    fontSize: 14,
-    fontFamily: 'Poppins_400Regular',
-    color: '#636366',
+    fontSize: 15,
+    fontFamily: 'Poppins_500Medium',
+    color: 'rgba(255,255,255,0.6)',
   },
   eventCard: {
-    width: 220,
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
-    overflow: 'hidden',
+    width: 240,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: 'rgba(255,255,255,0.1)',
+    overflow: 'hidden',
   },
   eventImage: {
     width: '100%',
-    height: 110,
+    height: 120,
   },
   eventInfo: {
-    padding: 12,
+    padding: 16,
   },
   eventDate: {
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: 'Poppins_600SemiBold',
-    color: Colors.primary,
-    marginBottom: 4,
+    color: CultureTokens.saffron,
+    marginBottom: 6,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   eventTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: 'Poppins_600SemiBold',
-    color: Colors.text,
-    lineHeight: 20,
-    marginBottom: 6,
+    color: '#FFFFFF',
+    lineHeight: 22,
+    marginBottom: 8,
   },
   eventMeta: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
-    marginBottom: 6,
+    gap: 4,
   },
   eventVenue: {
-    fontSize: 11,
-    fontFamily: 'Poppins_400Regular',
-    color: '#8E8E93',
+    fontSize: 12,
+    fontFamily: 'Poppins_500Medium',
+    color: 'rgba(255,255,255,0.6)',
     flex: 1,
   },
 });

@@ -4,7 +4,6 @@ import { goBackOrReplace } from '@/lib/navigation';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSaved } from '@/contexts/SavedContext';
-import { useColors } from '@/hooks/useColors';
 import { useMemo, useState } from 'react';
 import * as Haptics from 'expo-haptics';
 import { useQuery } from '@tanstack/react-query';
@@ -12,6 +11,7 @@ import { api } from '@/lib/api';
 import type { Community, EventData } from '@/shared/schema';
 import { AuthGuard } from '@/components/AuthGuard';
 import { CultureTokens } from '@/constants/theme';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const isWeb = Platform.OS === 'web';
 
@@ -26,7 +26,6 @@ function formatDate(dateStr: string): string {
 
 export default function SavedScreen() {
   const insets = useSafeAreaInsets();
-  const colors = useColors();
   const { width } = useWindowDimensions();
 
   const topInset = isWeb ? 72 : insets.top;
@@ -66,17 +65,22 @@ export default function SavedScreen() {
 
   return (
     <AuthGuard icon="bookmark" title="My Saved" message="Sign in to save events and communities you love.">
-      <View style={[s.container, { paddingTop: topInset, backgroundColor: colors.background }]}>
+      <View style={[s.container, { paddingTop: topInset }]}>
+        <LinearGradient 
+          colors={['rgba(44, 42, 114, 0.15)', 'transparent']} 
+          style={StyleSheet.absoluteFillObject} 
+          pointerEvents="none" 
+        />
         <View style={[s.shell, isDesktop && s.desktopShell]}>
           <View style={s.header}>
             <Pressable 
               onPress={() => goBackOrReplace('/(tabs)')} 
-              style={({ pressed }) => [s.backBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight, transform: [{ scale: pressed ? 0.95 : 1 }] }]} 
+              style={({ pressed }) => [s.backBtn, pressed && { transform: [{ scale: 0.95 }] }]} 
               hitSlop={8}
             >
-              <Ionicons name="chevron-back" size={24} color={colors.text} />
+              <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
             </Pressable>
-            <Text style={[s.headerTitle, { color: colors.text }]}>My Saved</Text>
+            <Text style={s.headerTitle}>My Saved</Text>
             <View style={{ width: 44 }} />
           </View>
 
@@ -86,25 +90,24 @@ export default function SavedScreen() {
               return (
                 <Pressable
                   key={tab.key}
-                  style={[
+                  style={({ pressed }) => [
                     s.tab, 
-                    { backgroundColor: colors.surface, borderColor: colors.borderLight },
-                    isActive && { backgroundColor: CultureTokens.indigo + '15', borderColor: CultureTokens.indigo + '30' }
+                    isActive ? { backgroundColor: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.2)' } : { backgroundColor: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.05)' },
+                    pressed && !isActive && { opacity: 0.8 }
                   ]}
                   onPress={() => {
                     if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     setActiveTab(tab.key);
                   }}
                 >
-                  <Ionicons name={tab.icon} size={18} color={isActive ? CultureTokens.indigo : colors.textSecondary} />
-                  <Text style={[s.tabText, { color: colors.textSecondary }, isActive && { color: CultureTokens.indigo }]}>{tab.label}</Text>
+                  <Ionicons name={tab.icon} size={18} color={isActive ? '#FFFFFF' : 'rgba(255,255,255,0.5)'} />
+                  <Text style={[s.tabText, isActive ? { color: '#FFFFFF' } : { color: 'rgba(255,255,255,0.5)' }]}>{tab.label}</Text>
                   {tab.count > 0 && (
                     <View style={[
                       s.countBadge, 
-                      { backgroundColor: colors.backgroundSecondary },
-                      isActive && { backgroundColor: CultureTokens.indigo + '25' }
+                      isActive ? { backgroundColor: CultureTokens.indigo } : { backgroundColor: 'rgba(255,255,255,0.1)' }
                     ]}>
-                      <Text style={[s.countText, { color: colors.textSecondary }, isActive && { color: CultureTokens.indigo }]}>{tab.count}</Text>
+                      <Text style={[s.countText, isActive ? { color: '#FFFFFF' } : { color: 'rgba(255,255,255,0.6)' }]}>{tab.count}</Text>
                     </View>
                   )}
                 </Pressable>
@@ -120,48 +123,48 @@ export default function SavedScreen() {
               <>
                 {savedEventItems.length === 0 ? (
                   <View style={s.emptyState}>
-                    <View style={[s.emptyIconWrap, { backgroundColor: colors.surface }]}>
-                      <Ionicons name="bookmark-outline" size={48} color={colors.textTertiary} />
+                    <View style={s.emptyIconWrap}>
+                      <Ionicons name="bookmark-outline" size={48} color="rgba(255,255,255,0.4)" />
                     </View>
-                    <Text style={[s.emptyTitle, { color: colors.text }]}>No saved events</Text>
-                    <Text style={[s.emptyDesc, { color: colors.textSecondary }]}>Tap the bookmark icon on any event to save it here for later.</Text>
+                    <Text style={s.emptyTitle}>No saved events</Text>
+                    <Text style={s.emptyDesc}>Tap the bookmark icon on any event to save it here for later.</Text>
                     <Pressable 
                       style={({ pressed }) => [s.emptyBtn, { backgroundColor: CultureTokens.indigo, transform: [{ scale: pressed ? 0.98 : 1 }] }]} 
                       onPress={() => router.push('/(tabs)')}
                     >
-                      <Text style={[s.emptyBtnText, { color: '#FFFFFF' }]}>Browse Events</Text>
+                      <Text style={s.emptyBtnText}>Browse Events</Text>
                     </Pressable>
                   </View>
                 ) : (
                   savedEventItems.map((event: EventData) => (
                     <View key={event.id}>
                       <Pressable
-                        style={({ pressed }) => [s.eventCard, { backgroundColor: colors.surface, borderColor: colors.borderLight, transform: [{ scale: pressed ? 0.98 : 1 }] }]}
+                        style={({ pressed }) => [s.eventCard, pressed && { transform: [{ scale: 0.98 }] }]}
                         onPress={() => router.push({ pathname: '/event/[id]', params: { id: event.id } })}
                       >
                         <Image source={{ uri: event.imageUrl }} style={s.eventImage} />
                         <View style={s.eventInfo}>
                           <View style={s.eventCommunityRow}>
-                            <Text style={[s.eventCommunity, { color: CultureTokens.saffron, backgroundColor: CultureTokens.saffron + '15' }]}>{event.communityTag}</Text>
+                            <Text style={s.eventCommunity}>{event.communityId}</Text>
                           </View>
-                          <Text style={[s.eventTitle, { color: colors.text }]} numberOfLines={2}>{event.title}</Text>
+                          <Text style={s.eventTitle} numberOfLines={2}>{event.title}</Text>
                           
                           <View style={s.metaGroup}>
                             <View style={s.eventMeta}>
-                              <Ionicons name="calendar-outline" size={14} color={colors.textSecondary} />
-                              <Text style={[s.eventMetaText, { color: colors.textSecondary }]}>{formatDate(event.date)}</Text>
+                              <Ionicons name="calendar-outline" size={14} color="rgba(255,255,255,0.6)" />
+                              <Text style={s.eventMetaText}>{formatDate(event.date)}</Text>
                             </View>
                             <View style={s.eventMeta}>
-                              <Ionicons name="location-outline" size={14} color={colors.textSecondary} />
-                              <Text style={[s.eventMetaText, { color: colors.textSecondary }]} numberOfLines={1}>{event.venue}</Text>
+                              <Ionicons name="location-outline" size={14} color="rgba(255,255,255,0.6)" />
+                              <Text style={s.eventMetaText} numberOfLines={1}>{event.venue}</Text>
                             </View>
                           </View>
 
                           <View style={s.eventBottom}>
-                            <Text style={[s.eventPrice, { color: CultureTokens.teal }]}>{event.priceLabel}</Text>
+                            <Text style={s.eventPrice}>{event.priceLabel}</Text>
                             <Pressable
                               hitSlop={12}
-                              style={[s.bookmarkBtn, { backgroundColor: CultureTokens.indigo + '10' }]}
+                              style={({pressed}) => [s.bookmarkBtn, pressed && { opacity: 0.8 }]}
                               onPress={(e) => {
                                 e.stopPropagation?.();
                                 if(!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -183,46 +186,46 @@ export default function SavedScreen() {
               <>
                 {joinedCommunityItems.length === 0 ? (
                   <View style={s.emptyState}>
-                    <View style={[s.emptyIconWrap, { backgroundColor: colors.surface }]}>
-                      <Ionicons name="people-outline" size={48} color={colors.textTertiary} />
+                    <View style={s.emptyIconWrap}>
+                      <Ionicons name="people-outline" size={48} color="rgba(255,255,255,0.4)" />
                     </View>
-                    <Text style={[s.emptyTitle, { color: colors.text }]}>No communities joined</Text>
-                    <Text style={[s.emptyDesc, { color: colors.textSecondary }]}>Join cultural communities to see them pinned here.</Text>
+                    <Text style={s.emptyTitle}>No communities joined</Text>
+                    <Text style={s.emptyDesc}>Join cultural communities to see them pinned here.</Text>
                     <Pressable 
                       style={({ pressed }) => [s.emptyBtn, { backgroundColor: CultureTokens.indigo, transform: [{ scale: pressed ? 0.98 : 1 }] }]} 
                       onPress={() => router.push('/(tabs)/communities')}
                     >
-                      <Text style={[s.emptyBtnText, { color: '#FFFFFF' }]}>Browse Communities</Text>
+                      <Text style={s.emptyBtnText}>Browse Communities</Text>
                     </Pressable>
                   </View>
                 ) : (
                   joinedCommunityItems.map((community: Community) => (
                     <View key={community.id}>
                       <Pressable
-                        style={({ pressed }) => [s.communityCard, { backgroundColor: colors.surface, borderColor: colors.borderLight, transform: [{ scale: pressed ? 0.98 : 1 }] }]}
+                        style={({ pressed }) => [s.communityCard, pressed && { transform: [{ scale: 0.98 }] }]}
                         onPress={() => {
                           if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                           router.push({ pathname: '/community/[id]', params: { id: community.id } });
                         }}
                       >
-                        <View style={[s.communityAvatar, { backgroundColor: CultureTokens.indigo + '15' }]}>
+                        <View style={s.communityAvatar}>
                           <Ionicons name="people" size={28} color={CultureTokens.indigo} />
                         </View>
                         
                         <View style={s.communityInfo}>
-                          <Text style={[s.communityName, { color: colors.text }]} numberOfLines={1}>{community.name}</Text>
-                          <View style={[s.communityTypeBadge, { backgroundColor: colors.backgroundSecondary }]}>
-                            <Text style={[s.communityType, { color: colors.textSecondary }]}>{community.category}</Text>
+                          <Text style={s.communityName} numberOfLines={1}>{community.name}</Text>
+                          <View style={s.communityTypeBadge}>
+                            <Text style={s.communityType}>{community.category}</Text>
                           </View>
                           
                           <View style={s.communityStats}>
-                            <Ionicons name="people-outline" size={14} color={colors.textTertiary} />
-                            <Text style={[s.communityStatText, { color: colors.textSecondary }]}>{community.memberCount ?? 0} members</Text>
+                            <Ionicons name="people-outline" size={14} color="rgba(255,255,255,0.4)" />
+                            <Text style={s.communityStatText}>{community.memberCount ?? 0} members</Text>
                             {(community as unknown as Record<string, unknown>).events !== undefined && Number((community as unknown as Record<string, unknown>).events) > 0 && (
                               <>
-                                <View style={[s.statDot, { backgroundColor: colors.textTertiary }]} />
-                                <Ionicons name="calendar-outline" size={14} color={colors.textTertiary} />
-                                <Text style={[s.communityStatText, { color: colors.textSecondary }]}>{String((community as unknown as Record<string, unknown>).events)} events</Text>
+                                <View style={s.statDot} />
+                                <Ionicons name="calendar-outline" size={14} color="rgba(255,255,255,0.4)" />
+                                <Text style={s.communityStatText}>{String((community as unknown as Record<string, unknown>).events)} events</Text>
                               </>
                             )}
                           </View>
@@ -235,9 +238,9 @@ export default function SavedScreen() {
                             if(!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                             toggleJoinCommunity(community.id);
                           }}
-                          style={[s.leaveBtn, { backgroundColor: colors.backgroundSecondary }]}
+                          style={({pressed}) => [s.leaveBtn, pressed && { opacity: 0.7 }]}
                         >
-                          <Ionicons name="checkmark" size={16} color={colors.text} />
+                          <Ionicons name="checkmark" size={16} color="#FFFFFF" />
                         </Pressable>
                       </Pressable>
                     </View>
@@ -253,53 +256,53 @@ export default function SavedScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: '#0B0B14' },
   shell: { flex: 1 },
   desktopShell: { maxWidth: 800, width: '100%', alignSelf: 'center' },
   
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
-  backBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-  headerTitle: { fontSize: 22, fontFamily: 'Poppins_700Bold' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12, zIndex: 10 },
+  backBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  headerTitle: { fontSize: 22, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
   
-  tabRow: { flexDirection: 'row', paddingHorizontal: 20, gap: 10, marginTop: 4, marginBottom: 8 },
+  tabRow: { flexDirection: 'row', paddingHorizontal: 20, gap: 10, marginTop: 4, marginBottom: 8, zIndex: 10 },
   tab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: 14, borderWidth: 1 },
   tabText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
   countBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
   countText: { fontSize: 11, fontFamily: 'Poppins_700Bold' },
   
   emptyState: { alignItems: 'center', paddingTop: 80, gap: 12, paddingHorizontal: 40 },
-  emptyIconWrap: { width: 90, height: 90, borderRadius: 45, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  emptyTitle: { fontSize: 20, fontFamily: 'Poppins_700Bold' },
-  emptyDesc: { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, maxWidth: 280 },
+  emptyIconWrap: { width: 90, height: 90, borderRadius: 45, alignItems: 'center', justifyContent: 'center', marginBottom: 8, backgroundColor: 'rgba(255,255,255,0.05)' },
+  emptyTitle: { fontSize: 20, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+  emptyDesc: { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, maxWidth: 280, color: 'rgba(255,255,255,0.6)' },
   emptyBtn: { marginTop: 20, paddingHorizontal: 28, paddingVertical: 14, borderRadius: 16 },
-  emptyBtnText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold' },
+  emptyBtnText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
   
-  eventCard: { flexDirection: 'row', borderRadius: 20, overflow: 'hidden', marginBottom: 16, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2 },
+  eventCard: { flexDirection: 'row', borderRadius: 20, overflow: 'hidden', marginBottom: 16, backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   eventImage: { width: 120, minHeight: 140 },
   eventInfo: { flex: 1, padding: 16, gap: 6, justifyContent: 'center' },
   eventCommunityRow: { flexDirection: 'row' },
-  eventCommunity: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, textTransform: 'uppercase', letterSpacing: 0.5 },
-  eventTitle: { fontSize: 16, fontFamily: 'Poppins_700Bold', lineHeight: 22 },
+  eventCommunity: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, textTransform: 'uppercase', letterSpacing: 0.5, color: CultureTokens.saffron, backgroundColor: CultureTokens.saffron + '15' },
+  eventTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', lineHeight: 24, color: '#FFFFFF' },
   
-  metaGroup: { gap: 4, marginVertical: 4 },
+  metaGroup: { gap: 6, marginVertical: 6 },
   eventMeta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  eventMetaText: { fontSize: 13, fontFamily: 'Poppins_400Regular', flexShrink: 1 },
+  eventMetaText: { fontSize: 13, fontFamily: 'Poppins_400Regular', flexShrink: 1, color: 'rgba(255,255,255,0.6)' },
   
-  eventBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 },
-  eventPrice: { fontSize: 16, fontFamily: 'Poppins_700Bold' },
-  bookmarkBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  eventBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 },
+  eventPrice: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: CultureTokens.teal },
+  bookmarkBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: CultureTokens.indigo + '20' },
   
-  communityCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 20, padding: 16, marginBottom: 12, borderWidth: 1, gap: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2 },
-  communityAvatar: { width: 60, height: 60, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  communityCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 20, padding: 16, marginBottom: 12, borderWidth: 1, gap: 14, backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.1)' },
+  communityAvatar: { width: 60, height: 60, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: CultureTokens.indigo + '15' },
   communityInfo: { flex: 1, gap: 4, justifyContent: 'center' },
-  communityName: { fontSize: 16, fontFamily: 'Poppins_700Bold' },
+  communityName: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
   
-  communityTypeBadge: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  communityType: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 0.5 },
+  communityTypeBadge: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.08)' },
+  communityType: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 0.5, color: 'rgba(255,255,255,0.6)' },
   
   communityStats: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
-  communityStatText: { fontSize: 12, fontFamily: 'Poppins_500Medium' },
-  statDot: { width: 4, height: 4, borderRadius: 2, marginHorizontal: 2 },
+  communityStatText: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.6)' },
+  statDot: { width: 4, height: 4, borderRadius: 2, marginHorizontal: 2, backgroundColor: 'rgba(255,255,255,0.4)' },
   
-  leaveBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  leaveBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.1)' },
 });

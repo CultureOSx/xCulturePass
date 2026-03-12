@@ -29,7 +29,7 @@ export interface EventData {
   priceCents?: number;
   priceLabel?: string;
   category?: string;
-  communityTag?: string;
+  communityId?: string;
   organizerId?: string;
   imageColor?: string;
   imageUrl?: string;
@@ -39,7 +39,12 @@ export interface EventData {
   isFree?: boolean;
   tiers?: { name: string; priceCents: number; available: number }[];
   country: string;
+  state?: string;
   city: string;
+  council?: string;
+  suburb?: string;
+  lat?: number;
+  lng?: number;
   tags?: string[];
   indigenousTags?: string[];
   languageTags?: string[];

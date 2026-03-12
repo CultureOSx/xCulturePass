@@ -1,4 +1,3 @@
-import { useColors } from '@/hooks/useColors';
 import React from 'react';
 import {
   View,
@@ -10,6 +9,7 @@ import {
   Image,
   Share,
   Platform,
+  Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { CultureTokens } from '@/constants/theme';
 
 const HERO_IMAGE =
   'https://www.discovertasmania.com.au/siteassets/experiences-unordinary-stories/tasmania-in-summer/1001159-2.jpg?resize=qtC69Ish9L24PErKrxCBYRcD64M_nhskIqezaGSSvB7TGgRe5_Ovqqf5a5ShpX5jOCAfKLknfJY5pLXvNT4xVw';
@@ -46,10 +47,10 @@ const PROBLEMS = [
 ] as const;
 
 const ECOSYSTEM = [
-  { title: 'Discover', items: ['Events', 'Venues', 'Communities'], icon: 'search-outline' as const },
-  { title: 'Book', items: ['Tickets', 'Wallet', 'Payments'], icon: 'ticket-outline' as const },
-  { title: 'Follow', items: ['Artists', 'Sponsors', 'Businesses'], icon: 'people-outline' as const },
-  { title: 'Unlock', items: ['Perks', 'Cashback', 'Memberships'], icon: 'gift-outline' as const },
+  { title: 'Discover', items: ['Events', 'Venues', 'Communities'], icon: 'search-outline' as const, color: CultureTokens.saffron },
+  { title: 'Book', items: ['Tickets', 'Wallet', 'Payments'], icon: 'ticket-outline' as const, color: CultureTokens.coral },
+  { title: 'Follow', items: ['Artists', 'Sponsors', 'Businesses'], icon: 'people-outline' as const, color: CultureTokens.teal },
+  { title: 'Unlock', items: ['Perks', 'Cashback', 'Memberships'], icon: 'gift-outline' as const, color: CultureTokens.gold },
 ] as const;
 
 const STEPS = [
@@ -75,8 +76,6 @@ const STACK = [
 ] as const;
 
 export default function Get2KnowPage() {
-  const colors = useColors();
-  const styles = getStyles(colors);
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
@@ -103,9 +102,14 @@ export default function Get2KnowPage() {
         contentContainerStyle={{ paddingBottom: insets.bottom + 56 }}
       >
         <ImageBackground source={{ uri: HERO_IMAGE }} style={styles.heroBg}>
-          <LinearGradient colors={['rgba(0,0,0,0.6)', 'rgba(0,0,0,0.35)']} style={styles.heroOverlay}>
+          <LinearGradient colors={['rgba(11,11,20,0.8)', 'rgba(11,11,20,0.4)', '#0B0B14']} style={styles.heroOverlay}>
             <View style={[styles.container, { paddingHorizontal: sidePad }]}> 
               <View style={[styles.heroContent, { paddingTop: isDesktop ? 160 : 120, paddingBottom: isDesktop ? 160 : 96 }]}> 
+                <Pressable onPress={() => router.back()} style={styles.backBtn}>
+                  <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+                  <Text style={styles.backBtnText}>Back</Text>
+                </Pressable>
+                
                 <Text style={[styles.heroTitle, isTablet && styles.heroTitleDesktop]}>Discover Your Culture. Belong Anywhere.</Text>
                 <Text style={styles.heroSubtitle}>Australia’s Cultural Discovery & Community Platform.</Text>
 
@@ -121,22 +125,22 @@ export default function Get2KnowPage() {
                 <View style={styles.trustRow}>
                   {TRUST_SIGNALS.map((signal) => (
                     <View key={signal} style={styles.trustItem}>
-                      <Ionicons name="checkmark-circle" size={14} color="#FCB131" />
+                      <Ionicons name="shield-checkmark" size={16} color={CultureTokens.success} />
                       <Text style={styles.trustText}>{signal}</Text>
                     </View>
                   ))}
                 </View>
 
-                <Card style={styles.qrPromoCard} padding={16}>
+                <Card style={styles.qrPromoCard} padding={20}>
                   <View style={styles.qrHeader}>
                     <View>
                       <Text style={styles.qrTitle}>Promote Your QR on Top</Text>
                       <Text style={styles.qrSubtitle}>Drive instant app join and ticket conversion.</Text>
                     </View>
-                    <Ionicons name="qr-code-outline" size={26} color="#2C2A72" />
+                    <Ionicons name="qr-code-outline" size={32} color={CultureTokens.indigo} />
                   </View>
                   <View style={styles.qrPreview}>
-                    <Ionicons name="qr-code" size={110} color="#2C2A72" />
+                    <Ionicons name="qr-code" size={140} color="#FFFFFF" />
                   </View>
                   <View style={styles.qrActions}>
                     <Button variant="primary" fullWidth onPress={shareQrPromo}>
@@ -171,10 +175,12 @@ export default function Get2KnowPage() {
           <View style={[styles.grid4, isDesktop && styles.grid4Desktop]}>
             {ECOSYSTEM.map((block) => (
               <Card key={block.title} style={styles.ecoCard} padding={24}>
-                <Ionicons name={block.icon} size={28} color="#124E78" />
+                <View style={[styles.ecoIconWrap, { backgroundColor: block.color + '15' }]}>
+                  <Ionicons name={block.icon} size={28} color={block.color} />
+                </View>
                 <Text style={styles.cardTitle}>{block.title}</Text>
                 {block.items.map((item) => (
-                  <Text key={item} style={styles.cardLine}>{item}</Text>
+                  <Text key={item} style={styles.cardLine}>— {item}</Text>
                 ))}
               </Card>
             ))}
@@ -185,7 +191,9 @@ export default function Get2KnowPage() {
           <View style={[styles.stepsWrap, isDesktop && styles.stepsWrapDesktop]}>
             {STEPS.map((step, index) => (
               <View key={step.title} style={styles.stepCard}>
-                <View style={styles.stepBadge}><Text style={styles.stepBadgeText}>{index + 1}</Text></View>
+                <View style={[styles.stepBadge, { backgroundColor: CultureTokens.saffron + '15' }]}>
+                  <Text style={[styles.stepBadgeText, { color: CultureTokens.saffron }]}>{index + 1}</Text>
+                </View>
                 <Text style={styles.stepTitle}>{step.title}</Text>
                 <Text style={styles.stepText}>{step.detail}</Text>
               </View>
@@ -195,8 +203,8 @@ export default function Get2KnowPage() {
 
         <Section title="Product Preview" subtitle="Core screens: Home, Calendar, Map Radius, Event Detail, Wallet, Artist Profile, Sponsor Profile" spacing={sectionY} sidePad={sidePad}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.previewRow}>
-            {PREVIEW_IMAGES.map((src) => (
-              <Image key={src} source={{ uri: src }} style={styles.previewImage} />
+            {PREVIEW_IMAGES.map((src, i) => (
+              <Image key={i} source={{ uri: src }} style={styles.previewImage} />
             ))}
           </ScrollView>
           <View style={styles.inlineCta}>
@@ -206,12 +214,18 @@ export default function Get2KnowPage() {
 
         <Section spacing={sectionY} sidePad={sidePad}>
           <View style={[styles.split, isDesktop && styles.splitDesktop]}>
-            <Card style={styles.splitPanel} padding={24}>
+            <Card style={styles.splitPanel} padding={26}>
+              <View style={[styles.ecoIconWrap, { backgroundColor: CultureTokens.indigo + '15', marginBottom: 16 }]}>
+                <Ionicons name="pie-chart" size={24} color={CultureTokens.indigo} />
+              </View>
               <Text style={styles.panelTitle}>For Organizers</Text>
               <Text style={styles.body}>Event creation dashboard, ticket management, artist attach, revenue overview, and Stripe payouts.</Text>
               <View style={styles.panelCta}><Button onPress={() => router.push('/submit')}>Become an Organizer</Button></View>
             </Card>
-            <Card style={[styles.splitPanel, styles.softPanel]} padding={24}>
+            <Card style={[styles.splitPanel, styles.softPanel]} padding={26}>
+              <View style={[styles.ecoIconWrap, { backgroundColor: CultureTokens.coral + '15', marginBottom: 16 }]}>
+                <Ionicons name="business" size={24} color={CultureTokens.coral} />
+              </View>
               <Text style={styles.panelTitle}>For Cities & Councils</Text>
               <Text style={styles.body}>Community infrastructure, city-level cultural promotion, institutional profiles, and transparent revenue share.</Text>
               <View style={styles.panelCta}><Button variant="outline" onPress={() => router.push('/help')}>Partner With Us</Button></View>
@@ -223,7 +237,7 @@ export default function Get2KnowPage() {
           <View style={styles.monetizationList}>
             {MONETIZATION.map((item) => (
               <View key={item} style={styles.bulletRow}>
-                <Ionicons name="checkmark-circle" size={16} color="#2A9D8F" />
+                <Ionicons name="checkmark-circle" size={18} color={CultureTokens.success} />
                 <Text style={styles.body}>{item}</Text>
               </View>
             ))}
@@ -231,7 +245,7 @@ export default function Get2KnowPage() {
         </Section>
 
         <Section title="Vision" subtitle="Not just events. Infrastructure." spacing={sectionY} sidePad={sidePad}>
-          <Card padding={24}>
+          <Card padding={28}>
             <Text style={styles.vision}>CulturePass is building the global diaspora operating system — Multi-City, Multi-Community, Multi-Country, Franchise-Ready.</Text>
           </Card>
         </Section>
@@ -275,8 +289,6 @@ function Section({
   centered?: boolean;
   children: React.ReactNode;
 }) {
-  const colors = useColors();
-  const styles = getStyles(colors);
   return (
     <View style={[surface ? styles.surfaceSection : undefined, { marginTop: spacing }]}> 
       <View style={[styles.container, { paddingHorizontal: sidePad }]}> 
@@ -288,11 +300,10 @@ function Section({
   );
 }
 
-// Move useColors inside a component to avoid top-level hook violation
-const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#0B0B14',
   },
   container: {
     width: '100%',
@@ -309,51 +320,79 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   heroContent: {
     gap: 24,
   },
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    alignSelf: 'flex-start',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    marginBottom: 16,
+  },
+  backBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontFamily: 'Poppins_600SemiBold',
+  },
   heroTitle: {
     color: '#FFFFFF',
     fontSize: 42,
     lineHeight: 50,
-    fontWeight: '700',
+    fontFamily: 'Poppins_700Bold',
     maxWidth: 760,
     letterSpacing: -0.3,
   },
   heroTitleDesktop: {
-    fontSize: 64,
-    lineHeight: 72,
+    fontSize: 54,
+    lineHeight: 64,
     letterSpacing: -0.6,
   },
   heroSubtitle: {
-    color: 'rgba(255,255,255,0.9)',
-    fontSize: 20,
-    lineHeight: 30,
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 18,
+    lineHeight: 28,
+    fontFamily: 'Poppins_400Regular',
     maxWidth: 760,
   },
   heroButtonRow: {
     flexDirection: 'row',
     gap: 16,
     flexWrap: 'wrap',
+    marginTop: 8,
   },
   trustRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 16,
+    marginTop: 10,
   },
   trustItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   trustText: {
     color: '#FFFFFF',
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: 'Poppins_500Medium',
   },
   qrPromoCard: {
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#EAEAEA',
-    backgroundColor: colors.surface,
-    maxWidth: 560,
+    borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    maxWidth: 600,
+    marginTop: 20,
   },
   qrHeader: {
     flexDirection: 'row',
@@ -362,90 +401,103 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     gap: 12,
   },
   qrTitle: {
-    color: '#111111',
+    color: '#FFFFFF',
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: 'Poppins_700Bold',
   },
   qrSubtitle: {
-    color: '#6B7280',
+    color: 'rgba(255,255,255,0.6)',
     fontSize: 14,
+    fontFamily: 'Poppins_400Regular',
     marginTop: 4,
   },
   qrPreview: {
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#EAEAEA',
-    backgroundColor: '#F7F7F7',
-    paddingVertical: 14,
-    marginTop: 14,
+    borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    paddingVertical: 24,
+    marginTop: 16,
   },
   qrActions: {
-    marginTop: 14,
-    gap: 10,
+    marginTop: 16,
+    gap: 12,
   },
   h2: {
-    color: '#111111',
-    fontSize: 36,
-    lineHeight: 44,
-    fontWeight: '600',
+    color: '#FFFFFF',
+    fontSize: 32,
+    lineHeight: 40,
+    fontFamily: 'Poppins_700Bold',
   },
   subhead: {
-    color: '#4B5563',
-    fontSize: 18,
-    lineHeight: 28,
-    marginTop: 14,
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 16,
+    lineHeight: 24,
+    fontFamily: 'Poppins_400Regular',
+    marginTop: 10,
     maxWidth: 760,
   },
   sectionBody: {
-    marginTop: 28,
+    marginTop: 32,
   },
   surfaceSection: {
-    backgroundColor: '#F7F7F7',
+    backgroundColor: 'rgba(255,255,255,0.02)',
     paddingVertical: 48,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
   },
   split: {
     gap: 24,
   },
   splitDesktop: {
     flexDirection: 'row',
-    alignItems: 'stretch',
+    alignItems: 'center',
+    gap: 40,
   },
   splitCol: {
     flex: 1,
-    gap: 12,
+    gap: 16,
   },
   problemImage: {
     flex: 1,
-    minHeight: 260,
-    borderRadius: 24,
-    backgroundColor: '#EEE',
+    minHeight: 280,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   bulletRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
   },
   bulletDot: {
     width: 8,
     height: 8,
-    borderRadius: 99,
-    backgroundColor: '#124E78',
-    marginTop: 8,
+    borderRadius: 4,
+    backgroundColor: CultureTokens.indigo,
   },
   body: {
     flex: 1,
-    color: '#374151',
-    fontSize: 16,
-    lineHeight: 24,
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 15,
+    fontFamily: 'Poppins_500Medium',
+    lineHeight: 22,
   },
   bridge: {
     marginTop: 10,
-    color: '#0B3C5D',
-    fontSize: 18,
-    lineHeight: 26,
-    fontWeight: '700',
+    color: CultureTokens.saffron,
+    fontSize: 20,
+    lineHeight: 28,
+    fontFamily: 'Poppins_700Bold',
   },
   grid4: {
     gap: 16,
@@ -455,24 +507,32 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     flexWrap: 'wrap',
   },
   ecoCard: {
-    minWidth: 240,
+    minWidth: 260,
     flexGrow: 1,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#EAEAEA',
-    backgroundColor: colors.surface,
-    gap: 10,
+    borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    gap: 12,
+  },
+  ecoIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   cardTitle: {
-    marginTop: 8,
-    color: '#111111',
-    fontSize: 22,
-    lineHeight: 30,
-    fontWeight: '600',
+    marginTop: 4,
+    color: '#FFFFFF',
+    fontSize: 20,
+    lineHeight: 28,
+    fontFamily: 'Poppins_700Bold',
   },
   cardLine: {
-    color: '#4B5563',
-    fontSize: 16,
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 15,
+    fontFamily: 'Poppins_400Regular',
     lineHeight: 24,
   },
   stepsWrap: {
@@ -485,119 +545,129 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   stepCard: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#EAEAEA',
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 20,
-    gap: 10,
+    borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 20,
+    padding: 24,
+    gap: 14,
   },
   stepBadge: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F4A261',
   },
   stepBadgeText: {
-    color: '#FFFFFF',
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: 'Poppins_700Bold',
   },
   stepTitle: {
-    color: '#111111',
+    color: '#FFFFFF',
     fontSize: 18,
     lineHeight: 26,
-    fontWeight: '600',
+    fontFamily: 'Poppins_700Bold',
   },
   stepText: {
-    color: '#4B5563',
-    fontSize: 15,
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 14,
     lineHeight: 22,
+    fontFamily: 'Poppins_400Regular',
   },
   previewRow: {
-    gap: 24,
+    gap: 20,
     paddingRight: 4,
   },
   previewImage: {
-    width: 260,
-    height: 520,
+    width: 280,
+    height: 580,
     borderRadius: 24,
-    backgroundColor: '#EAEAEA',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   inlineCta: {
-    marginTop: 24,
+    marginTop: 28,
     alignItems: 'flex-start',
   },
   splitPanel: {
     flex: 1,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#EAEAEA',
-    backgroundColor: colors.surface,
+    borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.03)',
     gap: 12,
   },
   softPanel: {
-    backgroundColor: '#F7F7F7',
+    backgroundColor: 'rgba(255,255,255,0.02)',
   },
   panelTitle: {
-    color: '#111111',
-    fontSize: 24,
-    lineHeight: 32,
-    fontWeight: '600',
+    color: '#FFFFFF',
+    fontSize: 22,
+    lineHeight: 30,
+    fontFamily: 'Poppins_700Bold',
   },
   panelCta: {
-    marginTop: 8,
+    marginTop: 12,
     alignItems: 'flex-start',
   },
   monetizationList: {
     borderWidth: 1,
-    borderColor: '#EAEAEA',
+    borderColor: 'rgba(255,255,255,0.1)',
     borderRadius: 20,
-    backgroundColor: colors.surface,
-    padding: 20,
-    gap: 12,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    padding: 24,
+    gap: 14,
   },
   vision: {
-    color: '#111111',
-    fontSize: 20,
-    lineHeight: 32,
-    fontWeight: '500',
+    color: '#FFFFFF',
+    fontSize: 18,
+    lineHeight: 30,
+    fontFamily: 'Poppins_500Medium',
   },
   finalCta: {
-    borderRadius: 20,
-    backgroundColor: '#0B3C5D',
-    padding: 28,
+    borderRadius: 24,
+    backgroundColor: CultureTokens.indigo,
+    padding: 32,
     gap: 16,
+    shadowColor: CultureTokens.indigo,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 8,
   },
   finalTitle: {
-    color: '#FFFFFF',
-    fontSize: 36,
-    lineHeight: 44,
-    fontWeight: '700',
+    color: '#0B0B14',
+    fontSize: 32,
+    lineHeight: 40,
+    fontFamily: 'Poppins_700Bold',
+    letterSpacing: -0.5,
   },
   finalButtonRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
+    marginTop: 8,
   },
   finalNote: {
-    color: 'rgba(255,255,255,0.8)',
+    color: 'rgba(11,11,20,0.7)',
     fontSize: 14,
     lineHeight: 20,
+    fontFamily: 'Poppins_600SemiBold',
+    marginTop: 4,
   },
   stackFooter: {
-    marginTop: 48,
+    marginTop: 64,
     paddingTop: 32,
     borderTopWidth: 1,
-    borderTopColor: '#EAEAEA',
+    borderTopColor: 'rgba(255,255,255,0.1)',
   },
   footerTitle: {
-    color: '#111111',
+    color: '#FFFFFF',
     fontSize: 16,
     lineHeight: 24,
-    fontWeight: '700',
-    marginBottom: 12,
+    fontFamily: 'Poppins_700Bold',
+    marginBottom: 16,
   },
   footerWrap: {
     flexDirection: 'row',
@@ -605,9 +675,14 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     gap: 12,
   },
   footerItem: {
-    color: '#6B7280',
+    color: 'rgba(255,255,255,0.5)',
     fontSize: 13,
     lineHeight: 19,
+    fontFamily: 'Poppins_500Medium',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
   },
   center: {
     textAlign: 'center',

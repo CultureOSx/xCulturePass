@@ -18,7 +18,7 @@ import QRCode from 'react-native-qrcode-svg';
 import * as Haptics from 'expo-haptics';
 import { useMemo, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useColors } from '@/hooks/useColors';
+import { CultureTokens } from '@/constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH - 48;
@@ -28,12 +28,12 @@ function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-const TIER_CONFIG: Record<string, { gradient: string[]; label: string; icon: string; accent: string }> = {
-  free:    { gradient: ['#636366', '#48484A'], label: 'Standard', icon: 'shield-outline', accent: '#8E8E93' },
-  plus:    { gradient: ['#3498DB', '#2471A3'], label: 'Plus',     icon: 'star',           accent: '#3498DB' },
-  premium: { gradient: ['#F4A623', '#D4871E'], label: 'Premium',  icon: 'diamond',        accent: '#F4A623' },
-  pro:     { gradient: ['#3498DB', '#2471A3'], label: 'Pro',      icon: 'star',           accent: '#3498DB' },
-  vip:     { gradient: ['#F4A623', '#D4871E'], label: 'VIP',      icon: 'diamond',        accent: '#F4A623' },
+const TIER_CONFIG: Record<string, { label: string; icon: string; accent: string }> = {
+  free:    { label: 'Standard', icon: 'shield-outline', accent: 'rgba(255,255,255,0.6)' },
+  plus:    { label: 'Plus',     icon: 'star',           accent: CultureTokens.indigo },
+  premium: { label: 'Premium',  icon: 'diamond',        accent: CultureTokens.gold },
+  pro:     { label: 'Pro',      icon: 'star',           accent: CultureTokens.indigo },
+  vip:     { label: 'VIP',      icon: 'diamond',        accent: CultureTokens.saffron },
 };
 
 const CORNER_SIZE  = 18;
@@ -43,7 +43,6 @@ export default function QRScreen() {
   const insets      = useSafeAreaInsets();
   const topInset    = Platform.OS === 'web' ? 0 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
-  const colors = useColors(); // Ensure colors is defined before styles
   const [copied, setCopied] = useState(false);
 
   const { data: usersData } = useQuery<User[]>({ queryKey: ['/api/users'] });
@@ -91,24 +90,24 @@ export default function QRScreen() {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: topInset, backgroundColor: colors.background }]}> 
+    <View style={[styles.container, { paddingTop: topInset }]}> 
       <View style={styles.header}> 
-        <Pressable style={[styles.backBtn, { backgroundColor: colors.surface }]} onPress={() => router.back()}> 
-          <Ionicons name="chevron-back" size={22} color={colors.text} /> 
+        <Pressable style={styles.backBtn} onPress={() => router.back()}> 
+          <Ionicons name="chevron-back" size={22} color="#FFFFFF" /> 
         </Pressable>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>CulturePass Digital ID</Text> 
-        <Pressable style={[styles.headerAction, { backgroundColor: colors.primaryGlow }]} onPress={() => router.push('/scanner')}> 
-          <Ionicons name="scan-outline" size={20} color={colors.primary} /> 
+        <Text style={styles.headerTitle}>CulturePass Digital ID</Text> 
+        <Pressable style={styles.headerAction} onPress={() => router.push('/scanner')}> 
+          <Ionicons name="scan-outline" size={20} color={CultureTokens.indigo} /> 
         </Pressable>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomInset + 40 }]}> 
         {/* ID card */}
-        <View style={[styles.cardOuter, { shadowColor: '#000' }]}> 
-          <View style={[styles.card, { backgroundColor: colors.surface }]}> 
+        <View style={styles.cardOuter}> 
+          <View style={styles.card}> 
             {/* Dark header — intentionally always dark (card design) */}
             <LinearGradient 
-              colors={['#1A1A2E', '#16213E', '#0F3460']} 
+              colors={['#1A1A2E', '#16213E', '#0B0B14']} 
               start={{ x: 0, y: 0 }} 
               end={{ x: 1, y: 1 }} 
               style={styles.cardTop} 
@@ -121,15 +120,15 @@ export default function QRScreen() {
               <View style={styles.cardHeaderRow}> 
                 <View style={styles.brandRow}> 
                   <View style={styles.logoMark}> 
-                    <Ionicons name="globe" size={14} color={colors.textInverse} />
+                    <Ionicons name="globe" size={14} color="#FFFFFF" />
                   </View>
                   <View>
-                    <Text style={[styles.brandName, { color: colors.textInverse }]}>CULTUREPASS</Text> 
-                    <Text style={[styles.brandSub, { color: colors.textInverse + '80' }]}>DIGITAL ID</Text> 
+                    <Text style={styles.brandName}>CULTUREPASS</Text> 
+                    <Text style={styles.brandSub}>DIGITAL ID</Text> 
                   </View>
                 </View>
-                <View style={[styles.tierBadge, { backgroundColor: tierConf.accent + '30' }]}> 
-                  <Ionicons name={tierConf.icon as never} size={11} color={tierConf.accent} />
+                <View style={[styles.tierBadge, { backgroundColor: tierConf.accent + '20' }]}> 
+                  <Ionicons name={tierConf.icon as never} size={12} color={tierConf.accent} />
                   <Text style={[styles.tierText, { color: tierConf.accent }]}>{tierConf.label}</Text> 
                 </View>
               </View>
@@ -138,31 +137,31 @@ export default function QRScreen() {
               <View style={styles.userSection}> 
                 <View style={styles.avatarRing}> 
                   <View style={styles.avatarInner}> 
-                    <Text style={[styles.avatarInitials, { color: colors.textInverse }]}> 
+                    <Text style={styles.avatarInitials}> 
                       {(displayName || 'U').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
                     </Text>
                   </View>
                 </View>
                 <View style={styles.userDetails}> 
-                  <Text style={[styles.userName, { color: colors.textInverse }]} numberOfLines={1}>{displayName}</Text> 
-                  <Text style={[styles.userHandle, { color: colors.textInverse + '99' }]}>@{username}</Text> 
+                  <Text style={styles.userName} numberOfLines={1}>{displayName}</Text> 
+                  <Text style={styles.userHandle}>@{username}</Text> 
                 </View>
               </View>
 
               <View style={styles.metaRow}> 
                 <View style={styles.metaItem}> 
-                  <Text style={[styles.metaText, { color: colors.textInverse + '99' }]}>{cpid}</Text> 
+                  <Text style={styles.metaText}>{cpid}</Text> 
                 </View> 
-                <View style={[styles.metaDot, { backgroundColor: colors.textInverse + '4D' }]} /> 
+                <View style={styles.metaDot} /> 
                 <View style={styles.metaItem}> 
-                  <Ionicons name="calendar-outline" size={12} color={colors.textInverse + '99'} /> 
-                  <Text style={[styles.metaText, { color: colors.textInverse + '99' }]}>{memberSince}</Text> 
+                  <Ionicons name="calendar-outline" size={12} color="rgba(255,255,255,0.6)" /> 
+                  <Text style={styles.metaText}>{memberSince}</Text> 
                 </View> 
               </View>
             </LinearGradient>
 
             {/* QR section */} 
-            <View style={[styles.qrSection, { backgroundColor: colors.surface }]}> 
+            <View style={styles.qrSection}> 
               <View style={styles.qrContainer}> 
                 {[styles.cornerTL, styles.cornerTR, styles.cornerBL, styles.cornerBR].map((cs, i) => ( 
                   <View key={i} style={[cs, { borderColor: '#1A1A2E' }]} /> 
@@ -171,23 +170,23 @@ export default function QRScreen() {
                   <QRCode value={qrValue} size={QR_SIZE} color="#1A1A2E" backgroundColor="#FFFFFF" ecl="H" /> 
                 </View> 
               </View> 
-              <Text style={[styles.scanLabel, { color: colors.textSecondary }]}>Scan to verify identity</Text> 
+              <Text style={styles.scanLabel}>Scan to verify identity</Text> 
             </View> 
 
             {/* Card bottom */} 
             <View style={styles.cardBottom}> 
-              <View style={[styles.bottomDivider, { backgroundColor: colors.borderLight }]} /> 
+              <View style={styles.bottomDivider} /> 
               <View style={styles.bottomRow}> 
                 <View style={styles.verifiedRow}> 
-                  <Ionicons name="shield-checkmark" size={15} color={colors.success} /> 
-                  <Text style={[styles.verifiedText, { color: colors.success }]}>Verified Member</Text> 
+                  <Ionicons name="shield-checkmark" size={16} color={CultureTokens.success} /> 
+                  <Text style={[styles.verifiedText, { color: CultureTokens.success }]}>Verified Member</Text> 
                 </View> 
                 <View style={styles.chipRow}> 
-                  <View style={[styles.nfcChip, { backgroundColor: colors.borderLight, borderColor: colors.border }]}> 
-                    <Ionicons name="wifi" size={10} color={colors.textInverse + '66'} style={{ transform: [{ rotate: '90deg' }] }} /> 
+                  <View style={styles.nfcChip}> 
+                    <Ionicons name="wifi" size={12} color="rgba(255,255,255,0.4)" style={{ transform: [{ rotate: '90deg' }] }} /> 
                   </View> 
-                  <View style={[styles.hologram, { backgroundColor: colors.primaryGlow }]}> 
-                    <Ionicons name="finger-print" size={16} color={colors.primary + '35'} /> 
+                  <View style={styles.hologram}> 
+                    <Ionicons name="finger-print" size={18} color={CultureTokens.indigo} /> 
                   </View> 
                 </View> 
               </View> 
@@ -197,11 +196,11 @@ export default function QRScreen() {
 
         {/* CPID row */}
         <View style={styles.cpidSection}>
-          <Text style={[styles.cpidLabel, { color: colors.textSecondary }]}>CULTUREPASS ID</Text>
-          <Pressable onPress={handleCopy} style={[styles.cpidRow, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.cpidValue, { color: colors.text }]}>{cpid}</Text>
-            <View style={[styles.cpidCopyBtn, { backgroundColor: copied ? colors.success : colors.primaryGlow }]}>
-              <Ionicons name={copied ? 'checkmark' : 'copy-outline'} size={16} color={copied ? colors.textInverse : colors.primary} />
+          <Text style={styles.cpidLabel}>CULTUREPASS ID</Text>
+          <Pressable onPress={handleCopy} style={styles.cpidRow}>
+            <Text style={styles.cpidValue}>{cpid}</Text>
+            <View style={[styles.cpidCopyBtn, { backgroundColor: copied ? CultureTokens.success : CultureTokens.indigo + '20' }]}>
+              <Ionicons name={copied ? 'checkmark' : 'copy-outline'} size={18} color={copied ? '#0B0B14' : CultureTokens.indigo} />
             </View>
           </Pressable>
         </View>
@@ -209,24 +208,24 @@ export default function QRScreen() {
         {/* Action grid */}
         <View style={styles.actionsGrid}>
           {[
-            { icon: 'share-outline', title: 'Share', desc: 'Send your ID', bg: colors.primaryGlow,      color: colors.primary,    onPress: handleShare },
-            { icon: 'copy-outline',  title: 'Copy',  desc: 'Copy CPID',   bg: colors.secondary + '15', color: colors.secondary,  onPress: handleCopy  },
-            { icon: 'scan-outline',  title: 'Scan',  desc: 'Scan others', bg: colors.accent + '15',    color: colors.accent,     onPress: () => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/scanner'); } },
+            { icon: 'share-outline', title: 'Share', desc: 'Send your ID', bg: CultureTokens.indigo + '15',      color: CultureTokens.indigo,    onPress: handleShare },
+            { icon: 'copy-outline',  title: 'Copy',  desc: 'Copy CPID',   bg: CultureTokens.saffron + '15', color: CultureTokens.saffron,  onPress: handleCopy  },
+            { icon: 'scan-outline',  title: 'Scan',  desc: 'Scan others', bg: CultureTokens.coral + '15',    color: CultureTokens.coral,     onPress: () => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/scanner'); } },
           ].map(btn => (
-            <Pressable key={btn.title} style={[styles.actionCard, { backgroundColor: colors.surface }]} onPress={btn.onPress}>
+            <Pressable key={btn.title} style={styles.actionCard} onPress={btn.onPress}>
               <View style={[styles.actionIcon, { backgroundColor: btn.bg }]}>
-                <Ionicons name={btn.icon as never} size={22} color={btn.color} />
+                <Ionicons name={btn.icon as never} size={24} color={btn.color} />
               </View>
-              <Text style={[styles.actionTitle, { color: colors.text }]}>{btn.title}</Text>
-              <Text style={[styles.actionDesc, { color: colors.text }]}>{btn.desc}</Text>
+              <Text style={styles.actionTitle}>{btn.title}</Text>
+              <Text style={styles.actionDesc}>{btn.desc}</Text>
             </Pressable>
           ))}
         </View>
 
         {/* Info card */}
-        <View style={[styles.infoCard, { backgroundColor: colors.surface }]}>
-          <Ionicons name="information-circle-outline" size={18} color={colors.primary} style={{ marginTop: 1 }} />
-          <Text style={[styles.infoText, { color: colors.text }]}> 
+        <View style={styles.infoCard}>
+          <Ionicons name="information-circle-outline" size={20} color={CultureTokens.indigo} style={{ marginTop: 2 }} />
+          <Text style={styles.infoText}> 
             Your CulturePass Digital ID is a unique identifier that can be scanned at events, venues, and partner locations for quick check-in and verification.
           </Text>
         </View>
@@ -236,68 +235,68 @@ export default function QRScreen() {
 }
 
 const styles = StyleSheet.create({
-  container:    { flex: 1 },
-  header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
-  backBtn:      { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  headerTitle:  { fontFamily: 'Poppins_700Bold', fontSize: 17 },
-  headerAction: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  scrollContent:{ paddingHorizontal: 24, paddingTop: 4 },
+  container:    { flex: 1, backgroundColor: '#0B0B14' },
+  header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
+  backBtn:      { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  headerTitle:  { fontFamily: 'Poppins_700Bold', fontSize: 18, color: '#FFFFFF' },
+  headerAction: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: CultureTokens.indigo + '20', borderWidth: 1, borderColor: CultureTokens.indigo + '40' },
+  scrollContent:{ paddingHorizontal: 20, paddingTop: 16 },
 
-  cardOuter: { borderRadius: 24, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 20, elevation: 10 },
-  card:      { borderRadius: 24, overflow: 'hidden' },
+  cardOuter: { borderRadius: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 20, elevation: 10 },
+  card:      { borderRadius: 24, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   cardTop:   { paddingHorizontal: 22, paddingTop: 22, paddingBottom: 20, overflow: 'hidden', position: 'relative' },
   cardPattern:  { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
   patternCircle1:{ position: 'absolute', top: -40, right: -30, width: 120, height: 120, borderRadius: 60, backgroundColor: 'rgba(255,255,255,0.03)' },
   patternCircle2:{ position: 'absolute', bottom: -20, left: -20, width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(255,255,255,0.02)' },
-  cardHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 },
-  brandRow:    { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  logoMark:    { width: 30, height: 30, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  brandName:   { fontFamily: 'Poppins_700Bold', fontSize: 13, letterSpacing: 2 },
-  brandSub:    { fontFamily: 'Poppins_400Regular', fontSize: 9, letterSpacing: 3, marginTop: -1 },
-  tierBadge:   { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
-  tierText:    { fontFamily: 'Poppins_600SemiBold', fontSize: 11 },
-  userSection: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 14 },
-  avatarRing:  { width: 50, height: 50, borderRadius: 25, borderWidth: 2, borderColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' },
-  avatarInner: { width: 42, height: 42, borderRadius: 21, backgroundColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center' },
-  avatarInitials:{ fontFamily: 'Poppins_700Bold', fontSize: 16 },
+  cardHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
+  brandRow:    { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  logoMark:    { width: 34, height: 34, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  brandName:   { fontFamily: 'Poppins_700Bold', fontSize: 14, letterSpacing: 2, color: '#FFFFFF' },
+  brandSub:    { fontFamily: 'Poppins_400Regular', fontSize: 10, letterSpacing: 3, marginTop: -1, color: 'rgba(255,255,255,0.5)' },
+  tierBadge:   { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  tierText:    { fontFamily: 'Poppins_600SemiBold', fontSize: 12 },
+  userSection: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 16 },
+  avatarRing:  { width: 56, height: 56, borderRadius: 28, borderWidth: 2, borderColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' },
+  avatarInner: { width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' },
+  avatarInitials:{ fontFamily: 'Poppins_700Bold', fontSize: 18, color: '#FFFFFF' },
   userDetails: { flex: 1 },
-  userName:    { fontFamily: 'Poppins_700Bold', fontSize: 20, letterSpacing: -0.3 },
-  userHandle:  { fontFamily: 'Poppins_400Regular', fontSize: 13, marginTop: 1 },
-  metaRow:     { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  metaItem:    { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  metaDot:     { width: 3, height: 3, borderRadius: 1.5 },
-  metaText:    { fontFamily: 'Poppins_500Medium', fontSize: 12 },
+  userName:    { fontFamily: 'Poppins_700Bold', fontSize: 22, letterSpacing: -0.3, color: '#FFFFFF' },
+  userHandle:  { fontFamily: 'Poppins_400Regular', fontSize: 14, marginTop: 2, color: 'rgba(255,255,255,0.6)' },
+  metaRow:     { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  metaItem:    { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  metaDot:     { width: 4, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.3)' },
+  metaText:    { fontFamily: 'Poppins_500Medium', fontSize: 13, color: 'rgba(255,255,255,0.6)' },
 
-  qrSection:   { alignItems: 'center', paddingVertical: 26, paddingHorizontal: 24 },
-  qrContainer: { position: 'relative', padding: 14, marginBottom: 12 },
+  qrSection:   { alignItems: 'center', paddingVertical: 28, paddingHorizontal: 24, backgroundColor: 'transparent' },
+  qrContainer: { position: 'relative', padding: 16, marginBottom: 16, backgroundColor: '#FFFFFF', borderRadius: 8 },
   cornerTL:    { position: 'absolute', top: 0, left: 0, width: CORNER_SIZE, height: CORNER_SIZE, borderTopWidth: CORNER_WIDTH, borderLeftWidth: CORNER_WIDTH, borderTopLeftRadius: 5 },
   cornerTR:    { position: 'absolute', top: 0, right: 0, width: CORNER_SIZE, height: CORNER_SIZE, borderTopWidth: CORNER_WIDTH, borderRightWidth: CORNER_WIDTH, borderTopRightRadius: 5 },
   cornerBL:    { position: 'absolute', bottom: 0, left: 0, width: CORNER_SIZE, height: CORNER_SIZE, borderBottomWidth: CORNER_WIDTH, borderLeftWidth: CORNER_WIDTH, borderBottomLeftRadius: 5 },
   cornerBR:    { position: 'absolute', bottom: 0, right: 0, width: CORNER_SIZE, height: CORNER_SIZE, borderBottomWidth: CORNER_WIDTH, borderRightWidth: CORNER_WIDTH, borderBottomRightRadius: 5 },
-  qrInner:     { padding: 10, borderRadius: 6 },
-  scanLabel:   { fontFamily: 'Poppins_500Medium', fontSize: 12, letterSpacing: 0.5 },
+  qrInner:     { padding: 12, borderRadius: 6, backgroundColor: '#FFFFFF' },
+  scanLabel:   { fontFamily: 'Poppins_500Medium', fontSize: 13, letterSpacing: 0.5, color: 'rgba(255,255,255,0.5)' },
 
-  cardBottom:  { paddingHorizontal: 22, paddingBottom: 18 },
-  bottomDivider:{ height: 1, marginBottom: 12 },
+  cardBottom:  { paddingHorizontal: 24, paddingBottom: 20 },
+  bottomDivider:{ height: 1, marginBottom: 16, backgroundColor: 'rgba(255,255,255,0.1)' },
   bottomRow:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  verifiedRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  verifiedText:{ fontFamily: 'Poppins_500Medium', fontSize: 12 },
-  chipRow:     { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  nfcChip:     { width: 24, height: 18, borderRadius: 3, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-  hologram:    { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  verifiedRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  verifiedText:{ fontFamily: 'Poppins_500Medium', fontSize: 13 },
+  chipRow:     { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  nfcChip:     { width: 28, height: 20, borderRadius: 4, alignItems: 'center', justifyContent: 'center', borderWidth: 1, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.2)' },
+  hologram:    { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: CultureTokens.indigo + '15' },
 
-  cpidSection: { alignItems: 'center', marginTop: 24, marginBottom: 4 },
-  cpidLabel:   { fontFamily: 'Poppins_500Medium', fontSize: 10, letterSpacing: 2.5, marginBottom: 8 },
-  cpidRow:     { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 16 },
-  cpidValue:   { fontFamily: 'Poppins_700Bold', fontSize: 22, letterSpacing: 3 },
-  cpidCopyBtn: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  cpidSection: { alignItems: 'center', marginTop: 32, marginBottom: 8 },
+  cpidLabel:   { fontFamily: 'Poppins_500Medium', fontSize: 11, letterSpacing: 2.5, marginBottom: 10, color: 'rgba(255,255,255,0.5)' },
+  cpidRow:     { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  cpidValue:   { fontFamily: 'Poppins_700Bold', fontSize: 24, letterSpacing: 3, color: '#FFFFFF' },
+  cpidCopyBtn: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
 
-  actionsGrid: { flexDirection: 'row', gap: 12, marginTop: 24 },
-  actionCard:  { flex: 1, alignItems: 'center', borderRadius: 18, paddingVertical: 18, paddingHorizontal: 8 },
-  actionIcon:  { width: 46, height: 46, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-  actionTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, marginBottom: 2 },
-  actionDesc:  { fontFamily: 'Poppins_400Regular', fontSize: 11 },
+  actionsGrid: { flexDirection: 'row', gap: 16, marginTop: 24 },
+  actionCard:  { flex: 1, alignItems: 'center', borderRadius: 20, paddingVertical: 20, paddingHorizontal: 10, backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  actionIcon:  { width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  actionTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, marginBottom: 4, color: '#FFFFFF' },
+  actionDesc:  { fontFamily: 'Poppins_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.5)', textAlign: 'center' },
 
-  infoCard:   { flexDirection: 'row', gap: 12, alignItems: 'flex-start', borderRadius: 16, padding: 16, marginTop: 24 },
-  infoText:   { flex: 1, fontFamily: 'Poppins_400Regular', fontSize: 13, lineHeight: 20 },
+  infoCard:   { flexDirection: 'row', gap: 14, alignItems: 'flex-start', borderRadius: 20, padding: 20, marginTop: 28, backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  infoText:   { flex: 1, fontFamily: 'Poppins_400Regular', fontSize: 14, lineHeight: 22, color: 'rgba(255,255,255,0.6)' },
 });

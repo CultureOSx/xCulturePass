@@ -18,10 +18,13 @@ import { goBackOrReplace } from '@/lib/navigation';
 import * as Haptics from 'expo-haptics';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient, getQueryFn } from '@/lib/query-client';
-import { useColors } from '@/hooks/useColors';
 import { useCallback, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ticket } from '@shared/schema';
+import { CultureTokens } from '@/constants/theme';
+import { LinearGradient } from 'expo-linear-gradient';
+
+const isWeb = Platform.OS === 'web';
 
 function formatDate(dateStr: string | null) {
   if (!dateStr) return '';
@@ -37,14 +40,12 @@ function formatDate(dateStr: string | null) {
 
 const QR_CACHE_PREFIX = '@culturepass_ticket_qr:';
 
-/** Cache a ticket's QR code URI so it is available offline at the venue. */
 function cacheTicketQr(ticketId: string, qrCode: string) {
   AsyncStorage.setItem(`${QR_CACHE_PREFIX}${ticketId}`, qrCode).catch((err) => {
     if (__DEV__) console.warn('QR cache write failed:', err);
   });
 }
 
-/** Retrieve a previously-cached QR code URI for offline fallback. */
 async function getCachedTicketQr(ticketId: string): Promise<string | null> {
   try {
     return await AsyncStorage.getItem(`${QR_CACHE_PREFIX}${ticketId}`);
@@ -56,11 +57,9 @@ async function getCachedTicketQr(ticketId: string): Promise<string | null> {
 export default function TicketDetailScreen() {
   const { id }      = useLocalSearchParams<{ id: string }>();
   const insets      = useSafeAreaInsets();
-  const topInset    = Platform.OS === 'web' ? 0 : insets.top;
-  const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
-  const colors      = useColors();
+  const topInset    = isWeb ? 0 : insets.top;
+  const bottomInset = isWeb ? 34 : insets.bottom;
 
-  // Offline QR code fallback: cached URI used when ticket.qrCode is unavailable
   const [cachedQr, setCachedQr] = useState<string | null>(null);
 
   const { data: ticket, isLoading } = useQuery<Ticket>({
@@ -69,16 +68,15 @@ export default function TicketDetailScreen() {
     enabled: !!id,
   });
 
-  // Cache the QR code whenever the ticket loads with one, and load cached QR on mount
   useEffect(() => {
     if (ticket?.qrCode && id) {
-      cacheTicketQr(id, ticket.qrCode);
+      cacheTicketQr(id as string, ticket.qrCode);
     }
   }, [ticket?.qrCode, id]);
 
   useEffect(() => {
     if (id) {
-      getCachedTicketQr(id).then(setCachedQr);
+      getCachedTicketQr(id as string).then(setCachedQr);
     }
   }, [id]);
 
@@ -90,7 +88,7 @@ export default function TicketDetailScreen() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/ticket', id] });
       queryClient.invalidateQueries({ queryKey: ['/api/tickets'] });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      if(!isWeb) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       const msg = data.refundId
         ? 'Your ticket has been cancelled and a refund has been initiated to your card.'
         : 'Your ticket has been cancelled.';
@@ -103,18 +101,19 @@ export default function TicketDetailScreen() {
 
   const handleCancel = useCallback(() => {
     if (!ticket) return;
-    const hasPayment = !!(ticket as unknown as Record<string, unknown>).stripePaymentIntentId;
+    const t = ticket as any;
+    const hasPayment = !!t.stripePaymentIntentId;
     const title = hasPayment ? 'Cancel & Refund' : 'Cancel Ticket';
     const message = hasPayment
-      ? `Are you sure you want to cancel your ticket for "${ticket.eventTitle}"? A refund will be processed to your card.`
-      : `Are you sure you want to cancel your ticket for "${ticket.eventTitle}"?`;
+      ? `Are you sure you want to cancel your ticket for "${t.eventTitle}"? A refund will be processed to your card.`
+      : `Are you sure you want to cancel your ticket for "${t.eventTitle}"?`;
     Alert.alert(title, message, [
       { text: 'Keep Ticket', style: 'cancel' },
       {
         text: hasPayment ? 'Cancel & Refund' : 'Cancel Ticket',
         style: 'destructive',
         onPress: () => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          if(!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
           cancelMutation.mutate(ticket.id);
         },
       },
@@ -123,11 +122,12 @@ export default function TicketDetailScreen() {
 
   const handleShare = useCallback(async () => {
     if (!ticket) return;
+    const t = ticket as any;
     try {
       const shareUrl = `https://culturepass.app/tickets/${ticket.id}`;
       await Share.share({
-        title: ticket.eventTitle,
-        message: `I'm going to ${ticket.eventTitle}! 🎫\n${ticket.eventVenue ? `📍 ${ticket.eventVenue}` : ''}\n${ticket.eventDate ? `📅 ${formatDate(ticket.eventDate)}` : ''}\n\nTicket Code: ${ticket.ticketCode || 'N/A'}\n\nGet yours on CulturePass!\n\n${shareUrl}`,
+        title: t.eventTitle,
+        message: `I'm going to ${t.eventTitle}! 🎫\n${t.eventVenue ? `📍 ${t.eventVenue}` : ''}\n${t.eventDate ? `📅 ${formatDate(t.eventDate)}` : ''}\n\nTicket Code: ${ticket.ticketCode || 'N/A'}\n\nGet yours on CulturePass!\n\n${shareUrl}`,
         url: shareUrl,
       });
     } catch {}
@@ -143,9 +143,10 @@ export default function TicketDetailScreen() {
 
   const handleAddToWallet = useCallback(async (walletType: 'apple' | 'google') => {
     if (!ticket) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const t = ticket as any;
+    if(!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const walletName = walletType === 'apple' ? 'Apple Wallet' : 'Google Wallet';
-    Alert.alert(`Add to ${walletName}`, `Your ticket for "${ticket.eventTitle}" will be added to ${walletName}.`, [
+    Alert.alert(`Add to ${walletName}`, `Your ticket for "${t.eventTitle}" will be added to ${walletName}.`, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Add',
@@ -167,24 +168,24 @@ export default function TicketDetailScreen() {
   }, [ticket]);
 
   const headerRow = (
-    <View style={s.header}>
-      <Pressable onPress={() => goBackOrReplace('/(tabs)')} style={[s.backBtn, { backgroundColor: colors.surface }]}>
-        <Ionicons name="chevron-back" size={22} color={colors.text} />
+    <View style={[s.header, { zIndex: 10 }]}>
+      <Pressable onPress={() => goBackOrReplace('/(tabs)')} style={({pressed}) => [s.backBtn, pressed && { transform: [{ scale: 0.95 }] }]}>
+        <Ionicons name="chevron-back" size={22} color="#FFFFFF" />
       </Pressable>
-      <Text style={[s.headerTitle, { color: colors.text }]}>Ticket Details</Text>
-      <Pressable onPress={handleShare} style={[s.backBtn, { backgroundColor: colors.surface }]}>
-        <Ionicons name="share-outline" size={20} color={colors.text} />
+      <Text style={s.headerTitle}>Ticket Details</Text>
+      <Pressable onPress={handleShare} style={({pressed}) => [s.backBtn, pressed && { transform: [{ scale: 0.95 }] }]}>
+        <Ionicons name="share-outline" size={20} color="#FFFFFF" />
       </Pressable>
     </View>
   );
 
   if (isLoading) {
     return (
-      <View style={[s.container, { paddingTop: topInset, backgroundColor: colors.background }]}>
+      <View style={[s.container, { paddingTop: topInset }]}>
         {headerRow}
         <View style={s.loadingState}>
-          <ActivityIndicator color={colors.primary} size="large" />
-          <Text style={[s.loadingText, { color: colors.textSecondary }]}>Loading ticket...</Text>
+          <ActivityIndicator color={CultureTokens.indigo} size="large" />
+          <Text style={s.loadingText}>Loading ticket...</Text>
         </View>
       </View>
     );
@@ -192,104 +193,123 @@ export default function TicketDetailScreen() {
 
   if (!ticket) {
     return (
-      <View style={[s.container, { paddingTop: topInset, backgroundColor: colors.background }]}>
+      <View style={[s.container, { paddingTop: topInset }]}>
         {headerRow}
         <View style={s.loadingState}>
-          <Ionicons name="ticket-outline" size={48} color={colors.textSecondary} />
-          <Text style={[s.emptyTitle, { color: colors.text }]}>Ticket Not Found</Text>
+          <View style={s.emptyIconContainer}>
+            <Ionicons name="ticket-outline" size={48} color="rgba(255,255,255,0.4)" />
+          </View>
+          <Text style={s.emptyTitle}>Ticket Not Found</Text>
           <Pressable onPress={() => goBackOrReplace('/(tabs)')}>
-            <Text style={[s.backLink, { color: colors.primary }]}>Go Back</Text>
+            <Text style={s.backLink}>Go Back</Text>
           </Pressable>
         </View>
       </View>
     );
   }
 
+  const t = ticket as any;
   const ticketStatus = ticket.status as string | null;
   const statusInfo =
-    ticketStatus === 'confirmed' ? { color: colors.success,      bg: colors.success + '12',      label: 'Confirmed',      icon: 'checkmark-circle' as const } :
-    ticketStatus === 'pending'   ? { color: colors.warning,      bg: colors.warning + '12',      label: 'Payment Pending',icon: 'time'             as const } :
-    ticketStatus === 'used'      ? { color: colors.textSecondary,bg: colors.textSecondary + '12',label: 'Scanned',        icon: 'checkmark-done'   as const } :
-    ticketStatus === 'cancelled' ? { color: colors.error,        bg: colors.error + '12',        label: 'Cancelled',      icon: 'close-circle'     as const } :
-    ticketStatus === 'expired'   ? { color: colors.warning,      bg: colors.warning + '12',      label: 'Expired',        icon: 'time'             as const } :
-                                   { color: colors.textSecondary, bg: colors.textSecondary + '12',label: ticketStatus || 'Unknown', icon: 'help-circle' as const };
+    ticketStatus === 'confirmed' ? { color: CultureTokens.teal,      bg: CultureTokens.teal + '20',      label: 'Confirmed',      icon: 'checkmark-circle' as const } :
+    ticketStatus === 'pending'   ? { color: CultureTokens.saffron,      bg: CultureTokens.saffron + '20',      label: 'Payment Pending',icon: 'time'             as const } :
+    ticketStatus === 'used'      ? { color: 'rgba(255,255,255,0.6)',bg: 'rgba(255,255,255,0.1)',label: 'Scanned',        icon: 'checkmark-done'   as const } :
+    ticketStatus === 'cancelled' ? { color: CultureTokens.coral,        bg: CultureTokens.coral + '20',        label: 'Cancelled',      icon: 'close-circle'     as const } :
+    ticketStatus === 'expired'   ? { color: CultureTokens.saffron,      bg: CultureTokens.saffron + '20',      label: 'Expired',        icon: 'time'             as const } :
+                                   { color: 'rgba(255,255,255,0.6)', bg: 'rgba(255,255,255,0.1)',label: ticketStatus || 'Unknown', icon: 'help-circle' as const };
 
   const isActive  = ticket.status === 'confirmed';
   const isScanned = ticket.status === 'used';
+  const bannerColor = t.imageColor || CultureTokens.indigo;
 
   return (
-    <View style={[s.container, { paddingTop: topInset, backgroundColor: colors.background }]}>
+    <View style={[s.container, { paddingTop: topInset }]}>
+      <LinearGradient 
+        colors={['rgba(44, 42, 114, 0.15)', 'transparent']} 
+        style={StyleSheet.absoluteFillObject} 
+        pointerEvents="none" 
+      />
       {headerRow}
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 + bottomInset }}>
         {/* Ticket card */}
-        <View style={[s.ticketContainer, { backgroundColor: colors.surface }]}>
-          <View style={[s.ticketTop, { backgroundColor: ticket.imageColor || colors.primary }]}>
+        <View style={s.ticketContainer}>
+          <View style={[s.ticketTop, { backgroundColor: bannerColor }]}>
+            <LinearGradient colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.5)']} style={StyleSheet.absoluteFillObject} />
             <View style={s.ticketTopOverlay}>
-              <View style={[s.statusBadge, { backgroundColor: statusInfo.bg }]}>
+              <View style={[s.statusBadge, { backgroundColor: statusInfo.bg, borderColor: statusInfo.color + '40', borderWidth: 1 }]}>
                 <Ionicons name={statusInfo.icon} size={14} color={statusInfo.color} />
                 <Text style={[s.statusText, { color: statusInfo.color }]}>{statusInfo.label}</Text>
               </View>
-              <Ionicons name="ticket" size={32} color="rgba(255,255,255,0.5)" />
+              <Ionicons name="ticket" size={32} color="rgba(255,255,255,0.8)" />
             </View>
           </View>
 
           {/* Tear notch */}
-          <View style={s.ticketNotch}>
-            <View style={[s.notchCircle, s.notchLeft, { backgroundColor: colors.background }]} />
-            <View style={[s.notchLine, { borderColor: colors.borderLight }]} />
-            <View style={[s.notchCircle, s.notchRight, { backgroundColor: colors.background }]} />
+          <View style={s.ticketNotchContainer}>
+             <View style={[s.ticketNotchBackground, { backgroundColor: '#0B0B14' }]} />
+             <View style={s.ticketNotch}>
+               <View style={[s.notchCircle, s.notchLeft]} />
+               <View style={s.notchLine} />
+               <View style={[s.notchCircle, s.notchRight]} />
+             </View>
           </View>
 
           <View style={s.ticketBody}>
-            <Text style={[s.eventTitle, { color: colors.text }]}>{ticket.eventTitle}</Text>
+            <Text style={s.eventTitle}>{t.eventTitle}</Text>
 
             <View style={s.infoGrid}>
-              {ticket.eventDate && (
+              {t.eventDate && (
                 <View style={s.infoItem}>
-                  <Ionicons name="calendar" size={16} color={colors.primary} />
+                  <View style={[s.infoIconWrap, { backgroundColor: CultureTokens.indigo + '15' }]}>
+                    <Ionicons name="calendar" size={16} color={CultureTokens.indigo} />
+                  </View>
                   <View>
-                    <Text style={[s.infoLabel, { color: colors.textSecondary }]}>Date</Text>
-                    <Text style={[s.infoValue, { color: colors.text }]}>{formatDate(ticket.eventDate)}</Text>
+                    <Text style={s.infoLabel}>Date</Text>
+                    <Text style={s.infoValue}>{formatDate(t.eventDate)}</Text>
                   </View>
                 </View>
               )}
-              {ticket.eventTime && (
+              {t.eventTime && (
                 <View style={s.infoItem}>
-                  <Ionicons name="time" size={16} color={colors.secondary} />
+                  <View style={[s.infoIconWrap, { backgroundColor: CultureTokens.saffron + '15' }]}>
+                    <Ionicons name="time" size={16} color={CultureTokens.saffron} />
+                  </View>
                   <View>
-                    <Text style={[s.infoLabel, { color: colors.textSecondary }]}>Time</Text>
-                    <Text style={[s.infoValue, { color: colors.text }]}>{ticket.eventTime}</Text>
+                    <Text style={s.infoLabel}>Time</Text>
+                    <Text style={s.infoValue}>{t.eventTime}</Text>
                   </View>
                 </View>
               )}
-              {ticket.eventVenue && (
+              {t.eventVenue && (
                 <View style={s.infoItem}>
-                  <Ionicons name="location" size={16} color={colors.accent} />
+                  <View style={[s.infoIconWrap, { backgroundColor: CultureTokens.teal + '15' }]}>
+                    <Ionicons name="location" size={16} color={CultureTokens.teal} />
+                  </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={[s.infoLabel, { color: colors.textSecondary }]}>Venue</Text>
-                    <Text style={[s.infoValue, { color: colors.text }]} numberOfLines={2}>{ticket.eventVenue}</Text>
+                    <Text style={s.infoLabel}>Venue</Text>
+                    <Text style={s.infoValue} numberOfLines={2}>{t.eventVenue}</Text>
                   </View>
                 </View>
               )}
             </View>
 
-            <View style={[s.divider, { backgroundColor: colors.borderLight }]} />
+            <View style={s.divider} />
 
             <View style={s.detailsRow}>
               {ticket.tierName && (
                 <View style={s.detailItem}>
-                  <Text style={[s.detailLabel, { color: colors.textSecondary }]}>Tier</Text>
-                  <Text style={[s.detailValue, { color: colors.text }]}>{ticket.tierName}</Text>
+                  <Text style={s.detailLabel}>Tier</Text>
+                  <Text style={s.detailValue}>{ticket.tierName}</Text>
                 </View>
               )}
               <View style={s.detailItem}>
-                <Text style={[s.detailLabel, { color: colors.textSecondary }]}>Quantity</Text>
-                <Text style={[s.detailValue, { color: colors.text }]}>{ticket.quantity || 1}</Text>
+                <Text style={s.detailLabel}>Quantity</Text>
+                <Text style={s.detailValue}>{ticket.quantity || 1}</Text>
               </View>
               <View style={s.detailItem}>
-                <Text style={[s.detailLabel, { color: colors.textSecondary }]}>Total</Text>
-                <Text style={[s.detailValue, { color: colors.primary }]}>
+                <Text style={s.detailLabel}>Total</Text>
+                <Text style={[s.detailValue, { color: CultureTokens.indigo }]}>
                   ${((ticket.totalPriceCents || 0) / 100).toFixed(2)}
                 </Text>
               </View>
@@ -297,27 +317,27 @@ export default function TicketDetailScreen() {
 
             {ticket.ticketCode && (
               <>
-                <View style={[s.divider, { backgroundColor: colors.borderLight }]} />
+                <View style={s.divider} />
                 <View style={s.qrSection}>
-                  <Text style={[s.qrTitle, { color: colors.text }]}> 
+                  <Text style={s.qrTitle}> 
                     {isScanned ? 'Ticket Scanned' : isActive ? 'Scan at Entry' : 'Ticket Code'}
                   </Text>
                   {(ticket.qrCode || cachedQr) && isActive ? (
-                    <View style={[s.qrImageContainer, { borderColor: colors.borderLight }]}>
-                      <Image source={{ uri: ticket.qrCode ?? cachedQr ?? '' }} style={s.qrImage} resizeMode="contain" />
+                    <View style={s.qrImageContainer}>
+                       <Image source={{ uri: ticket.qrCode ?? cachedQr ?? '' }} style={s.qrImage} resizeMode="contain" />
                     </View>
                   ) : isScanned ? (
                     <View style={s.scannedOverlay}>
-                      <Ionicons name="checkmark-circle" size={48} color={colors.textSecondary} />
-                      <Text style={[s.scannedText, { color: colors.textSecondary }]}>Checked In</Text>
-                      {ticket.scannedAt && (
-                        <Text style={[s.scannedTime, { color: colors.textSecondary }]}> 
-                          {new Date(ticket.scannedAt).toLocaleString('en-AU', { dateStyle: 'medium', timeStyle: 'short' })}
+                      <Ionicons name="checkmark-circle" size={48} color="rgba(255,255,255,0.4)" />
+                      <Text style={s.scannedText}>Checked In</Text>
+                      {t.scannedAt && (
+                        <Text style={s.scannedTime}> 
+                          {new Date(t.scannedAt).toLocaleString('en-AU', { dateStyle: 'medium', timeStyle: 'short' })}
                         </Text>
                       )}
                     </View>
                   ) : null}
-                  <Text style={[s.ticketCode, { color: colors.primary }]}>{ticket.ticketCode}</Text>
+                  <Text style={s.ticketCodeText}>{ticket.ticketCode}</Text>
                 </View>
               </>
             )}
@@ -327,15 +347,21 @@ export default function TicketDetailScreen() {
         {/* Add to wallet */}
         {isActive && (
           <View style={s.walletSection}>
-            <Text style={[s.walletTitle, { color: colors.text }]}>Add to Wallet</Text>
+            <Text style={s.walletTitle}>Add to Wallet</Text>
             <View style={s.walletButtons}>
-              {(Platform.OS === 'ios' || Platform.OS === 'web') && (
-                <Pressable style={[s.walletBtn, { backgroundColor: '#000' }]} onPress={() => handleAddToWallet('apple')}>
+              {(Platform.OS === 'ios' || isWeb) && (
+                <Pressable 
+                  style={({pressed}) => [s.walletBtn, { backgroundColor: '#111111', borderWidth: 1, borderColor: '#333' }, pressed && { opacity: 0.8 }]} 
+                  onPress={() => handleAddToWallet('apple')}
+                >
                   <Ionicons name="wallet" size={20} color="#FFF" />
                   <Text style={s.walletBtnText}>Apple Wallet</Text>
                 </Pressable>
               )}
-              <Pressable style={[s.walletBtn, { backgroundColor: '#4285F4' }]} onPress={() => handleAddToWallet('google')}>
+              <Pressable 
+                style={({pressed}) => [s.walletBtn, { backgroundColor: '#4285F4' }, pressed && { opacity: 0.8 }]} 
+                onPress={() => handleAddToWallet('google')}
+              >
                 <Ionicons name="logo-google" size={18} color="#FFF" />
                 <Text style={s.walletBtnText}>Google Wallet</Text>
               </Pressable>
@@ -344,43 +370,52 @@ export default function TicketDetailScreen() {
         )}
 
         {/* Actions list */}
-        <View style={[s.actionsSection, { backgroundColor: colors.surface }]}>
+        <View style={s.actionsSection}>
           <Pressable
-            style={[s.actionBtn, { borderBottomColor: colors.borderLight }]}
+            style={({pressed}) => [s.actionBtn, pressed && { backgroundColor: 'rgba(255,255,255,0.02)' }]}
             onPress={() => router.push({ pathname: '/event/[id]', params: { id: ticket.eventId } })}
           >
-            <View style={[s.actionIcon, { backgroundColor: colors.primaryGlow }]}>
-              <Ionicons name="calendar" size={18} color={colors.primary} />
+            <View style={[s.actionIcon, { backgroundColor: CultureTokens.indigo + '15' }]}>
+              <Ionicons name="calendar" size={18} color={CultureTokens.indigo} />
             </View>
-            <Text style={[s.actionText, { color: colors.text }]}>View Event</Text>
-            <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+            <Text style={s.actionText}>View Event</Text>
+            <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.4)" />
           </Pressable>
 
-          <Pressable style={[s.actionBtn, { borderBottomColor: colors.borderLight }]} onPress={handleShare}>
-            <View style={[s.actionIcon, { backgroundColor: colors.secondary + '12' }]}>
-              <Ionicons name="share-outline" size={18} color={colors.secondary} />
+          <Pressable 
+            style={({pressed}) => [s.actionBtn, pressed && { backgroundColor: 'rgba(255,255,255,0.02)' }]} 
+            onPress={handleShare}
+          >
+            <View style={[s.actionIcon, { backgroundColor: CultureTokens.saffron + '15' }]}>
+              <Ionicons name="share-outline" size={18} color={CultureTokens.saffron} />
             </View>
-            <Text style={[s.actionText, { color: colors.text }]}>Share Ticket</Text>
-            <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+            <Text style={s.actionText}>Share Ticket</Text>
+            <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.4)" />
           </Pressable>
 
           {(isActive || isScanned) && (
-            <Pressable style={[s.actionBtn, { borderBottomColor: colors.borderLight }]} onPress={handlePrint}>
-              <View style={[s.actionIcon, { backgroundColor: colors.warning + '12' }]}>
-                <Ionicons name="print-outline" size={18} color={colors.warning} />
+            <Pressable 
+               style={({pressed}) => [s.actionBtn, pressed && { backgroundColor: 'rgba(255,255,255,0.02)' }]} 
+               onPress={handlePrint}
+            >
+              <View style={[s.actionIcon, { backgroundColor: CultureTokens.teal + '15' }]}>
+                <Ionicons name="print-outline" size={18} color={CultureTokens.teal} />
               </View>
-              <Text style={[s.actionText, { color: colors.warning }]}>Print Ticket / Badge</Text>
-              <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+              <Text style={s.actionText}>Print Ticket / Badge</Text>
+              <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.4)" />
             </Pressable>
           )}
 
           {isActive && (
-            <Pressable style={[s.actionBtn, { borderBottomWidth: 0 }]} onPress={handleCancel}>
-              <View style={[s.actionIcon, { backgroundColor: colors.error + '12' }]}>
-                <Ionicons name="close-circle-outline" size={18} color={colors.error} />
+            <Pressable 
+              style={({pressed}) => [s.actionBtn, { borderBottomWidth: 0 }, pressed && { backgroundColor: 'rgba(255,255,255,0.02)' }]} 
+              onPress={handleCancel}
+            >
+              <View style={[s.actionIcon, { backgroundColor: CultureTokens.coral + '15' }]}>
+                <Ionicons name="close-circle-outline" size={18} color={CultureTokens.coral} />
               </View>
-              <Text style={[s.actionText, { color: colors.error }]}>Cancel Ticket</Text>
-              <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+              <Text style={[s.actionText, { color: CultureTokens.coral }]}>Cancel Ticket</Text>
+              <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.4)" />
             </Pressable>
           )}
         </View>
@@ -390,56 +425,61 @@ export default function TicketDetailScreen() {
 }
 
 const s = StyleSheet.create({
-  container:       { flex: 1 },
+  container:       { flex: 1, backgroundColor: '#0B0B14' },
   header:          { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 10 },
-  backBtn:         { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  headerTitle:     { fontSize: 17, fontFamily: 'Poppins_600SemiBold' },
-  loadingState:    { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  loadingText:     { fontSize: 15, fontFamily: 'Poppins_500Medium' },
-  emptyTitle:      { fontSize: 18, fontFamily: 'Poppins_700Bold', marginTop: 8 },
-  backLink:        { fontSize: 15, fontFamily: 'Poppins_600SemiBold', marginTop: 8 },
+  backBtn:         { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  headerTitle:     { fontSize: 17, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
+  
+  loadingState:       { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
+  loadingText:        { fontSize: 15, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.6)' },
+  emptyIconContainer: { width: 90, height: 90, borderRadius: 45, backgroundColor: 'rgba(255,255,255,0.03)', alignItems: 'center', justifyContent: 'center' },
+  emptyTitle:         { fontSize: 18, fontFamily: 'Poppins_700Bold', marginTop: 8, color: '#FFFFFF' },
+  backLink:           { fontSize: 15, fontFamily: 'Poppins_600SemiBold', marginTop: 8, color: CultureTokens.indigo },
 
-  ticketContainer: { marginHorizontal: 20, marginTop: 12, borderRadius: 16, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 12, elevation: 6 },
-  ticketTop:       { height: 100, justifyContent: 'center' },
-  ticketTopOverlay:{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, backgroundColor: 'rgba(0,0,0,0.15)' },
-  statusBadge:     { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
+  ticketContainer: { marginHorizontal: 20, marginTop: 12, borderRadius: 24, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  ticketTop:       { height: 120, justifyContent: 'center', position: 'relative' },
+  ticketTopOverlay:{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, zIndex: 1 },
+  statusBadge:     { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
   statusText:      { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
 
-  ticketNotch:  { flexDirection: 'row', alignItems: 'center', marginTop: -10, marginBottom: -10, zIndex: 2 },
-  notchCircle:  { width: 20, height: 20, borderRadius: 10 },
-  notchLeft:    { marginLeft: -10 },
-  notchRight:   { marginRight: -10 },
-  notchLine:    { flex: 1, height: 1, borderStyle: 'dashed', borderWidth: 1 },
+  ticketNotchContainer: { position: 'relative', height: 20, marginTop: -10, marginBottom: -10, zIndex: 2 },
+  ticketNotchBackground: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, opacity: 0 },
+  ticketNotch:  { flexDirection: 'row', alignItems: 'center', height: '100%' },
+  notchCircle:  { width: 30, height: 30, borderRadius: 15, backgroundColor: '#0B0B14', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  notchLeft:    { marginLeft: -16 },
+  notchRight:   { marginRight: -16 },
+  notchLine:    { flex: 1, height: 1, borderStyle: 'dashed', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', opacity: 0.5, marginHorizontal: 10 },
 
-  ticketBody:   { padding: 20 },
-  eventTitle:   { fontSize: 20, fontFamily: 'Poppins_700Bold', marginBottom: 16 },
-  infoGrid:     { gap: 14 },
-  infoItem:     { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  infoLabel:    { fontSize: 11, fontFamily: 'Poppins_500Medium', textTransform: 'uppercase', letterSpacing: 0.5 },
-  infoValue:    { fontSize: 15, fontFamily: 'Poppins_600SemiBold' },
-  divider:      { height: StyleSheet.hairlineWidth, marginVertical: 16 },
+  ticketBody:   { padding: 24 },
+  eventTitle:   { fontSize: 22, fontFamily: 'Poppins_700Bold', marginBottom: 20, color: '#FFFFFF' },
+  infoGrid:     { gap: 16 },
+  infoItem:     { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  infoIconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  infoLabel:    { fontSize: 11, fontFamily: 'Poppins_500Medium', textTransform: 'uppercase', letterSpacing: 0.5, color: 'rgba(255,255,255,0.6)' },
+  infoValue:    { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
+  divider:      { height: 1, backgroundColor: 'rgba(255,255,255,0.1)', marginVertical: 20 },
   detailsRow:   { flexDirection: 'row', justifyContent: 'space-between' },
   detailItem:   { alignItems: 'center', flex: 1 },
-  detailLabel:  { fontSize: 11, fontFamily: 'Poppins_500Medium', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 },
-  detailValue:  { fontSize: 17, fontFamily: 'Poppins_700Bold' },
+  detailLabel:  { fontSize: 11, fontFamily: 'Poppins_500Medium', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4, color: 'rgba(255,255,255,0.6)' },
+  detailValue:  { fontSize: 17, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
 
-  qrSection:        { alignItems: 'center', gap: 12 },
-  qrTitle:          { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
-  qrImageContainer: { padding: 12, backgroundColor: '#FFF', borderRadius: 12, borderWidth: StyleSheet.hairlineWidth },
-  qrImage:          { width: 200, height: 200 },
+  qrSection:        { alignItems: 'center', gap: 16 },
+  qrTitle:          { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
+  qrImageContainer: { padding: 16, backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  qrImage:          { width: 220, height: 220 },
   scannedOverlay:   { alignItems: 'center', gap: 6, paddingVertical: 16 },
-  scannedText:      { fontSize: 16, fontFamily: 'Poppins_700Bold' },
-  scannedTime:      { fontSize: 13, fontFamily: 'Poppins_400Regular' },
-  ticketCode:       { fontSize: 18, fontFamily: 'Poppins_700Bold', letterSpacing: 2 },
+  scannedText:      { fontSize: 16, fontFamily: 'Poppins_700Bold', color: 'rgba(255,255,255,0.6)' },
+  scannedTime:      { fontSize: 13, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.4)' },
+  ticketCodeText:   { fontSize: 20, fontFamily: 'Poppins_700Bold', letterSpacing: 3, color: CultureTokens.indigo, marginTop: 4 },
 
-  walletSection: { marginHorizontal: 20, marginTop: 20 },
-  walletTitle:   { fontSize: 17, fontFamily: 'Poppins_700Bold', marginBottom: 12 },
-  walletButtons: { flexDirection: 'row', gap: 10 },
-  walletBtn:     { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 12, paddingVertical: 14 },
+  walletSection: { marginHorizontal: 20, marginTop: 24 },
+  walletTitle:   { fontSize: 18, fontFamily: 'Poppins_700Bold', marginBottom: 16, color: '#FFFFFF' },
+  walletButtons: { flexDirection: 'row', gap: 12 },
+  walletBtn:     { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 14, paddingVertical: 14 },
   walletBtnText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#FFF' },
 
-  actionsSection: { marginHorizontal: 20, marginTop: 20, borderRadius: 12, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },
-  actionBtn:      { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderBottomWidth: StyleSheet.hairlineWidth },
-  actionIcon:     { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  actionText:     { flex: 1, fontSize: 15, fontFamily: 'Poppins_600SemiBold' },
+  actionsSection: { marginHorizontal: 20, marginTop: 24, borderRadius: 16, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  actionBtn:      { flexDirection: 'row', alignItems: 'center', gap: 16, padding: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' },
+  actionIcon:     { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  actionText:     { flex: 1, fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
 });

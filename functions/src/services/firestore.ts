@@ -124,13 +124,15 @@ export interface FirestoreEvent {
   id: string;
   title: string;
   description: string;
-  communityTag: string;
+  communityId: string;
   venue: string;
   address?: string;
   date: string;
   time: string;
   city: string;
   state?: string;
+  council?: string;
+  suburb?: string;
   postcode?: number;
   latitude?: number;
   longitude?: number;
@@ -186,6 +188,7 @@ export interface EventFilters {
   dateFrom?: string;
   dateTo?: string;
   organizerId?: string;
+  communityId?: string;
   status?: FirestoreEvent['status'];
   
   // Geolocation Bounding
@@ -218,6 +221,7 @@ export const eventsService = {
     }
 
     if (filters.organizerId) baseQuery = baseQuery.where('organizerId', '==', filters.organizerId);
+    if (filters.communityId) baseQuery = baseQuery.where('communityId', '==', filters.communityId);
     if (filters.city) baseQuery = baseQuery.where('city', '==', filters.city);
     if (filters.country) baseQuery = baseQuery.where('country', '==', filters.country);
     if (filters.category) baseQuery = baseQuery.where('category', '==', filters.category);

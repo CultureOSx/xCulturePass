@@ -17,10 +17,9 @@ import { useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/query-client';
 import { useAuth } from '@/lib/auth';
-import { useColors } from '@/hooks/useColors';
 import { useLayout } from '@/hooks/useLayout';
 import { useRole } from '@/hooks/useRole';
-import { Colors } from '@/constants/theme';
+import { CultureTokens } from '@/constants/theme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type { EventData } from '@/shared/schema';
 
@@ -56,10 +55,10 @@ function formatDate(dateStr?: string): string {
 
 function statusColor(status?: string): string {
   switch (status) {
-    case 'published': return Colors.success;
-    case 'draft': return Colors.warning ?? '#F59E0B';
-    case 'deleted': return Colors.error;
-    default: return Colors.textTertiary;
+    case 'published': return CultureTokens.success;
+    case 'draft': return CultureTokens.saffron;
+    case 'deleted': return CultureTokens.coral;
+    default: return 'rgba(255,255,255,0.4)';
   }
 }
 
@@ -77,14 +76,13 @@ function statusLabel(status?: string): string {
 // ---------------------------------------------------------------------------
 
 function StatCard({ label, value, icon, accent }: { label: string; value: string; icon: string; accent: string }) {
-  const colors = useColors();
   return (
-    <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
-      <View style={[styles.statIcon, { backgroundColor: accent + '20' }]}>
-        <Ionicons name={icon as never} size={20} color={accent} />
+    <View style={[styles.statCard, { borderColor: accent + '30', backgroundColor: accent + '05' }]}>
+      <View style={[styles.statIcon, { backgroundColor: accent + '15' }]}>
+        <Ionicons name={icon as never} size={18} color={accent} />
       </View>
-      <Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
-      <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{label}</Text>
+      <Text style={[styles.statValue, { color: accent }]}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
 }
@@ -106,37 +104,37 @@ function EventRow({
   isPublishing: boolean;
   isDeleting: boolean;
 }) {
-  const colors = useColors();
   const status = (event as EventData & { status?: string }).status;
   const accentColor = statusColor(status);
 
   return (
-    <View style={[styles.eventRow, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
+    <View style={[styles.eventRow, status === 'draft' && { borderColor: CultureTokens.saffron + '40', backgroundColor: CultureTokens.saffron + '05' }]}>
       <Pressable
         style={styles.eventRowContent}
         onPress={() => router.push({ pathname: '/event/[id]', params: { id: event.id } })}
       >
-        {/* Status badge */}
-        <View style={[styles.statusBadge, { backgroundColor: accentColor + '20' }]}>
-          <View style={[styles.statusDot, { backgroundColor: accentColor }]} />
-          <Text style={[styles.statusText, { color: accentColor }]}>{statusLabel(status)}</Text>
+        <View style={styles.eventHeaderRow}>
+          <Text style={styles.eventTitle} numberOfLines={2}>
+            {event.title}
+          </Text>
+          <View style={[styles.statusBadge, { backgroundColor: accentColor + '15' }]}>
+            <View style={[styles.statusDot, { backgroundColor: accentColor }]} />
+            <Text style={[styles.statusText, { color: accentColor }]}>{statusLabel(status)}</Text>
+          </View>
         </View>
-
-        <Text style={[styles.eventTitle, { color: colors.text }]} numberOfLines={2}>
-          {event.title}
-        </Text>
-        <Text style={[styles.eventMeta, { color: colors.textSecondary }]}>
+        
+        <Text style={styles.eventMeta}>
           {formatDate(event.date)} · {event.venue ?? '—'}
         </Text>
 
         <View style={styles.eventFooter}>
           <View style={styles.eventStats}>
-            <Ionicons name="people-outline" size={12} color={colors.textTertiary} />
-            <Text style={[styles.eventStatText, { color: colors.textTertiary }]}>
+            <Ionicons name="people" size={14} color="rgba(255,255,255,0.4)" />
+            <Text style={styles.eventStatText}>
               {event.attending ?? 0}/{event.capacity ?? '∞'}
             </Text>
           </View>
-          <Text style={[styles.eventPrice, { color: colors.primary }]}>
+          <Text style={styles.eventPrice}>
             {event.isFree ? 'Free' : event.priceLabel ?? formatCurrency(event.priceCents ?? 0)}
           </Text>
         </View>
@@ -147,7 +145,7 @@ function EventRow({
         <View style={styles.eventActions}>
           {status === 'draft' && (
             <Pressable
-              style={[styles.actionBtn, { backgroundColor: Colors.success + '20' }]}
+              style={[styles.actionBtn, { backgroundColor: CultureTokens.success + '15' }]}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 onPublish(event.id);
@@ -155,15 +153,15 @@ function EventRow({
               disabled={isPublishing}
             >
               {isPublishing ? (
-                <ActivityIndicator size={12} color={Colors.success} />
+                <ActivityIndicator size={14} color={CultureTokens.success} />
               ) : (
-                <Ionicons name="cloud-upload-outline" size={14} color={Colors.success} />
+                <Ionicons name="cloud-upload" size={16} color={CultureTokens.success} />
               )}
-              <Text style={[styles.actionBtnText, { color: Colors.success }]}>Publish</Text>
+              <Text style={[styles.actionBtnText, { color: CultureTokens.success }]}>Publish</Text>
             </Pressable>
           )}
           <Pressable
-            style={[styles.actionBtn, { backgroundColor: Colors.error + '20' }]}
+            style={[styles.actionBtn, { backgroundColor: CultureTokens.coral + '15' }]}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               onDelete(event.id);
@@ -171,11 +169,11 @@ function EventRow({
             disabled={isDeleting}
           >
             {isDeleting ? (
-              <ActivityIndicator size={12} color={Colors.error} />
+              <ActivityIndicator size={14} color={CultureTokens.coral} />
             ) : (
-              <Ionicons name="trash-outline" size={14} color={Colors.error} />
+              <Ionicons name="trash" size={16} color={CultureTokens.coral} />
             )}
-            <Text style={[styles.actionBtnText, { color: Colors.error }]}>Delete</Text>
+            <Text style={[styles.actionBtnText, { color: CultureTokens.coral }]}>Delete</Text>
           </Pressable>
         </View>
       )}
@@ -189,7 +187,6 @@ function EventRow({
 
 function OrganizerDashboardContent() {
   const insets = useSafeAreaInsets();
-  const colors = useColors();
   const { hPad } = useLayout();
   const { userId, user } = useAuth();
   const { isOrganizer, isLoading: roleLoading } = useRole();
@@ -281,17 +278,17 @@ function OrganizerDashboardContent() {
   });
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={styles.container}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: topPad + 12, paddingHorizontal: hPad, backgroundColor: colors.surface, borderBottomColor: colors.cardBorder }]}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
+      <View style={[styles.header, { paddingTop: topPad + 12, paddingHorizontal: hPad }]}>
+        <Pressable onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
         </Pressable>
 
         <View style={styles.headerCenter}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Organizer Dashboard</Text>
+          <Text style={styles.headerTitle}>Organizer Dashboard</Text>
           {user?.displayName && (
-            <Text style={[styles.headerSub, { color: colors.textSecondary }]}>{user.displayName}</Text>
+            <Text style={styles.headerSub}>{user.displayName}</Text>
           )}
         </View>
 
@@ -300,9 +297,9 @@ function OrganizerDashboardContent() {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             router.push('/submit');
           }}
-          style={[styles.createBtn, { backgroundColor: colors.primary }]}
+          style={styles.createBtn}
         >
-          <Ionicons name="add" size={18} color="#fff" />
+          <Ionicons name="add" size={24} color={CultureTokens.indigo} />
         </Pressable>
       </View>
 
@@ -310,42 +307,42 @@ function OrganizerDashboardContent() {
         contentContainerStyle={[styles.scroll, { paddingHorizontal: hPad }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={CultureTokens.indigo} />
         }
       >
         {/* Quick Actions */}
         <View style={styles.quickActions}>
           <Pressable
-            style={[styles.quickAction, { backgroundColor: colors.primary }]}
+            style={[styles.quickAction, { backgroundColor: CultureTokens.indigo + '15', borderColor: CultureTokens.indigo + '30' }]}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               router.push('/submit');
             }}
           >
-            <Ionicons name="calendar-outline" size={18} color="#fff" />
-            <Text style={styles.quickActionText}>Create Event</Text>
+            <Ionicons name="calendar" size={20} color={CultureTokens.indigo} />
+            <Text style={[styles.quickActionText, { color: CultureTokens.indigo }]}>Create Event</Text>
           </Pressable>
 
           <Pressable
-            style={[styles.quickAction, { backgroundColor: colors.secondary ?? Colors.secondary }]}
+            style={[styles.quickAction, { backgroundColor: CultureTokens.teal + '15', borderColor: CultureTokens.teal + '30' }]}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               router.push('/scanner');
             }}
           >
-            <Ionicons name="qr-code-outline" size={18} color="#fff" />
-            <Text style={styles.quickActionText}>Scan Tickets</Text>
+            <Ionicons name="qr-code" size={20} color={CultureTokens.teal} />
+            <Text style={[styles.quickActionText, { color: CultureTokens.teal }]}>Scan Tickets</Text>
           </Pressable>
 
           <Pressable
-            style={[styles.quickAction, { backgroundColor: Colors.accent }]}
+            style={[styles.quickAction, { backgroundColor: CultureTokens.coral + '15', borderColor: CultureTokens.coral + '30' }]}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               router.push('/tickets');
             }}
           >
-            <Ionicons name="ticket-outline" size={18} color="#fff" />
-            <Text style={styles.quickActionText}>All Tickets</Text>
+            <Ionicons name="ticket" size={20} color={CultureTokens.coral} />
+            <Text style={[styles.quickActionText, { color: CultureTokens.coral }]}>All Tickets</Text>
           </Pressable>
         </View>
 
@@ -356,25 +353,25 @@ function OrganizerDashboardContent() {
               label="Total Events"
               value={String(stats.totalEvents)}
               icon="calendar"
-              accent={Colors.primary}
+              accent={CultureTokens.indigo}
             />
             <StatCard
               label="Published"
               value={String(stats.publishedEvents)}
               icon="radio-button-on"
-              accent={Colors.success}
+              accent={CultureTokens.success}
             />
             <StatCard
               label="Attending"
               value={String(stats.totalTicketsSold)}
               icon="people"
-              accent={Colors.info ?? '#3498DB'}
+              accent={CultureTokens.teal}
             />
             <StatCard
               label="Revenue"
               value={formatCurrency(stats.totalRevenueCents)}
               icon="wallet"
-              accent={Colors.gold ?? Colors.accent}
+              accent={CultureTokens.gold}
             />
           </View>
         )}
@@ -382,10 +379,10 @@ function OrganizerDashboardContent() {
         {/* Events Section */}
         <View>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>My Events</Text>
+            <Text style={styles.sectionTitle}>My Events</Text>
             {stats.draftEvents > 0 && (
-              <View style={[styles.draftBadge, { backgroundColor: Colors.warning + '20' }]}>
-                <Text style={[styles.draftBadgeText, { color: Colors.warning ?? '#F59E0B' }]}>
+              <View style={[styles.draftBadge, { backgroundColor: CultureTokens.saffron + '15' }]}>
+                <Text style={styles.draftBadgeText}>
                   {stats.draftEvents} draft{stats.draftEvents > 1 ? 's' : ''}
                 </Text>
               </View>
@@ -394,20 +391,20 @@ function OrganizerDashboardContent() {
 
           {isLoading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator color={colors.primary} />
-              <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-                Loading your events…
-              </Text>
+              <ActivityIndicator color={CultureTokens.indigo} size="large" />
+              <Text style={styles.loadingText}>Loading your events…</Text>
             </View>
           ) : sortedEvents.length === 0 ? (
-            <View style={[styles.emptyState, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
-              <Ionicons name="calendar-outline" size={48} color={colors.textTertiary} />
-              <Text style={[styles.emptyTitle, { color: colors.text }]}>No events yet</Text>
-              <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+            <View style={styles.emptyState}>
+              <View style={styles.emptyIconBg}>
+                <Ionicons name="calendar-outline" size={48} color="rgba(255,255,255,0.4)" />
+              </View>
+              <Text style={styles.emptyTitle}>No events yet</Text>
+              <Text style={styles.emptySubtitle}>
                 Create your first event to get started.
               </Text>
               <Pressable
-                style={[styles.emptyBtn, { backgroundColor: colors.primary }]}
+                style={styles.emptyBtn}
                 onPress={() => router.push('/submit')}
               >
                 <Text style={styles.emptyBtnText}>Create Event</Text>
@@ -446,27 +443,103 @@ export default function OrganizerDashboard() {
 // ---------------------------------------------------------------------------
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: '#0B0B14' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingBottom: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    gap: 12,
+    paddingBottom: 16,
+    gap: 16,
+  },
+  backBtn: {
+    width: 44, height: 44, borderRadius: 22,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
   },
   headerCenter: { flex: 1 },
-  headerTitle: { fontSize: 17, fontWeight: '700', letterSpacing: -0.3 },
-  headerSub: { fontSize: 13, marginTop: 1 },
+  headerTitle: { fontSize: 20, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', letterSpacing: -0.3 },
+  headerSub: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.6)', marginTop: 2 },
   createBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: CultureTokens.indigo + '20',
   },
-  scroll: { paddingTop: 16, gap: 16 },
-  quickActions: { flexDirection: 'row', gap: 10 },
+  scroll: { paddingTop: 4, gap: 24 },
+  quickActions: { flexDirection: 'row', gap: 12 },
   quickAction: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  quickActionText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13 },
+  statsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  statCard: {
+    width: '48%',
+    flexGrow: 1,
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  statIcon: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
+  statValue: { fontSize: 24, fontFamily: 'Poppins_700Bold', letterSpacing: -0.5, marginBottom: 2 },
+  statLabel: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.6)' },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  sectionTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+  draftBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
+  draftBadgeText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.saffron },
+  eventRow: {
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    overflow: 'hidden',
+    marginBottom: 12,
+  },
+  eventRowContent: { padding: 18, gap: 8 },
+  eventHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusDot: { width: 6, height: 6, borderRadius: 3 },
+  statusText: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 0.5 },
+  eventTitle: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF', lineHeight: 22, flex: 1 },
+  eventMeta: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.6)' },
+  eventFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 },
+  eventStats: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  eventStatText: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.5)' },
+  eventPrice: { fontSize: 15, fontFamily: 'Poppins_700Bold', color: CultureTokens.indigo },
+  eventActions: {
+    flexDirection: 'row',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.05)',
+    padding: 12,
+    gap: 12,
+    backgroundColor: 'rgba(255,255,255,0.02)',
+  },
+  actionBtn: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
@@ -475,79 +548,26 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 12,
   },
-  quickActionText: { color: '#fff', fontWeight: '600', fontSize: 13 },
-  statsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  statCard: {
-    width: '47%',
-    padding: 14,
-    borderRadius: 14,
-    borderWidth: StyleSheet.hairlineWidth,
-    gap: 4,
-  },
-  statIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
-  statValue: { fontSize: 22, fontWeight: '700', letterSpacing: -0.5 },
-  statLabel: { fontSize: 12 },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  sectionTitle: { fontSize: 17, fontWeight: '700' },
-  draftBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
-  draftBadgeText: { fontSize: 12, fontWeight: '600' },
-  eventRow: {
-    borderRadius: 14,
-    borderWidth: StyleSheet.hairlineWidth,
-    overflow: 'hidden',
-    marginBottom: 10,
-  },
-  eventRowContent: { padding: 14, gap: 6 },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 20,
-  },
-  statusDot: { width: 6, height: 6, borderRadius: 3 },
-  statusText: { fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
-  eventTitle: { fontSize: 15, fontWeight: '600', lineHeight: 21 },
-  eventMeta: { fontSize: 13 },
-  eventFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
-  eventStats: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  eventStatText: { fontSize: 12 },
-  eventPrice: { fontSize: 13, fontWeight: '600' },
-  eventActions: {
-    flexDirection: 'row',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(0,0,0,0.06)',
-    padding: 10,
-    gap: 8,
-  },
-  actionBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 5,
-    paddingVertical: 9,
-    borderRadius: 8,
-  },
-  actionBtnText: { fontSize: 13, fontWeight: '600' },
-  loadingContainer: { alignItems: 'center', paddingVertical: 40, gap: 12 },
-  loadingText: { fontSize: 14 },
+  actionBtnText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
+  loadingContainer: { alignItems: 'center', paddingVertical: 60, gap: 16 },
+  loadingText: { fontSize: 15, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.6)' },
   emptyState: {
     alignItems: 'center',
     padding: 40,
-    borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    gap: 10,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.02)',
+    marginTop: 10,
   },
-  emptyTitle: { fontSize: 17, fontWeight: '700' },
-  emptySubtitle: { fontSize: 14, textAlign: 'center' },
-  emptyBtn: { marginTop: 8, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 },
-  emptyBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  emptyIconBg: {
+    width: 80, height: 80, borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: 16,
+  },
+  emptyTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', marginBottom: 6 },
+  emptySubtitle: { fontSize: 14, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.5)', textAlign: 'center', marginBottom: 20 },
+  emptyBtn: { paddingHorizontal: 24, paddingVertical: 14, borderRadius: 16, backgroundColor: CultureTokens.indigo },
+  emptyBtnText: { color: '#0B0B14', fontFamily: 'Poppins_700Bold', fontSize: 15 },
 });

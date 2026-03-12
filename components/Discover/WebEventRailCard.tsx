@@ -15,7 +15,7 @@ function WebEventRailCard({ event }: WebEventRailCardProps) {
   const colors = useColors();
   const rawDate = event.date ?? '';
   const dateChip = rawDate.length >= 7 ? rawDate.slice(5).replace('-', ' ') : rawDate;
-  const category = event.category || event.communityTag || 'Event';
+  const category = event.category || event.communityId || 'Event';
   return (
     <Pressable
       style={({ pressed }) => [

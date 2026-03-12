@@ -10,3 +10,4 @@ export * from './schema/notification';
 export * from './schema/moderation';
 export * from './schema/social';
 export * from './schema/media';
+export * from './schema/feedItem';

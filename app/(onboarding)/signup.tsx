@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,8 +12,9 @@ import {
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors, CultureTokens, gradients } from '@/constants/theme';
+import { CultureTokens, gradients } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
+import { BlurView } from 'expo-blur';
 import { auth as firebaseAuth } from '@/lib/firebase';
 import {
   createUserWithEmailAndPassword,
@@ -32,12 +33,10 @@ import { Checkbox } from '@/components/ui/Checkbox';
 import { SocialButton } from '@/components/ui/SocialButton';
 import { PasswordStrengthIndicator } from '@/components/ui/PasswordStrengthIndicator';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useColors } from '@/hooks/useColors';
 import * as AppleAuthentication from 'expo-apple-authentication';
 
 export default function SignUpScreen() {
   const insets = useSafeAreaInsets();
-  const colors = useColors();
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === 'web' && width >= 1024;
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
@@ -46,24 +45,58 @@ export default function SignUpScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [agreed, setAgreed] = useState(false);
-  const [error, setError] = useState('');
+  const [role, setRole] = useState<'user' | 'organizer'>('user');
+  
+  const [nameError, setNameError] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [globalError, setGlobalError] = useState('');
+  
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Form logic (eager normalization)
   const normalizedName = name.trim();
   const normalizedEmail = email.trim().toLowerCase();
   const isValid = normalizedName.length > 1 && normalizedEmail.includes('@') && password.length >= 6 && agreed;
 
+  const clearErrors = useCallback(() => {
+    if (nameError) setNameError('');
+    if (emailError) setEmailError('');
+    if (passwordError) setPasswordError('');
+    if (globalError) setGlobalError('');
+  }, [nameError, emailError, passwordError, globalError]);
+
+  const validate = () => {
+    let valid = true;
+    if (normalizedName.length < 2) {
+      setNameError('Please enter your full name');
+      valid = false;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      setEmailError('Please enter a valid email address');
+      valid = false;
+    }
+    if (password.length < 6) {
+      setPasswordError('Password must be at least 6 characters');
+      valid = false;
+    }
+    if (!agreed) {
+      setGlobalError('You must agree to the Terms of Service to continue');
+      valid = false;
+    }
+    return valid;
+  };
+
   const handleGoogleSignUp = async () => {
     setLoading(true);
-    setError('');
+    clearErrors();
     try {
       if (Platform.OS === 'web') {
         await setPersistence(firebaseAuth, browserLocalPersistence);
         const provider = new GoogleAuthProvider();
         await signInWithPopup(firebaseAuth, provider);
       } else {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { GoogleSignin } = require('@react-native-google-signin/google-signin') as typeof import('@react-native-google-signin/google-signin');
         GoogleSignin.configure({ webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID });
         await GoogleSignin.hasPlayServices();
@@ -72,14 +105,12 @@ export default function SignUpScreen() {
         const credential = GoogleAuthProvider.credential(tokens.idToken);
         await signInWithCredential(firebaseAuth, credential);
       }
-      if (Platform.OS !== 'web') {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      }
+      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace('/(onboarding)/location');
     } catch (e: any) {
       const code = e?.code;
       if (!['auth/popup-closed-by-user', 'auth/cancelled-popup-request', '-5'].includes(code)) {
-        setError('Google sign-up failed. Please try again.');
+        setGlobalError('Google sign-up failed. Please try again.');
         if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       }
     } finally {
@@ -90,7 +121,7 @@ export default function SignUpScreen() {
   const handleAppleSignUp = async () => {
     if (Platform.OS !== 'ios') return;
     setLoading(true);
-    setError('');
+    clearErrors();
     try {
       const credential = await AppleAuthentication.signInAsync({
         requestedScopes: [
@@ -108,7 +139,7 @@ export default function SignUpScreen() {
       router.replace('/(onboarding)/location');
     } catch (e: any) {
       if (e?.code !== 'ERR_REQUEST_CANCELED') {
-        setError('Apple sign-up failed. Please try again.');
+        setGlobalError('Apple sign-up failed. Please try again.');
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       }
     } finally {
@@ -117,9 +148,8 @@ export default function SignUpScreen() {
   };
 
   const handleSignUp = async () => {
-    setError('');
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
-      setError('Please enter a valid email address.');
+    clearErrors();
+    if (!validate()) {
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
@@ -137,7 +167,7 @@ export default function SignUpScreen() {
       await credential.user.getIdToken(true);
       
       // Sync to backend DB
-      await api.auth.register({ displayName: normalizedName });
+      await api.auth.register({ displayName: normalizedName, role });
 
       if (Platform.OS !== 'web') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -146,13 +176,13 @@ export default function SignUpScreen() {
     } catch (e: any) {
       const code = e?.code;
       if (code === 'auth/email-already-in-use') {
-        setError('An account with this email already exists.');
+        setEmailError('An account with this email already exists.');
       } else if (code === 'auth/invalid-email') {
-        setError('Please enter a valid email address.');
+        setEmailError('Please enter a valid email address.');
       } else if (code === 'auth/weak-password') {
-        setError('Password must be at least 6 characters.');
+        setPasswordError('Password must be at least 6 characters.');
       } else {
-        setError('Registration failed. Please try again.');
+        setGlobalError('Registration failed. Please try again.');
       }
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
@@ -163,27 +193,33 @@ export default function SignUpScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={gradients.culturepassBrand}
+        colors={gradients.culturepassBrandReversed}
         start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0.95 }}
-        style={StyleSheet.absoluteFillObject}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradientBg}
       />
       
-      {/* Desktop Layout Background Back Button */}
+      {/* Decorative Orbs */}
+      {Platform.OS === 'web' ? (
+        <>
+          <View style={[styles.orb, { top: -100, right: -50, backgroundColor: CultureTokens.indigo, opacity: 0.5, filter: 'blur(50px)' } as any]} />
+          <View style={[styles.orb, { bottom: -50, left: -50, backgroundColor: CultureTokens.saffron, opacity: 0.3, filter: 'blur(50px)' } as any]} />
+        </>
+      ) : null}
+
       {isDesktop && (
         <View style={styles.desktopBackRow}>
-          <Pressable onPress={() => router.replace('/(tabs)')} hitSlop={8} style={[styles.desktopBackBtn, { backgroundColor: colors.surface + '26' }]}>
+          <Pressable onPress={() => router.replace('/(tabs)')} hitSlop={8} style={[styles.desktopBackBtn, { backgroundColor: 'rgba(0,0,0,0.3)' }]}>
             <Ionicons name="chevron-back" size={18} color="#FFFFFF" />
             <Text style={styles.desktopBackText}>Back to Discover</Text>
           </Pressable>
         </View>
       )}
 
-      {/* Mobile Header Nav */}
       {!isDesktop && (
-        <View style={[styles.mobileHeader, { paddingTop: topInset }]}>
+        <View style={[styles.mobileHeader, { paddingTop: topInset + 12 }]}>
           <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')} hitSlop={8}>
-            <Ionicons name="chevron-back" size={28} color="#FFFFFF" />
+            <Ionicons name="close" size={28} color="#FFFFFF" />
           </Pressable>
         </View>
       )}
@@ -191,7 +227,6 @@ export default function SignUpScreen() {
       <KeyboardAvoidingView 
         style={styles.keyboardAvoid} 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
-        keyboardVerticalOffset={0}
       >
         <ScrollView 
           showsVerticalScrollIndicator={false} 
@@ -202,129 +237,144 @@ export default function SignUpScreen() {
             !isDesktop && { paddingTop: 20 }
           ]}
         >
-          {/* Main Interface Block */}
-          <View style={[
-            styles.formCard, 
-            { backgroundColor: colors.surface },
-            isDesktop && styles.formCardDesktop
-          ]}>
-            <View style={styles.logoRow}>
-              <View style={[styles.logoCircle, { backgroundColor: CultureTokens.indigo + '1A' }]}>
-                <Ionicons name="globe-outline" size={32} color={CultureTokens.indigo} />
+          <View style={[styles.formContainer, isDesktop && styles.formContainerDesktop]}>
+            {Platform.OS === 'ios' || Platform.OS === 'web' ? (
+              <BlurView intensity={isDesktop ? 60 : 40} tint="dark" style={[StyleSheet.absoluteFill, styles.formBlur]} />
+            ) : (
+              <View style={[StyleSheet.absoluteFill, styles.formBlur, { backgroundColor: 'rgba(11, 11, 20, 0.85)' }]} />
+            )}
+
+            <View style={styles.formContent}>
+              <View style={styles.logoRow}>
+                <View style={[styles.logoCircle, { backgroundColor: 'rgba(255,255,255,0.1)' }]}>
+                  <Ionicons name="globe-outline" size={32} color="#FFFFFF" />
+                </View>
+                <Text style={styles.brandLabel}>CulturePass.app</Text>
               </View>
-              <Text style={[styles.brandLabel, { color: colors.textSecondary }]}>CulturePass.app</Text>
-            </View>
 
-            <Text style={[styles.title, { color: colors.text }]}>Create Account</Text>
-            <Text style={[styles.benefitsRow, { color: CultureTokens.saffron }]}>
-              🎉 Free events · Community access · Exclusive perks
-            </Text>
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-              Join thousands of community members celebrating culture together.
-            </Text>
-
-            {/* Error Message */}
-            {error ? (
-              <View style={[styles.errorBanner, { backgroundColor: CultureTokens.error + '1A' }]}>
-                <Ionicons name="alert-circle-outline" size={18} color={CultureTokens.error} />
-                <Text style={[styles.errorText, { color: CultureTokens.error }]}>{error}</Text>
-              </View>
-            ) : null}
-
-            <View style={styles.form}>
-              <Input
-                label="Full Name"
-                placeholder="Enter your full name"
-                leftIcon="person-outline"
-                value={name}
-                onChangeText={(value) => {
-                  setName(value);
-                  if (error) setError('');
-                }}
-                autoCapitalize="words"
-                returnKeyType="next"
-              />
-
-              <Input
-                label="Email Address"
-                placeholder="you@example.com"
-                leftIcon="mail-outline"
-                value={email}
-                onChangeText={(value) => {
-                  setEmail(value);
-                  if (error) setError('');
-                }}
-                autoCapitalize="none"
-                keyboardType="email-address"
-                returnKeyType="next"
-              />
-
-              <View>
-                <Input
-                  label="Password"
-                  placeholder="Min. 6 characters"
-                  leftIcon="lock-closed-outline"
-                  value={password}
-                  onChangeText={(value) => {
-                    setPassword(value);
-                    if (error) setError('');
-                  }}
-                  secureTextEntry
-                  passwordToggle
-                  returnKeyType="done"
-                  onSubmitEditing={handleSignUp}
-                  hint={password.length > 0 && password.length < 6 ? 'Password must be at least 6 characters' : undefined}
-                />
-                {password.length > 0 && <PasswordStrengthIndicator password={password} />}
-              </View>
-            </View>
-
-            <View style={styles.optionsRow}>
-              <Checkbox
-                checked={agreed}
-                onToggle={setAgreed}
-                label={
-                  <Text style={[styles.checkText, { color: colors.text }]}>
-                    I agree to the <Text style={[styles.linkText, { color: CultureTokens.saffron }]} onPress={() => router.push('/legal/terms')}>Terms of Service</Text> and <Text style={[styles.linkText, { color: CultureTokens.saffron }]} onPress={() => router.push('/legal/privacy')}>Privacy Policy</Text>
-                  </Text>
-                }
-              />
-            </View>
-
-            <Button
-              variant="primary"
-              size="lg"
-              fullWidth
-              rightIcon="arrow-forward"
-              loading={loading}
-              disabled={!isValid || loading}
-              onPress={handleSignUp}
-              style={styles.submitBtn}
-              accessibilityLabel="Create your CulturePass account"
-            >
-              Create Account
-            </Button>
-
-            <View style={styles.socialDivider}>
-              <View style={[styles.divLine, { backgroundColor: colors.borderLight }]} />
-              <Text style={[styles.divText, { color: colors.textTertiary }]}>or sign up with</Text>
-              <View style={[styles.divLine, { backgroundColor: colors.borderLight }]} />
-            </View>
-
-            <View style={styles.socialRow}>
-              <SocialButton provider="google" onPress={handleGoogleSignUp} disabled={loading} />
-              {Platform.OS === 'ios' ? (
-                <SocialButton provider="apple" onPress={handleAppleSignUp} disabled={loading} />
-              ) : (
-                <SocialButton provider="apple" comingSoon disabled={loading} />
-              )}
-            </View>
-
-            <Pressable style={styles.switchRow} onPress={() => router.replace('/(onboarding)/login')}>
-              <Text style={[styles.switchText, { color: colors.textSecondary }]}>
-                Already have an account? <Text style={[styles.switchLink, { color: CultureTokens.saffron }]}>Sign In</Text>
+              <Text style={styles.title}>Create Account.</Text>
+              <Text style={styles.benefitsRow}>
+                🎉 Free events · Community access · Exclusive perks
               </Text>
-            </Pressable>
+
+              {globalError ? (
+                <View style={[styles.errorBanner, { backgroundColor: CultureTokens.coral + '20', borderColor: CultureTokens.coral + '50' }]}>
+                  <Ionicons name="alert-circle" size={20} color={CultureTokens.coral} />
+                  <Text style={[styles.globalErrorText, { color: CultureTokens.coral }]}>{globalError}</Text>
+                </View>
+              ) : null}
+
+              <View style={styles.roleToggleGroup}>
+                <Text style={styles.roleLabel}>I want to...</Text>
+                <View style={styles.roleRow}>
+                  <Pressable
+                    style={[styles.roleOption, role === 'user' && styles.roleOptionActive]}
+                    onPress={() => { setRole('user'); if(Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                  >
+                    <Ionicons name="compass-outline" size={20} color={role === 'user' ? '#FFF' : 'rgba(255,255,255,0.6)'} />
+                    <Text style={[styles.roleOptionText, role === 'user' && styles.roleOptionTextActive]}>Discover Events</Text>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.roleOption, role === 'organizer' && styles.roleOptionActive]}
+                    onPress={() => { setRole('organizer'); if(Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                  >
+                    <Ionicons name="calendar-outline" size={20} color={role === 'organizer' ? '#FFF' : 'rgba(255,255,255,0.6)'} />
+                    <Text style={[styles.roleOptionText, role === 'organizer' && styles.roleOptionTextActive]}>Host Events</Text>
+                  </Pressable>
+                </View>
+              </View>
+
+              <View style={styles.form}>
+                <View style={styles.inputGroup}>
+                  <Input
+                    label="Full Name"
+                    placeholder="Enter your full name"
+                    leftIcon="person-outline"
+                    value={name}
+                    onChangeText={(v) => { setName(v); clearErrors(); }}
+                    autoCapitalize="words"
+                    returnKeyType="next"
+                    error={nameError}
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Input
+                    label="Email Address"
+                    placeholder="you@example.com"
+                    leftIcon="mail-outline"
+                    value={email}
+                    onChangeText={(v) => { setEmail(v); clearErrors(); }}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    returnKeyType="next"
+                    error={emailError}
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Input
+                    label="Password"
+                    placeholder="Min. 6 characters"
+                    leftIcon="lock-closed-outline"
+                    value={password}
+                    onChangeText={(v) => { setPassword(v); clearErrors(); }}
+                    secureTextEntry={!showPassword}
+                    passwordToggle
+                    returnKeyType="done"
+                    onSubmitEditing={handleSignUp}
+                    error={passwordError}
+                  />
+                  {password.length > 0 && <PasswordStrengthIndicator password={password} />}
+                </View>
+              </View>
+
+              <View style={styles.optionsRow}>
+                <Checkbox
+                  checked={agreed}
+                  onToggle={(v) => { setAgreed(v); clearErrors(); }}
+                  label={
+                    <Text style={styles.checkText}>
+                      I agree to the <Text style={[styles.linkText, { color: CultureTokens.saffron }]} onPress={() => router.push('/legal/terms')}>Terms</Text> & <Text style={[styles.linkText, { color: CultureTokens.saffron }]} onPress={() => router.push('/legal/privacy')}>Privacy</Text>
+                    </Text>
+                  }
+                />
+              </View>
+
+              <Button
+                variant="primary"
+                size="lg"
+                fullWidth
+                rightIcon="arrow-forward"
+                loading={loading}
+                disabled={!isValid || loading}
+                onPress={handleSignUp}
+                style={[styles.submitBtn, { backgroundColor: CultureTokens.saffron }]}
+              >
+                Create Account
+              </Button>
+
+              <View style={styles.socialDivider}>
+                <View style={[styles.divLine, { backgroundColor: 'rgba(255,255,255,0.15)' }]} />
+                <Text style={styles.divText}>or sign up with</Text>
+                <View style={[styles.divLine, { backgroundColor: 'rgba(255,255,255,0.15)' }]} />
+              </View>
+
+              <View style={styles.socialRow}>
+                <SocialButton provider="google" onPress={handleGoogleSignUp} disabled={loading} />
+                {Platform.OS === 'ios' ? (
+                  <SocialButton provider="apple" onPress={handleAppleSignUp} disabled={loading} />
+                ) : (
+                  <SocialButton provider="apple" comingSoon disabled={loading} />
+                )}
+              </View>
+
+              <Pressable style={styles.switchRow} onPress={() => router.replace('/(onboarding)/login')}>
+                <Text style={styles.switchText}>
+                  Already have an account? <Text style={[styles.switchLink, { color: CultureTokens.saffron }]}>Sign In</Text>
+                </Text>
+              </Pressable>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -333,165 +383,45 @@ export default function SignUpScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: 'transparent' 
-  },
-  keyboardAvoid: { 
-    flex: 1 
-  },
-  mobileHeader: { 
-    paddingHorizontal: 20, 
-    paddingBottom: 12 
-  },
-  desktopBackRow: {
-    position: 'absolute',
-    top: 24,
-    left: 40,
-    zIndex: 10,
-  },
-  desktopBackBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    borderRadius: 24,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-  },
-  desktopBackText: { 
-    fontSize: 14, 
-    fontFamily: 'Poppins_500Medium', 
-    color: '#FFFFFF' 
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 20,
-    paddingBottom: 60,
-  },
-  scrollContentDesktop: {
-    justifyContent: 'center',
-    paddingVertical: 40,
-  },
-  formCard: {
-    width: '100%',
-    maxWidth: 440,
-    alignSelf: 'center',
-    borderRadius: 28,
-    paddingHorizontal: 32,
-    paddingVertical: 36,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.1,
-    shadowRadius: 32,
-    elevation: 8,
-  },
-  formCardDesktop: {
-    paddingHorizontal: 48,
-    paddingVertical: 48,
-  },
-  logoRow: { 
-    alignItems: 'center', 
-    marginBottom: 24 
-  },
-  logoCircle: { 
-    width: 64, 
-    height: 64, 
-    borderRadius: 32, 
-    alignItems: 'center', 
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  brandLabel: { 
-    fontSize: 12, 
-    fontFamily: 'Poppins_600SemiBold', 
-    letterSpacing: 2, 
-    textTransform: 'uppercase' 
-  },
-  title: { 
-    fontSize: 32, 
-    fontFamily: 'Poppins_700Bold', 
-    textAlign: 'center', 
-    marginBottom: 8, 
-    letterSpacing: -0.5 
-  },
-  benefitsRow: { 
-    fontSize: 13, 
-    fontFamily: 'Poppins_600SemiBold', 
-    textAlign: 'center', 
-    marginBottom: 16 
-  },
-  subtitle: { 
-    fontSize: 15, 
-    fontFamily: 'Poppins_400Regular', 
-    lineHeight: 24, 
-    textAlign: 'center', 
-    marginBottom: 32 
-  },
-  errorBanner: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    gap: 10, 
-    paddingVertical: 12, 
-    paddingHorizontal: 16, 
-    borderRadius: 14, 
-    marginBottom: 24 
-  },
-  errorText: { 
-    flex: 1, 
-    fontSize: 14, 
-    fontFamily: 'Poppins_500Medium', 
-  },
-  form: { 
-    gap: 20, 
-    marginBottom: 16 
-  },
-  optionsRow: {
-    marginBottom: 32,
-  },
-  checkText: { 
-    flex: 1, 
-    fontSize: 13, 
-    fontFamily: 'Poppins_400Regular', 
-    lineHeight: 20 
-  },
-  linkText: { 
-    fontFamily: 'Poppins_600SemiBold' 
-  },
-  submitBtn: { 
-    marginBottom: 32,
-    borderRadius: 16,
-    height: 56,
-  },
-  socialDivider: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    gap: 16, 
-    marginBottom: 24 
-  },
-  divLine: { 
-    flex: 1, 
-    height: 1 
-  },
-  divText: { 
-    fontSize: 14, 
-    fontFamily: 'Poppins_500Medium' 
-  },
-  socialRow: { 
-    flexDirection: 'row', 
-    gap: 16, 
-    marginBottom: 32 
-  },
-  switchRow: { 
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  switchText: { 
-    fontSize: 15, 
-    fontFamily: 'Poppins_400Regular' 
-  },
-  switchLink: { 
-    fontFamily: 'Poppins_600SemiBold' 
-  },
+  container: { flex: 1, backgroundColor: '#0B0B14' },
+  gradientBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.8 },
+  orb: { position: 'absolute', width: 300, height: 300, borderRadius: 150 },
+  keyboardAvoid: { flex: 1 },
+  mobileHeader: { paddingHorizontal: 20, paddingBottom: 12 },
+  desktopBackRow: { position: 'absolute', top: 32, left: 40, zIndex: 10 },
+  desktopBackBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 24, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  desktopBackText: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: '#FFFFFF' },
+  scrollContent: { flexGrow: 1, paddingHorizontal: 20, paddingBottom: 60, justifyContent: 'center' },
+  scrollContentDesktop: { paddingVertical: 60 },
+  formContainer: { width: '100%', maxWidth: 460, alignSelf: 'center', borderRadius: 32, overflow: 'hidden' },
+  formContainerDesktop: { maxWidth: 520 },
+  formBlur: { borderRadius: 32, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  formContent: { padding: 32, paddingTop: 40 },
+  logoRow: { alignItems: 'center', marginBottom: 20 },
+  logoCircle: { width: 68, height: 68, borderRadius: 34, alignItems: 'center', justifyContent: 'center', marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
+  brandLabel: { fontSize: 12, fontFamily: 'Poppins_700Bold', letterSpacing: 3, textTransform: 'uppercase', color: '#FFFFFF' },
+  title: { fontSize: 34, fontFamily: 'Poppins_700Bold', textAlign: 'center', marginBottom: 8, letterSpacing: -0.5, color: '#FFFFFF' },
+  benefitsRow: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', textAlign: 'center', marginBottom: 32, color: CultureTokens.saffron },
+  errorBanner: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 14, paddingHorizontal: 16, borderRadius: 16, marginBottom: 24, borderWidth: 1 },
+  globalErrorText: { flex: 1, fontSize: 14, fontFamily: 'Poppins_500Medium' },
+  roleToggleGroup: { marginBottom: 20 },
+  roleLabel: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: 'rgba(255,255,255,0.6)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
+  roleRow: { flexDirection: 'row', gap: 10 },
+  roleOption: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 16, borderWidth: 1, backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.1)' },
+  roleOptionActive: { backgroundColor: 'rgba(44, 42, 114, 0.4)', borderColor: CultureTokens.indigo },
+  roleOptionText: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.6)' },
+  roleOptionTextActive: { color: '#FFFFFF', fontFamily: 'Poppins_600SemiBold' },
+  form: { gap: 20, marginBottom: 20 },
+  inputGroup: { gap: 8 },
+  optionsRow: { marginBottom: 32 },
+  checkText: { flex: 1, fontSize: 13, fontFamily: 'Poppins_400Regular', color: '#FFFFFF', lineHeight: 20 },
+  linkText: { fontFamily: 'Poppins_600SemiBold' },
+  submitBtn: { height: 56, borderRadius: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 16, elevation: 6 },
+  socialDivider: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 24 },
+  divLine: { flex: 1, height: 1 },
+  divText: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.5)' },
+  socialRow: { flexDirection: 'row', gap: 16, marginBottom: 32 },
+  switchRow: { alignItems: 'center', paddingVertical: 8 },
+  switchText: { fontSize: 15, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.7)' },
+  switchLink: { fontFamily: 'Poppins_700Bold' },
 });

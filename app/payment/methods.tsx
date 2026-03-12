@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/query-client';
 import { useAuth } from '@/lib/auth';
-import { useColors } from '@/hooks/useColors';
+import { CultureTokens } from '@/constants/theme';
 
 interface PaymentMethod {
   id: string;
@@ -43,7 +43,6 @@ export default function PaymentMethodsScreen() {
   const insets      = useSafeAreaInsets();
   const topInset    = Platform.OS === 'web' ? 0 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
-  const colors      = useColors();
   const { userId }  = useAuth();
 
   const [showAddForm, setShowAddForm] = useState(false);
@@ -119,70 +118,70 @@ export default function PaymentMethodsScreen() {
   const typeOptions  = ['credit', 'debit', 'paypal'];
 
   return (
-    <View style={[s.container, { paddingTop: topInset, backgroundColor: colors.background }]}>
+    <View style={[s.container, { paddingTop: topInset }]}>
       <View style={s.header}>
         <Pressable
           onPress={() => router.back()}
-          style={[s.backBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+          style={s.backBtn}
         >
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
+          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
         </Pressable>
-        <Text style={[s.headerTitle, { color: colors.text }]}>Payment Methods</Text>
-        <View style={{ width: 40 }} />
+        <Text style={s.headerTitle}>Payment Methods</Text>
+        <View style={{ width: 44 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: bottomInset + 20 }}>
         {isLoading ? (
           <View style={s.loadingContainer}>
-            <ActivityIndicator color={colors.primary} />
+            <ActivityIndicator color={CultureTokens.indigo} />
           </View>
         ) : methods.length === 0 ? (
           <View style={s.emptyState}>
-            <View style={[s.emptyIcon, { backgroundColor: colors.backgroundSecondary }]}>
-              <Ionicons name="card-outline" size={48} color={colors.textSecondary} />
+            <View style={s.emptyIcon}>
+              <Ionicons name="card-outline" size={48} color="rgba(255,255,255,0.4)" />
             </View>
-            <Text style={[s.emptyTitle, { color: colors.text }]}>No Payment Methods</Text>
-            <Text style={[s.emptySubtitle, { color: colors.text }]}>Add a card or PayPal to make quick payments</Text>
+            <Text style={s.emptyTitle}>No Payment Methods</Text>
+            <Text style={s.emptySubtitle}>Add a card or PayPal to make quick payments</Text>
           </View>
         ) : (
           methods.map((method) => {
-            const brandColor = getBrandColor(method.brand, colors.primary);
+            const brandColor = getBrandColor(method.brand, CultureTokens.indigo);
             return (
               <View key={method.id} style={s.cardContainer}>
-                <View style={[s.cardWrap, { backgroundColor: colors.surface, borderColor: colors.borderLight, borderLeftColor: brandColor }]}>
+                <View style={[s.cardWrap, { borderLeftColor: brandColor }]}>
                   <View style={s.cardTop}>
                     <View style={[s.brandIcon, { backgroundColor: brandColor + '15' }]}>
                       <Ionicons name={getBrandIcon(method.brand) as never} size={22} color={brandColor} />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={[s.cardLabel, { color: colors.text }]}>{method.label}</Text>
-                      <Text style={[s.cardBrand, { color: colors.text }]}>{method.brand} · {method.type}</Text>
+                      <Text style={s.cardLabel}>{method.label}</Text>
+                      <Text style={s.cardBrand}>{method.brand} · {method.type}</Text>
                     </View>
                     {method.isDefault && (
-                      <View style={[s.defaultBadge, { backgroundColor: colors.success + '18' }]}>
-                        <Text style={[s.defaultText, { color: colors.success }]}>Default</Text>
+                      <View style={s.defaultBadge}>
+                        <Text style={s.defaultText}>Default</Text>
                       </View>
                     )}
                   </View>
                   <View style={s.cardBottom}>
-                    <Text style={[s.cardNumber, { color: colors.text }]}>•••• •••• •••• {method.last4}</Text>
-                    <Text style={[s.cardExpiry, { color: colors.text }]}> 
+                    <Text style={s.cardNumber}>•••• •••• •••• {method.last4}</Text>
+                    <Text style={s.cardExpiry}> 
                       {method.expiryMonth?.toString().padStart(2, '0')}/{method.expiryYear?.toString().slice(-2)}
                     </Text>
                   </View>
-                  <View style={[s.cardActions, { borderTopColor: colors.divider }]}>
+                  <View style={s.cardActions}>
                     {!method.isDefault && (
                       <Pressable
                         onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setDefaultMutation.mutate(method.id); }}
                         style={s.actionBtn}
                       >
-                        <Ionicons name="star-outline" size={16} color={colors.primary} />
-                        <Text style={[s.actionText, { color: colors.primary }]}>Set Default</Text>
+                        <Ionicons name="star-outline" size={16} color={CultureTokens.indigo} />
+                        <Text style={[s.actionText, { color: CultureTokens.indigo }]}>Set Default</Text>
                       </Pressable>
                     )}
                     <Pressable onPress={() => handleDelete(method.id)} style={[s.actionBtn, s.deleteBtn]}>
-                      <Ionicons name="trash-outline" size={16} color={colors.error} />
-                      <Text style={[s.actionText, { color: colors.error }]}>Remove</Text>
+                      <Ionicons name="trash-outline" size={16} color={CultureTokens.coral} />
+                      <Text style={[s.actionText, { color: CultureTokens.coral }]}>Remove</Text>
                     </Pressable>
                   </View>
                 </View>
@@ -192,75 +191,73 @@ export default function PaymentMethodsScreen() {
         )}
 
         <Pressable
-          style={[s.addButton, { backgroundColor: colors.primary }]}
+          style={s.addButton}
           onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowAddForm(true); }}
         >
-          <Ionicons name="add-circle" size={22} color={colors.textInverse} />
-          <Text style={[s.addButtonText, { color: colors.textInverse }]}>Add Payment Method</Text>
+          <Ionicons name="add-circle" size={22} color="#0B0B14" />
+          <Text style={s.addButtonText}>Add Payment Method</Text>
         </Pressable>
       </ScrollView>
 
       <Modal visible={showAddForm} animationType="slide" transparent>
-        <View style={[s.modalOverlay, { backgroundColor: colors.overlay }]}>
-          <View style={[s.modalContent, { backgroundColor: colors.background, paddingBottom: bottomInset + 20 }]}>
+        <View style={s.modalOverlay}>
+          <View style={[s.modalContent, { paddingBottom: bottomInset + 30 }]}>
             <View style={s.modalHeader}>
-              <Text style={[s.modalTitle, { color: colors.text }]}>Add Payment Method</Text>
-              <Pressable onPress={() => setShowAddForm(false)}>
-                <Ionicons name="close" size={24} color={colors.text} />
+              <Text style={s.modalTitle}>Add Payment Method</Text>
+              <Pressable onPress={() => setShowAddForm(false)} style={s.modalCloseBtn}>
+                <Ionicons name="close" size={24} color="#FFFFFF" />
               </Pressable>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
-              <Text style={[s.fieldLabel, { color: colors.text }]}>Card Label</Text>
+              <Text style={s.fieldLabel}>Card Label</Text>
               <TextInput
-                style={[s.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.borderLight }]}
+                style={s.input}
                 placeholder="e.g., My Visa Card"
-                placeholderTextColor={colors.textSecondary}
+                placeholderTextColor="rgba(255,255,255,0.4)"
                 value={formData.label}
                 onChangeText={(v) => setFormData(p => ({ ...p, label: v }))}
               />
 
-              <Text style={[s.fieldLabel, { color: colors.text }]}>Last 4 Digits</Text>
+              <Text style={s.fieldLabel}>Last 4 Digits</Text>
               <TextInput
-                style={[s.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.borderLight }]}
+                style={s.input}
                 placeholder="1234"
-                placeholderTextColor={colors.textSecondary}
+                placeholderTextColor="rgba(255,255,255,0.4)"
                 value={formData.last4}
                 onChangeText={(v) => setFormData(p => ({ ...p, last4: v.replace(/\D/g, '').slice(0, 4) }))}
                 keyboardType="number-pad"
                 maxLength={4}
               />
 
-              <Text style={[s.fieldLabel, { color: colors.text }]}>Card Brand</Text>
+              <Text style={s.fieldLabel}>Card Brand</Text>
               <View style={s.optionsRow}>
                 {brandOptions.map(b => (
                   <Pressable
                     key={b}
                     style={[
                       s.optionChip,
-                      { backgroundColor: colors.surface, borderColor: colors.borderLight },
-                      formData.brand === b && { backgroundColor: colors.primaryGlow, borderColor: colors.primary },
+                      formData.brand === b && s.optionChipActive,
                     ]}
                     onPress={() => setFormData(p => ({ ...p, brand: b }))}
                   >
-                    <Text style={[s.optionChipText, { color: formData.brand === b ? colors.primary : colors.text }]}>{b}</Text>
+                    <Text style={[s.optionChipText, formData.brand === b && s.optionChipTextActive]}>{b}</Text>
                   </Pressable>
                 ))}
               </View>
 
-              <Text style={[s.fieldLabel, { color: colors.text }]}>Card Type</Text>
+              <Text style={s.fieldLabel}>Card Type</Text>
               <View style={s.optionsRow}>
                 {typeOptions.map(t => (
                   <Pressable
                     key={t}
                     style={[
                       s.optionChip,
-                      { backgroundColor: colors.surface, borderColor: colors.borderLight },
-                      formData.type === t && { backgroundColor: colors.primaryGlow, borderColor: colors.primary },
+                      formData.type === t && s.optionChipActive,
                     ]}
                     onPress={() => setFormData(p => ({ ...p, type: t }))}
                   >
-                    <Text style={[s.optionChipText, { color: formData.type === t ? colors.primary : colors.text }]}> 
+                    <Text style={[s.optionChipText, formData.type === t && s.optionChipTextActive]}> 
                       {t.charAt(0).toUpperCase() + t.slice(1)}
                     </Text>
                   </Pressable>
@@ -269,11 +266,11 @@ export default function PaymentMethodsScreen() {
 
               <View style={s.expiryRow}>
                 <View style={{ flex: 1 }}>
-                  <Text style={[s.fieldLabel, { color: colors.text }]}>Expiry Month</Text>
+                  <Text style={s.fieldLabel}>Expiry Month</Text>
                   <TextInput
-                    style={[s.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.borderLight }]}
+                    style={s.input}
                     placeholder="MM"
-                    placeholderTextColor={colors.textSecondary}
+                    placeholderTextColor="rgba(255,255,255,0.4)"
                     value={formData.expiryMonth}
                     onChangeText={(v) => setFormData(p => ({ ...p, expiryMonth: v.replace(/\D/g, '').slice(0, 2) }))}
                     keyboardType="number-pad"
@@ -281,11 +278,11 @@ export default function PaymentMethodsScreen() {
                   />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[s.fieldLabel, { color: colors.text }]}>Expiry Year</Text>
+                  <Text style={s.fieldLabel}>Expiry Year</Text>
                   <TextInput
-                    style={[s.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.borderLight }]}
+                    style={s.input}
                     placeholder="YYYY"
-                    placeholderTextColor={colors.textSecondary}
+                    placeholderTextColor="rgba(255,255,255,0.4)"
                     value={formData.expiryYear}
                     onChangeText={(v) => setFormData(p => ({ ...p, expiryYear: v.replace(/\D/g, '').slice(0, 4) }))}
                     keyboardType="number-pad"
@@ -295,13 +292,13 @@ export default function PaymentMethodsScreen() {
               </View>
 
               <Pressable
-                style={[s.submitBtn, { backgroundColor: colors.primary }, createMutation.isPending && { opacity: 0.6 }]}
+                style={[s.submitBtn, createMutation.isPending && { opacity: 0.7 }]}
                 onPress={handleAdd}
                 disabled={createMutation.isPending}
               >
                 {createMutation.isPending
-                  ? <ActivityIndicator color={colors.textInverse} size="small" />
-                  : <Text style={[s.submitBtnText, { color: colors.textInverse }]}>Add Card</Text>
+                  ? <ActivityIndicator color="#0B0B14" size="small" />
+                  : <Text style={s.submitBtnText}>Add Card</Text>
                 }
               </Pressable>
             </ScrollView>
@@ -313,42 +310,45 @@ export default function PaymentMethodsScreen() {
 }
 
 const s = StyleSheet.create({
-  container:      { flex: 1 },
-  header:         { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
-  backBtn:        { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-  headerTitle:    { fontSize: 18, fontFamily: 'Poppins_700Bold' },
+  container:      { flex: 1, backgroundColor: '#0B0B14' },
+  header:         { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12, zIndex: 10 },
+  backBtn:        { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  headerTitle:    { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
   loadingContainer:{ padding: 60, alignItems: 'center' },
   emptyState:     { alignItems: 'center', paddingTop: 80, paddingHorizontal: 40 },
-  emptyIcon:      { width: 100, height: 100, borderRadius: 50, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
-  emptyTitle:     { fontSize: 20, fontFamily: 'Poppins_700Bold', marginBottom: 8 },
-  emptySubtitle:  { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center' },
-  cardContainer:  { marginHorizontal: 20, marginBottom: 12 },
-  cardWrap:       { borderRadius: 16, padding: 16, borderWidth: 1, borderLeftWidth: 4 },
-  cardTop:        { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 },
-  brandIcon:      { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  cardLabel:      { fontSize: 16, fontFamily: 'Poppins_600SemiBold' },
-  cardBrand:      { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 2 },
-  defaultBadge:   { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  defaultText:    { fontSize: 11, fontFamily: 'Poppins_600SemiBold' },
-  cardBottom:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
-  cardNumber:     { fontSize: 15, fontFamily: 'Poppins_500Medium', letterSpacing: 1 },
-  cardExpiry:     { fontSize: 13, fontFamily: 'Poppins_500Medium' },
-  cardActions:    { flexDirection: 'row', gap: 12, borderTopWidth: 1, paddingTop: 12 },
-  actionBtn:      { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 4, paddingHorizontal: 8 },
+  emptyIcon:      { width: 100, height: 100, borderRadius: 50, alignItems: 'center', justifyContent: 'center', marginBottom: 20, backgroundColor: 'rgba(255,255,255,0.02)' },
+  emptyTitle:     { fontSize: 20, fontFamily: 'Poppins_700Bold', marginBottom: 8, color: '#FFFFFF' },
+  emptySubtitle:  { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', color: 'rgba(255,255,255,0.6)' },
+  cardContainer:  { marginHorizontal: 20, marginBottom: 14 },
+  cardWrap:       { borderRadius: 20, padding: 18, borderWidth: 1, borderLeftWidth: 4, backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.1)' },
+  cardTop:        { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 16 },
+  brandIcon:      { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  cardLabel:      { fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
+  cardBrand:      { fontSize: 13, fontFamily: 'Poppins_400Regular', marginTop: 2, color: 'rgba(255,255,255,0.6)', textTransform: 'capitalize' },
+  defaultBadge:   { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, backgroundColor: CultureTokens.success + '15' },
+  defaultText:    { fontSize: 11, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.success },
+  cardBottom:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  cardNumber:     { fontSize: 15, fontFamily: 'Poppins_500Medium', letterSpacing: 1, color: '#FFFFFF' },
+  cardExpiry:     { fontSize: 13, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.7)' },
+  cardActions:    { flexDirection: 'row', gap: 14, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.05)', paddingTop: 14 },
+  actionBtn:      { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 2 },
   deleteBtn:      { marginLeft: 'auto' as never },
   actionText:     { fontSize: 13, fontFamily: 'Poppins_500Medium' },
-  addButton:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginHorizontal: 20, marginTop: 8, borderRadius: 14, paddingVertical: 16 },
-  addButtonText:  { fontSize: 15, fontFamily: 'Poppins_600SemiBold' },
-  modalOverlay:   { flex: 1, justifyContent: 'flex-end' },
-  modalContent:   { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, maxHeight: '85%' },
-  modalHeader:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  modalTitle:     { fontSize: 20, fontFamily: 'Poppins_700Bold' },
-  fieldLabel:     { fontSize: 13, fontFamily: 'Poppins_600SemiBold', marginBottom: 6, marginTop: 14 },
-  input:          { borderRadius: 12, padding: 14, fontSize: 15, fontFamily: 'Poppins_400Regular', borderWidth: 1 },
-  optionsRow:     { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  optionChip:     { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
-  optionChipText: { fontSize: 13, fontFamily: 'Poppins_500Medium' },
-  expiryRow:      { flexDirection: 'row', gap: 12 },
-  submitBtn:      { borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginTop: 24 },
-  submitBtnText:  { fontSize: 16, fontFamily: 'Poppins_600SemiBold' },
+  addButton:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginHorizontal: 20, marginTop: 12, borderRadius: 16, paddingVertical: 18, backgroundColor: CultureTokens.indigo },
+  addButtonText:  { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#0B0B14' },
+  modalOverlay:   { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(11,11,20,0.85)' },
+  modalContent:   { borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, maxHeight: '90%', backgroundColor: '#161622', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  modalHeader:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
+  modalTitle:     { fontSize: 20, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+  modalCloseBtn:  { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  fieldLabel:     { fontSize: 13, fontFamily: 'Poppins_600SemiBold', marginBottom: 8, marginTop: 16, color: 'rgba(255,255,255,0.8)' },
+  input:          { borderRadius: 16, padding: 16, fontSize: 15, fontFamily: 'Poppins_400Regular', borderWidth: 1, backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.1)', color: '#FFFFFF' },
+  optionsRow:     { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  optionChip:     { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 14, borderWidth: 1, backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.1)' },
+  optionChipActive: { backgroundColor: CultureTokens.indigo + '20', borderColor: CultureTokens.indigo },
+  optionChipText: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.6)' },
+  optionChipTextActive: { color: CultureTokens.indigo },
+  expiryRow:      { flexDirection: 'row', gap: 14 },
+  submitBtn:      { borderRadius: 16, paddingVertical: 18, alignItems: 'center', marginTop: 32, backgroundColor: CultureTokens.indigo },
+  submitBtnText:  { fontSize: 15, fontFamily: 'Poppins_700Bold', color: '#0B0B14' },
 });

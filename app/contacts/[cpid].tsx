@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { goBackOrReplace } from '@/lib/navigation';
-import { Colors } from '@/constants/theme';
+import { CultureTokens } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
 import { useContacts } from '@/contexts/ContactsContext';
 import { useCallback } from 'react';
@@ -22,12 +22,12 @@ import * as FileSystem from 'expo-file-system/legacy';
 // ─── Tier config ─────────────────────────────────────────────────────────────
 
 const TIER_DISPLAY: Record<string, { label: string; color: string; icon: string }> = {
-  free: { label: 'Standard', color: Colors.textSecondary, icon: 'shield-outline' },
-  plus: { label: 'Plus', color: '#3498DB', icon: 'star' },
-  premium: { label: 'Premium', color: '#F39C12', icon: 'diamond' },
+  free: { label: 'Standard', color: 'rgba(255,255,255,0.6)', icon: 'shield-outline' },
+  plus: { label: 'Plus', color: CultureTokens.indigo, icon: 'star' },
+  premium: { label: 'Premium', color: CultureTokens.gold, icon: 'diamond' },
   elite: { label: 'Elite', color: '#8E44AD', icon: 'trophy' },
-  vip: { label: 'VIP', color: '#E74C3C', icon: 'ribbon' },
-  pro: { label: 'Pro', color: '#27AE60', icon: 'briefcase' },
+  vip: { label: 'VIP', color: CultureTokens.saffron, icon: 'ribbon' },
+  pro: { label: 'Pro', color: CultureTokens.teal, icon: 'briefcase' },
 };
 
 // ─── vCard builder ────────────────────────────────────────────────────────────
@@ -81,7 +81,6 @@ async function saveVCardToPhone(contact: NonNullable<ReturnType<ReturnType<typeo
   const displayName = contact.name || contact.cpid;
 
   if (Platform.OS === 'web') {
-    // Web: trigger .vcf download
     const blob = new Blob([vCardString], { type: 'text/vcard;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -94,7 +93,6 @@ async function saveVCardToPhone(contact: NonNullable<ReturnType<ReturnType<typeo
     return;
   }
 
-  // Native: write .vcf to cache, then share — iOS opens "Add to Contacts"
   try {
     const safeName = displayName.replace(/[^a-zA-Z0-9_-]/g, '_');
     const fileUri = (FileSystem.cacheDirectory ?? '') + `${safeName}.vcf`;
@@ -109,7 +107,6 @@ async function saveVCardToPhone(contact: NonNullable<ReturnType<ReturnType<typeo
       url: fileUri,
     });
   } catch {
-    // Fallback: share vCard as plain text
     await Share.share({
       title: `Save ${displayName} to Contacts`,
       message: vCardString,
@@ -123,7 +120,7 @@ function InfoRow({
   icon,
   label,
   value,
-  color = Colors.text,
+  color = '#FFFFFF',
   onPress,
   badge,
 }: {
@@ -136,7 +133,7 @@ function InfoRow({
 }) {
   const content = (
     <View style={rowStyles.container}>
-      <View style={[rowStyles.iconWrap, { backgroundColor: color + '15' }]}>
+      <View style={[rowStyles.iconWrap, { backgroundColor: color === '#FFFFFF' ? 'rgba(255,255,255,0.05)' : color + '15' }]}>
         <Ionicons name={icon as any} size={18} color={color} />
       </View>
       <View style={rowStyles.textWrap}>
@@ -148,29 +145,25 @@ function InfoRow({
           <Text style={rowStyles.badgeText}>{badge}</Text>
         </View>
       )}
-      {onPress && <Ionicons name="chevron-forward" size={14} color={Colors.textTertiary} />}
+      {onPress && <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.4)" />}
     </View>
   );
 
-  return onPress ? (
-    <Pressable onPress={onPress}>{content}</Pressable>
-  ) : (
-    content
-  );
+  return onPress ? <Pressable onPress={onPress}>{content}</Pressable> : content;
 }
 
 const rowStyles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    gap: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
   },
   iconWrap: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -178,26 +171,26 @@ const rowStyles = StyleSheet.create({
   label: {
     fontSize: 11,
     fontFamily: 'Poppins_500Medium',
-    color: Colors.textTertiary,
+    color: 'rgba(255,255,255,0.5)',
     textTransform: 'uppercase',
-    letterSpacing: 0.4,
+    letterSpacing: 0.6,
   },
   value: {
     fontSize: 15,
     fontFamily: 'Poppins_500Medium',
-    color: Colors.text,
-    marginTop: 1,
+    color: '#FFFFFF',
+    marginTop: 2,
   },
   badge: {
-    backgroundColor: Colors.primary + '15',
+    backgroundColor: CultureTokens.indigo + '15',
     borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
   },
   badgeText: {
     fontSize: 11,
     fontFamily: 'Poppins_600SemiBold',
-    color: Colors.primary,
+    color: CultureTokens.indigo,
   },
 });
 
@@ -288,7 +281,7 @@ export default function ContactDetailScreen() {
   if (!contact) {
     return (
       <View style={[styles.container, { paddingTop: topInset, justifyContent: 'center', alignItems: 'center' }]}>
-        <Ionicons name="person-outline" size={48} color={Colors.textTertiary} />
+        <Ionicons name="person-outline" size={48} color="rgba(255,255,255,0.4)" />
         <Text style={styles.notFoundText}>Contact not found</Text>
         <Pressable style={styles.backLink} onPress={() => goBackOrReplace('/(tabs)')}>
           <Text style={styles.backLinkText}>Go Back</Text>
@@ -316,11 +309,11 @@ export default function ContactDetailScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => goBackOrReplace('/(tabs)')} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={22} color={Colors.text} />
+          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
         </Pressable>
-        <Text style={styles.headerTitle}>Contact</Text>
+        <Text style={styles.headerTitle}>Contact Details</Text>
         <Pressable style={styles.headerShareBtn} onPress={handleShare}>
-          <Ionicons name="share-outline" size={20} color={Colors.primary} />
+          <Ionicons name="share-outline" size={20} color={CultureTokens.indigo} />
         </Pressable>
       </View>
 
@@ -330,7 +323,7 @@ export default function ContactDetailScreen() {
       >
         {/* Profile card */}
         <View style={styles.profileCard}>
-          <View style={[styles.avatar, { borderColor: tier.color + '50' }]}>
+          <View style={[styles.avatar, { borderColor: tier.color + '40', backgroundColor: tier.color + '10' }]}>
             <Text style={[styles.avatarText, { color: tier.color }]}>{initials}</Text>
           </View>
 
@@ -345,10 +338,10 @@ export default function ContactDetailScreen() {
           {/* CPID + tier chips */}
           <View style={styles.chipRow}>
             <View style={styles.cpidChip}>
-              <Ionicons name="finger-print" size={14} color={Colors.primary} />
+              <Ionicons name="finger-print" size={14} color={CultureTokens.indigo} />
               <Text style={styles.cpidText}>{contact.cpid}</Text>
             </View>
-            <View style={[styles.tierChip, { backgroundColor: tier.color + '15' }]}>
+            <View style={[styles.tierChip, { backgroundColor: tier.color + '15', borderColor: tier.color + '30' }]}>
               <Ionicons name={tier.icon as any} size={12} color={tier.color} />
               <Text style={[styles.tierText, { color: tier.color }]}>{tier.label}</Text>
             </View>
@@ -358,23 +351,23 @@ export default function ContactDetailScreen() {
           <View style={styles.quickActions}>
             {contact.phone && (
               <Pressable style={styles.quickActionBtn} onPress={handleCall}>
-                <Ionicons name="call" size={20} color={Colors.success} />
-                <Text style={[styles.quickActionLabel, { color: Colors.success }]}>Call</Text>
+                <Ionicons name="call" size={22} color={CultureTokens.success} />
+                <Text style={[styles.quickActionLabel, { color: CultureTokens.success }]}>Call</Text>
               </Pressable>
             )}
             {contact.email && (
               <Pressable style={styles.quickActionBtn} onPress={handleEmail}>
-                <Ionicons name="mail" size={20} color={Colors.primary} />
-                <Text style={[styles.quickActionLabel, { color: Colors.primary }]}>Email</Text>
+                <Ionicons name="mail" size={22} color={CultureTokens.indigo} />
+                <Text style={[styles.quickActionLabel, { color: CultureTokens.indigo }]}>Email</Text>
               </Pressable>
             )}
             <Pressable style={styles.quickActionBtn} onPress={handleSaveToPhone}>
-              <Ionicons name="person-add" size={20} color={Colors.accent} />
-              <Text style={[styles.quickActionLabel, { color: Colors.accent }]}>Save</Text>
+              <Ionicons name="person-add" size={22} color={CultureTokens.coral} />
+              <Text style={[styles.quickActionLabel, { color: CultureTokens.coral }]}>Save</Text>
             </Pressable>
             <Pressable style={styles.quickActionBtn} onPress={handleShare}>
-              <Ionicons name="share-social" size={20} color={Colors.secondary} />
-              <Text style={[styles.quickActionLabel, { color: Colors.secondary }]}>Share</Text>
+              <Ionicons name="share-social" size={22} color={CultureTokens.saffron} />
+              <Text style={[styles.quickActionLabel, { color: CultureTokens.saffron }]}>Share</Text>
             </Pressable>
           </View>
         </View>
@@ -393,7 +386,7 @@ export default function ContactDetailScreen() {
               icon="call"
               label="Phone"
               value={contact.phone}
-              color={Colors.success}
+              color={CultureTokens.success}
               onPress={handleCall}
             />
           )}
@@ -405,7 +398,7 @@ export default function ContactDetailScreen() {
               icon="mail"
               label="Email"
               value={contact.email}
-              color={Colors.primary}
+              color={CultureTokens.indigo}
               onPress={handleEmail}
             />
           )}
@@ -417,7 +410,7 @@ export default function ContactDetailScreen() {
               icon="business"
               label="Organisation"
               value={contact.org}
-              color={Colors.textSecondary}
+              color="rgba(255,255,255,0.8)"
             />
           )}
           {contact.org && contact.city && <View style={styles.divider} />}
@@ -426,7 +419,7 @@ export default function ContactDetailScreen() {
               icon="location"
               label="Location"
               value={`${contact.city}${contact.country ? `, ${contact.country}` : ''}`}
-              color={Colors.primary}
+              color={CultureTokens.indigo}
               onPress={handleOpenLocation}
             />
           )}
@@ -437,7 +430,7 @@ export default function ContactDetailScreen() {
             icon="calendar-outline"
             label="Saved on"
             value={savedDate}
-            color={Colors.textSecondary}
+            color="rgba(255,255,255,0.6)"
           />
         </View>
 
@@ -449,7 +442,7 @@ export default function ContactDetailScreen() {
                 icon="globe-outline"
                 label="CulturePass Profile"
                 value={`culturepass.app/u/${contact.username}`}
-                color={Colors.primary}
+                color={CultureTokens.indigo}
                 onPress={() =>
                   Linking.openURL(`https://culturepass.app/u/${contact.username}`)
                 }
@@ -461,7 +454,7 @@ export default function ContactDetailScreen() {
             icon="finger-print"
             label="CulturePass ID"
             value={contact.cpid}
-            color={Colors.primary}
+            color={CultureTokens.indigo}
           />
         </View>
 
@@ -469,39 +462,39 @@ export default function ContactDetailScreen() {
         <View style={styles.actionsSection}>
           {contact.userId && (
             <Pressable style={styles.actionBtn} onPress={handleViewProfile}>
-              <View style={[styles.actionIcon, { backgroundColor: Colors.primary + '15' }]}>
-                <Ionicons name="person-outline" size={18} color={Colors.primary} />
+              <View style={[styles.actionIcon, { backgroundColor: CultureTokens.indigo + '15' }]}>
+                <Ionicons name="person-outline" size={20} color={CultureTokens.indigo} />
               </View>
-              <Text style={[styles.actionBtnText, { color: Colors.primary }]}>View Full Profile</Text>
-              <Ionicons name="chevron-forward" size={16} color={Colors.textTertiary} />
+              <Text style={styles.actionBtnText}>View Full Profile</Text>
+              <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.4)" />
             </Pressable>
           )}
 
           <Pressable style={styles.actionBtn} onPress={handleSaveToPhone}>
-            <View style={[styles.actionIcon, { backgroundColor: Colors.accent + '15' }]}>
-              <Ionicons name="person-add-outline" size={18} color={Colors.accent} />
+            <View style={[styles.actionIcon, { backgroundColor: CultureTokens.coral + '15' }]}>
+              <Ionicons name="person-add-outline" size={20} color={CultureTokens.coral} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.actionBtnText, { color: Colors.accent }]}>Save to Phone Contacts</Text>
+              <Text style={styles.actionBtnText}>Save to Phone Contacts</Text>
               <Text style={styles.actionBtnSub}>Exports as vCard (.vcf)</Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color={Colors.textTertiary} />
+            <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.4)" />
           </Pressable>
 
           <Pressable style={styles.actionBtn} onPress={handleShare}>
-            <View style={[styles.actionIcon, { backgroundColor: Colors.secondary + '15' }]}>
-              <Ionicons name="share-outline" size={18} color={Colors.secondary} />
+            <View style={[styles.actionIcon, { backgroundColor: CultureTokens.saffron + '15' }]}>
+              <Ionicons name="share-outline" size={20} color={CultureTokens.saffron} />
             </View>
-            <Text style={[styles.actionBtnText, { color: Colors.secondary }]}>Share Contact</Text>
-            <Ionicons name="chevron-forward" size={16} color={Colors.textTertiary} />
+            <Text style={styles.actionBtnText}>Share Contact</Text>
+            <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.4)" />
           </Pressable>
 
           <Pressable style={[styles.actionBtn, styles.actionBtnDanger]} onPress={handleRemove}>
-            <View style={[styles.actionIcon, { backgroundColor: Colors.error + '15' }]}>
-              <Ionicons name="trash-outline" size={18} color={Colors.error} />
+            <View style={[styles.actionIcon, { backgroundColor: CultureTokens.error + '15' }]}>
+              <Ionicons name="trash-outline" size={20} color={CultureTokens.error} />
             </View>
-            <Text style={[styles.actionBtnText, { color: Colors.error }]}>Remove Contact</Text>
-            <Ionicons name="chevron-forward" size={16} color={Colors.textTertiary} />
+            <Text style={[styles.actionBtnText, { color: CultureTokens.error }]}>Remove Contact</Text>
+            <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.4)" />
           </Pressable>
         </View>
       </ScrollView>
@@ -510,7 +503,7 @@ export default function ContactDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1, backgroundColor: '#0B0B14' },
 
   header: {
     flexDirection: 'row',
@@ -518,167 +511,175 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 12,
+    zIndex: 10,
   },
   backBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: Colors.surface,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: Colors.text },
+  headerTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
   headerShareBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: Colors.primary + '15',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: CultureTokens.indigo + '15',
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   profileCard: {
     marginHorizontal: 20,
-    backgroundColor: Colors.surface,
+    backgroundColor: 'rgba(255,255,255,0.03)',
     borderRadius: 24,
-    padding: 28,
+    paddingHorizontal: 28,
+    paddingVertical: 32,
     alignItems: 'center',
-    ...Colors.shadow.medium,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   avatar: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: Colors.primary + '12',
+    width: 96,
+    height: 96,
+    borderRadius: 48,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 3,
-    marginBottom: 16,
+    marginBottom: 20,
   },
-  avatarText: { fontSize: 30, fontFamily: 'Poppins_700Bold' },
-  name: { fontSize: 22, fontFamily: 'Poppins_700Bold', color: Colors.text, textAlign: 'center' },
+  avatarText: { fontSize: 32, fontFamily: 'Poppins_700Bold' },
+  name: { fontSize: 24, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', textAlign: 'center' },
   username: {
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: 'Poppins_400Regular',
-    color: Colors.textSecondary,
-    marginTop: 2,
+    color: 'rgba(255,255,255,0.6)',
+    marginTop: 4,
   },
   orgName: {
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: 'Poppins_500Medium',
-    color: Colors.textTertiary,
-    marginTop: 2,
+    color: 'rgba(255,255,255,0.5)',
+    marginTop: 4,
   },
 
-  chipRow: { flexDirection: 'row', gap: 8, marginTop: 14 },
+  chipRow: { flexDirection: 'row', gap: 10, marginTop: 18 },
   cpidChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: Colors.primary + '12',
-    paddingHorizontal: 14,
-    paddingVertical: 7,
+    gap: 8,
+    backgroundColor: CultureTokens.indigo + '15',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderRadius: 20,
   },
-  cpidText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: Colors.primary },
+  cpidText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.indigo },
   tierChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderRadius: 20,
+    borderWidth: 1,
   },
-  tierText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
+  tierText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
 
   quickActions: {
     flexDirection: 'row',
-    gap: 16,
-    marginTop: 20,
-    paddingTop: 16,
+    gap: 20,
+    marginTop: 28,
+    paddingTop: 24,
     borderTopWidth: 1,
-    borderTopColor: Colors.divider,
+    borderTopColor: 'rgba(255,255,255,0.1)',
     width: '100%',
     justifyContent: 'center',
   },
-  quickActionBtn: { alignItems: 'center', gap: 6, minWidth: 56 },
+  quickActionBtn: { alignItems: 'center', gap: 8, minWidth: 60 },
   quickActionLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: 'Poppins_600SemiBold',
   },
 
   bioCard: {
     marginHorizontal: 20,
-    marginTop: 16,
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    ...Colors.shadow.small,
+    marginTop: 20,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   bioText: {
     fontSize: 14,
     fontFamily: 'Poppins_400Regular',
-    color: Colors.textSecondary,
-    lineHeight: 22,
+    color: 'rgba(255,255,255,0.7)',
+    lineHeight: 24,
   },
 
   infoCard: {
     marginHorizontal: 20,
-    marginTop: 16,
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
+    marginTop: 20,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 20,
     overflow: 'hidden',
-    ...Colors.shadow.small,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
-  divider: { height: 1, backgroundColor: Colors.divider, marginLeft: 66 },
+  divider: { height: 1, backgroundColor: 'rgba(255,255,255,0.05)', marginLeft: 78 },
 
   actionsSection: {
     marginHorizontal: 20,
-    marginTop: 24,
-    gap: 8,
-    paddingBottom: 8,
+    marginTop: 32,
+    gap: 12,
+    paddingBottom: 10,
   },
   actionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    backgroundColor: Colors.surface,
-    borderRadius: 14,
-    padding: 14,
-    ...Colors.shadow.small,
+    gap: 14,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   actionBtnDanger: {
     borderWidth: 1,
-    borderColor: Colors.error + '20',
+    borderColor: CultureTokens.error + '30',
   },
   actionIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  actionBtnText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold' },
+  actionBtnText: { flex: 1, fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
   actionBtnSub: {
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: 'Poppins_400Regular',
-    color: Colors.textTertiary,
-    marginTop: 1,
+    color: 'rgba(255,255,255,0.5)',
+    marginTop: 2,
   },
 
   notFoundText: {
     fontSize: 16,
     fontFamily: 'Poppins_500Medium',
-    color: Colors.textSecondary,
-    marginTop: 12,
+    color: 'rgba(255,255,255,0.6)',
+    marginTop: 16,
   },
   backLink: {
-    marginTop: 16,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 12,
-    backgroundColor: Colors.primary,
+    marginTop: 24,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 14,
+    backgroundColor: CultureTokens.indigo,
   },
-  backLinkText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: '#FFF' },
+  backLinkText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#0B0B14' },
 });

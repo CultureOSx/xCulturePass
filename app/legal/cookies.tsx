@@ -1,15 +1,14 @@
 import { View, Text, Pressable, StyleSheet, ScrollView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useColors } from '@/hooks/useColors';
-import { Colors } from '@/constants/theme';
+import { CultureTokens } from '@/constants/theme';
 import { router } from 'expo-router';
 
 const COOKIE_TYPES = [
-  { name: 'Essential Cookies',   desc: 'Required for the app to function. They enable core features like secure login, session management, and payment processing. These cannot be disabled.',                                                           icon: 'lock-closed' as const, colorType: 'error' as const, required: true },
-  { name: 'Analytics Cookies',   desc: 'Help us understand how users interact with CulturePass. We use anonymised analytics to improve the user experience, identify popular features, and fix issues.',                                                 icon: 'analytics' as const,   colorType: 'info' as const, required: false },
-  { name: 'Preference Cookies',  desc: 'Remember your settings such as language preference, selected location, theme, and notification preferences. These make your experience more personalised.',                                                      icon: 'settings' as const,    colorType: 'secondary' as const, required: false },
-  { name: 'Marketing Cookies',   desc: 'Used to deliver relevant event recommendations and sponsor offers based on your interests and browsing behaviour. You can opt out of these at any time.',                                                        icon: 'megaphone' as const,   colorType: 'warning' as const, required: false },
+  { name: 'Essential Cookies',   desc: 'Required for the app to function. They enable core features like secure login, session management, and payment processing. These cannot be disabled.',                                                           icon: 'lock-closed' as const, color: CultureTokens.coral, required: true },
+  { name: 'Analytics Cookies',   desc: 'Help us understand how users interact with CulturePass. We use anonymised analytics to improve the user experience, identify popular features, and fix issues.',                                                 icon: 'analytics' as const,   color: CultureTokens.indigo, required: false },
+  { name: 'Preference Cookies',  desc: 'Remember your settings such as language preference, selected location, theme, and notification preferences. These make your experience more personalised.',                                                      icon: 'settings' as const,    color: CultureTokens.teal, required: false },
+  { name: 'Marketing Cookies',   desc: 'Used to deliver relevant event recommendations and sponsor offers based on your interests and browsing behaviour. You can opt out of these at any time.',                                                        icon: 'megaphone' as const,   color: CultureTokens.saffron, required: false },
 ];
 
 const SECTIONS = [
@@ -26,44 +25,42 @@ const SECTIONS = [
 export default function CookiesScreen() {
   const insets = useSafeAreaInsets();
   const webTop = 0;
-  const colors = useColors();
 
   return (
-    <View style={[s.container, { paddingTop: insets.top + webTop, backgroundColor: colors.background }]}>
+    <View style={[s.container, { paddingTop: insets.top + webTop }]}>
       <View style={s.header}>
-        <Pressable onPress={() => router.back()} style={[s.backBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
+        <Pressable onPress={() => router.back()} style={s.backBtn}>
+          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
         </Pressable>
-        <Text style={[s.headerTitle, { color: colors.text }]}>Data & Cookie Policy</Text>
-        <View style={{ width: 40 }} />
+        <Text style={s.headerTitle}>Data & Cookie Policy</Text>
+        <View style={{ width: 44 }} />
       </View>
 
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 40 + (Platform.OS === 'web' ? 34 : insets.bottom) }} showsVerticalScrollIndicator={false}>
-        <View style={[s.intro, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-          <View style={[s.iconWrap, { backgroundColor: colors.warning + '15' }]}>
-            <Ionicons name="finger-print" size={28} color={colors.warning} />
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 40 + (Platform.OS === 'web' ? 34 : insets.bottom), paddingTop: 10 }} showsVerticalScrollIndicator={false}>
+        <View style={s.intro}>
+          <View style={s.iconWrap}>
+            <Ionicons name="finger-print" size={28} color={CultureTokens.saffron} />
           </View>
-          <Text style={[s.introTitle, { color: colors.text }]}>Data & Cookie Policy</Text>
-          <Text style={[s.introDate, { color: colors.primary }]}>Last updated: 1 February 2026</Text>
-          <Text style={[s.introPara, { color: colors.text }]}>This policy explains how CulturePass uses cookies, local storage, and similar technologies to provide and improve our services.</Text>
+          <Text style={s.introTitle}>Data & Cookie Policy</Text>
+          <Text style={s.introDate}>Last updated: 1 February 2026</Text>
+          <Text style={s.introPara}>This policy explains how CulturePass uses cookies, local storage, and similar technologies to provide and improve our services.</Text>
         </View>
 
         <View style={s.cookieSection}>
-          <Text style={[s.cookieSectionTitle, { color: colors.text }]}>Types of Data We Collect</Text>
+          <Text style={s.cookieSectionTitle}>Types of Data We Collect</Text>
           {COOKIE_TYPES.map((ct, i) => {
-            const ctColor = ct.colorType === 'error' ? colors.error : ct.colorType === 'info' ? colors.info : ct.colorType === 'secondary' ? colors.secondary : colors.warning;
             return (
-            <View key={i} style={[s.cookieCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+            <View key={i} style={s.cookieCard}>
               <View style={s.cookieHeader}>
-                <View style={[s.cookieIcon, { backgroundColor: ctColor + '15' }]}>
-                  <Ionicons name={ct.icon as never} size={20} color={ctColor} />
+                <View style={[s.cookieIcon, { backgroundColor: ct.color + '15' }]}>
+                  <Ionicons name={ct.icon as never} size={20} color={ct.color} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[s.cookieName, { color: colors.text }]}>{ct.name}</Text>
-                  {ct.required && <View style={s.requiredBadge}><Text style={s.requiredText}>Required</Text></View>}
+                  <Text style={s.cookieName}>{ct.name}</Text>
+                  {ct.required && <View style={[s.requiredBadge, { backgroundColor: CultureTokens.coral + '15' }]}><Text style={[s.requiredText, { color: CultureTokens.coral }]}>Required</Text></View>}
                 </View>
               </View>
-              <Text style={[s.cookieDesc, { color: colors.text }]}>{ct.desc}</Text>
+              <Text style={s.cookieDesc}>{ct.desc}</Text>
             </View>
             );
           })}
@@ -71,8 +68,8 @@ export default function CookiesScreen() {
 
         {SECTIONS.map((sec, i) => (
           <View key={i} style={s.section}>
-            <Text style={[s.sectionTitle, { color: colors.text }]}>{sec.title}</Text>
-            <Text style={[s.sectionBody, { color: colors.text }]}>{sec.body}</Text>
+            <Text style={s.sectionTitle}>{sec.title}</Text>
+            <Text style={s.sectionBody}>{sec.body}</Text>
           </View>
         ))}
       </ScrollView>
@@ -81,25 +78,25 @@ export default function CookiesScreen() {
 }
 
 const s = StyleSheet.create({
-  container:         { flex: 1 },
-  header:            { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
-  backBtn:           { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-  headerTitle:       { fontSize: 18, fontFamily: 'Poppins_700Bold' },
-  intro:             { marginHorizontal: 20, marginBottom: 24, borderRadius: 18, padding: 20, borderWidth: 1, alignItems: 'center' },
-  iconWrap:          { width: 56, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-  introTitle:        { fontSize: 20, fontFamily: 'Poppins_700Bold', marginBottom: 4 },
-  introDate:         { fontSize: 12, fontFamily: 'Poppins_500Medium', marginBottom: 12 },
-  introPara:         { fontSize: 13, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 20 },
+  container:    { flex: 1, backgroundColor: '#0B0B14' },
+  header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
+  backBtn:      { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  headerTitle:  { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+  intro:        { marginHorizontal: 20, marginBottom: 24, borderRadius: 20, padding: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.03)', alignItems: 'center' },
+  iconWrap:     { width: 60, height: 60, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 16, backgroundColor: CultureTokens.saffron + '15' },
+  introTitle:   { fontSize: 20, fontFamily: 'Poppins_700Bold', marginBottom: 4, color: '#FFFFFF' },
+  introDate:    { fontSize: 12, fontFamily: 'Poppins_500Medium', marginBottom: 14, color: CultureTokens.indigo },
+  introPara:    { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, color: 'rgba(255,255,255,0.7)' },
   cookieSection:     { paddingHorizontal: 20, marginBottom: 24 },
-  cookieSectionTitle:{ fontSize: 17, fontFamily: 'Poppins_700Bold', marginBottom: 12 },
-  cookieCard:        { borderRadius: 14, padding: 14, borderWidth: 1, marginBottom: 10 },
-  cookieHeader:      { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 },
-  cookieIcon:        { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  cookieName:        { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
-  requiredBadge:     { backgroundColor: Colors.error + '15', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, alignSelf: 'flex-start', marginTop: 2 },
-  requiredText:      { fontSize: 10, fontFamily: 'Poppins_600SemiBold', color: Colors.error },
-  cookieDesc:        { fontSize: 12, fontFamily: 'Poppins_400Regular', lineHeight: 18 },
-  section:           { marginHorizontal: 20, marginBottom: 16 },
-  sectionTitle:      { fontSize: 15, fontFamily: 'Poppins_700Bold', marginBottom: 8 },
-  sectionBody:       { fontSize: 13, fontFamily: 'Poppins_400Regular', lineHeight: 21 },
+  cookieSectionTitle:{ fontSize: 16, fontFamily: 'Poppins_700Bold', marginBottom: 12, color: '#FFFFFF', letterSpacing: 0.3 },
+  cookieCard:        { borderRadius: 16, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.03)', marginBottom: 10 },
+  cookieHeader:      { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 10 },
+  cookieIcon:        { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  cookieName:        { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
+  requiredBadge:     { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, alignSelf: 'flex-start', marginTop: 4 },
+  requiredText:      { fontSize: 11, fontFamily: 'Poppins_600SemiBold' },
+  cookieDesc:        { fontSize: 14, fontFamily: 'Poppins_400Regular', lineHeight: 22, color: 'rgba(255,255,255,0.6)' },
+  section:      { marginHorizontal: 20, marginBottom: 24 },
+  sectionTitle: { fontSize: 16, fontFamily: 'Poppins_700Bold', marginBottom: 8, color: '#FFFFFF', letterSpacing: 0.3 },
+  sectionBody:  { fontSize: 14, fontFamily: 'Poppins_400Regular', lineHeight: 24, color: 'rgba(255,255,255,0.6)' },
 });

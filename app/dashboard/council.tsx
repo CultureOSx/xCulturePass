@@ -3,26 +3,24 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useColors } from '@/hooks/useColors';
 import { useCouncil } from '@/hooks/useCouncil';
 import { useRole } from '@/hooks/useRole';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { LinearGradient } from 'expo-linear-gradient';
-import { gradients } from '@/constants/theme';
+import { gradients, CultureTokens } from '@/constants/theme';
 
-function Stat({ label, value, color, mutedColor }: { label: string; value: string; color: string; mutedColor: string }) {
+function Stat({ label, value, color }: { label: string; value: string; color: string }) {
   return (
-    <View style={[styles.statCard, { borderColor: color + '50' }]}>
+    <View style={[styles.statCard, { borderColor: color + '30', backgroundColor: color + '05' }]}>
       <Text style={[styles.statValue, { color }]}>{value}</Text>
-      <Text style={[styles.statLabel, { color: mutedColor }]}>{label}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
 }
 
 export default function CouncilDashboardScreen() {
-  const colors = useColors();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const { isAdmin, isOrganizer, isLoading: roleLoading } = useRole();
@@ -111,9 +109,9 @@ export default function CouncilDashboardScreen() {
 
   if (!roleLoading && !myClaimsQuery.isLoading && !canAccess) {
     return (
-      <View style={[styles.center, { backgroundColor: colors.background }]}> 
-        <Text style={[styles.title, { color: colors.text }]}>Council Dashboard</Text>
-        <Text style={[styles.sub, { color: colors.textSecondary }]}>Approved council claimant, admin, or organizer access required.</Text>
+      <View style={styles.center}> 
+        <Text style={styles.title}>Council Dashboard</Text>
+        <Text style={styles.sub}>Approved council claimant, admin, or organizer access required.</Text>
         <Button onPress={() => router.replace('/(tabs)')}>Back to Discover</Button>
       </View>
     );
@@ -121,20 +119,28 @@ export default function CouncilDashboardScreen() {
 
   if (isLoading || !council) {
     return (
-      <View style={[styles.center, { backgroundColor: colors.background }]}> 
-        <Text style={[styles.sub, { color: colors.textSecondary }]}>Loading council dashboard…</Text>
+      <View style={styles.center}> 
+        <Text style={styles.sub}>Loading council dashboard…</Text>
       </View>
     );
   }
 
   return (
     <ErrorBoundary>
-      <View style={[styles.container, { backgroundColor: colors.background, paddingTop: Platform.OS === 'web' ? 12 : insets.top + 8 }]}> 
+      <View style={[styles.container, { paddingTop: Platform.OS === 'web' ? 12 : insets.top + 8 }]}> 
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()} style={styles.backBtn}>
+            <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+          </Pressable>
+          <Text style={styles.headerTitle}>Council Dashboard</Text>
+          <View style={{ width: 44 }} />
+        </View>
+
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <LinearGradient colors={gradients.culturepassBrand} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.heroCard}>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.title, { color: colors.textInverse }]}>{council.name}</Text>
-              <Text style={[styles.sub, { color: colors.textInverse }]}>{council.state} • LGA {council.lgaCode}</Text>
+            <View style={styles.heroContentWrap}>
+              <Text style={styles.heroTitle}>{council.name}</Text>
+              <Text style={styles.heroSub}>{council.state} • LGA {council.lgaCode}</Text>
             </View>
             <Button
               size="sm"
@@ -147,68 +153,80 @@ export default function CouncilDashboardScreen() {
           </LinearGradient>
 
           <View style={styles.statsRow}>
-            <Stat label="Active Alerts" value={String(activeAlerts.length)} color={colors.error} mutedColor={colors.textTertiary} />
-            <Stat label="Open Grants" value={String(openGrants.length)} color={colors.success} mutedColor={colors.textTertiary} />
-            <Stat label="Facilities" value={String(facilities.length)} color={colors.primary} mutedColor={colors.textTertiary} />
-            <Stat label="Links" value={String(links.length)} color={colors.warning} mutedColor={colors.textTertiary} />
+            <Stat label="Active Alerts" value={String(activeAlerts.length)} color={CultureTokens.coral} />
+            <Stat label="Open Grants" value={String(openGrants.length)} color={CultureTokens.success} />
+            <Stat label="Facilities" value={String(facilities.length)} color={CultureTokens.indigo} />
+            <Stat label="Links" value={String(links.length)} color={CultureTokens.saffron} />
           </View>
 
-          <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Operations</Text>
-            <Text style={[styles.sectionSub, { color: colors.textSecondary }]}>Create and monitor council civic content.</Text>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Operations</Text>
+            <Text style={styles.sectionSub}>Create and monitor council civic content.</Text>
             <View style={styles.rowActions}>
               <Button size="sm" onPress={() => createAlertMutation.mutate()} loading={createAlertMutation.isPending} disabled={!canCrud}>Create Alert</Button>
               <Button size="sm" variant="secondary" onPress={() => createGrantMutation.mutate()} loading={createGrantMutation.isPending} disabled={!canCrud}>Create Grant</Button>
               {isAdmin ? <Button size="sm" variant="outline" onPress={() => router.push('/admin/council-claims')}>Review Claims</Button> : null}
             </View>
             {waste ? (
-              <Text style={[styles.muted, { color: colors.textSecondary }]}>Waste schedule: General {waste.generalWasteDay}, Recycling {waste.recyclingDay}</Text>
+              <Text style={styles.muted}>Waste schedule: General {waste.generalWasteDay}, Recycling {waste.recyclingDay}</Text>
             ) : (
-              <Text style={[styles.muted, { color: colors.textSecondary }]}>No waste schedule available for this council.</Text>
+              <Text style={styles.muted}>No waste schedule available for this council.</Text>
             )}
           </View>
 
-          <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Alerts (Manage)</Text>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Alerts (Manage)</Text>
             {activeAlerts.length === 0 ? (
-              <Text style={[styles.muted, { color: colors.textSecondary }]}>No active alerts.</Text>
+              <View style={styles.emptyWrap}>
+                <Ionicons name="notifications-off-outline" size={32} color="rgba(255,255,255,0.4)" />
+                <Text style={styles.muted}>No active alerts.</Text>
+              </View>
             ) : activeAlerts.map((alert: any) => (
-              <View key={alert.id} style={[styles.item, { borderColor: colors.borderLight }]}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.itemTitle, { color: colors.text }]}>{alert.title}</Text>
-                  <Text style={[styles.itemSub, { color: colors.textSecondary }]}>{alert.category} • {alert.severity}</Text>
+              <View key={alert.id} style={styles.item}>
+                <View style={[styles.itemIcon, { backgroundColor: CultureTokens.coral + '15' }]}>
+                  <Ionicons name="warning-outline" size={18} color={CultureTokens.coral} />
+                </View>
+                <View style={styles.itemBody}>
+                  <Text style={styles.itemTitle}>{alert.title}</Text>
+                  <Text style={styles.itemSubText}>{alert.category} • {alert.severity}</Text>
                 </View>
                 <Pressable
-                  style={styles.iconBtn}
+                  style={[styles.iconBtn, { backgroundColor: CultureTokens.coral + '15' }]}
                   onPress={() => archiveAlertMutation.mutate(alert.id)}
                   disabled={!canCrud}
                   accessibilityRole="button"
                   accessibilityLabel="Archive alert"
                 >
-                  <Ionicons name="archive-outline" size={16} color={colors.warning} />
+                  <Ionicons name="archive-outline" size={16} color={CultureTokens.coral} />
                 </Pressable>
               </View>
             ))}
           </View>
 
-          <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Grants (Manage)</Text>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Grants (Manage)</Text>
             {openGrants.length === 0 ? (
-              <Text style={[styles.muted, { color: colors.textSecondary }]}>No open grants.</Text>
+              <View style={styles.emptyWrap}>
+                <Ionicons name="folder-open-outline" size={32} color="rgba(255,255,255,0.4)" />
+                <Text style={styles.muted}>No open grants.</Text>
+              </View>
             ) : openGrants.map((grant: any) => (
-              <View key={grant.id} style={[styles.item, { borderColor: colors.borderLight }]}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.itemTitle, { color: colors.text }]}>{grant.title}</Text>
-                  <Text style={[styles.itemSub, { color: colors.textSecondary }]}>{grant.category} • {grant.status}</Text>
+              <View key={grant.id} style={styles.item}>
+                <View style={[styles.itemIcon, { backgroundColor: CultureTokens.success + '15' }]}>
+                  <Ionicons name="star-outline" size={18} color={CultureTokens.success} />
+                </View>
+                <View style={styles.itemBody}>
+                  <Text style={styles.itemTitle}>{grant.title}</Text>
+                  <Text style={styles.itemSubText}>{grant.category} • {grant.status}</Text>
                 </View>
                 <Pressable
-                  style={styles.iconBtn}
+                  style={[styles.iconBtn, { backgroundColor: CultureTokens.success + '15' }]}
                   onPress={() => closeGrantMutation.mutate(grant.id)}
                   disabled={!canCrud}
                   accessibilityRole="button"
                   accessibilityLabel="Close grant"
                 >
-                  <Ionicons name="checkmark-done-outline" size={16} color={colors.success} />
+                  <Ionicons name="checkmark-done-outline" size={16} color={CultureTokens.success} />
                 </Pressable>
               </View>
             ))}
@@ -220,24 +238,32 @@ export default function CouncilDashboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  content: { paddingHorizontal: 16, paddingBottom: 110, gap: 12 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 10 },
-  heroCard: { borderRadius: 14, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  headerCard: { borderWidth: 1, borderRadius: 14, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  title: { fontSize: 18, fontFamily: 'Poppins_700Bold' },
-  sub: { fontSize: 13, fontFamily: 'Poppins_400Regular' },
-  statsRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
-  statCard: { flexGrow: 1, minWidth: 120, borderWidth: 1, borderRadius: 12, padding: 10 },
-  statValue: { fontSize: 18, fontFamily: 'Poppins_700Bold' },
-  statLabel: { fontSize: 11, fontFamily: 'Poppins_500Medium' },
-  section: { borderWidth: 1, borderRadius: 14, padding: 12, gap: 8 },
-  sectionTitle: { fontSize: 14, fontFamily: 'Poppins_700Bold' },
-  sectionSub: { fontSize: 12, fontFamily: 'Poppins_400Regular' },
-  rowActions: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
-  muted: { fontSize: 12, fontFamily: 'Poppins_400Regular' },
-  item: { borderWidth: 1, borderRadius: 10, padding: 10, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  itemTitle: { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
-  itemSub: { fontSize: 12, fontFamily: 'Poppins_400Regular' },
-  iconBtn: { width: 34, height: 34, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+  container:    { flex: 1, backgroundColor: '#0B0B14' },
+  header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12, marginBottom: 8 },
+  backBtn:      { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  headerTitle:  { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+  content:      { paddingHorizontal: 20, paddingBottom: 110, gap: 16 },
+  center:       { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 10, backgroundColor: '#0B0B14' },
+  heroCard:     { borderRadius: 20, padding: 20, flexDirection: 'row', alignItems: 'center', gap: 14, shadowColor: '#2C2A72', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 16, elevation: 8 },
+  heroContentWrap:{ flex: 1 },
+  title:        { fontSize: 20, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+  heroTitle:    { fontSize: 22, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', letterSpacing: -0.5 },
+  sub:          { fontSize: 14, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.6)', textAlign: 'center' },
+  heroSub:      { fontSize: 14, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.85)' },
+  statsRow:     { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
+  statCard:     { flexGrow: 1, minWidth: 140, borderWidth: 1, borderRadius: 16, padding: 16 },
+  statValue:    { fontSize: 24, fontFamily: 'Poppins_700Bold', marginBottom: 2 },
+  statLabel:    { fontSize: 12, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.6)' },
+  section:      { borderWidth: 1, borderRadius: 20, padding: 20, gap: 12, backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.1)' },
+  sectionTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+  sectionSub:   { fontSize: 14, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.6)' },
+  rowActions:   { flexDirection: 'row', gap: 10, flexWrap: 'wrap', marginTop: 4 },
+  muted:        { fontSize: 13, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.5)', marginTop: 4 },
+  item:         { borderWidth: 1, borderRadius: 16, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12, borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.02)' },
+  itemIcon:     { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  itemBody:     { flex: 1 },
+  itemTitle:    { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF', marginBottom: 2 },
+  itemSubText:  { fontSize: 13, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.5)' },
+  iconBtn:      { width: 38, height: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  emptyWrap:    { alignItems: 'center', paddingVertical: 24, gap: 8 },
 });

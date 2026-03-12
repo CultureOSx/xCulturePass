@@ -52,7 +52,7 @@ export default function ExploreScreen() {
     rating: event.attending ? undefined : undefined,
     priceLabel: event.priceCents === 0 ? 'Free' : event.priceLabel,
     isPromoted: event.isFeatured,
-    badge: event.communityTag,
+    badge: event.communityId,
     category: event.category,
     meta: `${event.attending} attending`,
   }));

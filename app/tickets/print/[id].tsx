@@ -31,22 +31,23 @@ function formatEventDate(dateStr?: string): string {
 }
 
 function PrintableBadge({ ticket, attendeeName }: { ticket: Ticket; attendeeName: string }) {
+  const t = ticket as any;
   return (
     <View style={styles.badgeWrap}>
       <View style={styles.badgeHole} />
       <View style={styles.badgeCard}>
-        <View style={[styles.badgeTop, { backgroundColor: ticket.imageColor ?? Colors.primary }]}>
+        <View style={[styles.badgeTop, { backgroundColor: t.imageColor ?? Colors.primary }]}>
           <Text style={styles.badgeBrand}>CulturePass</Text>
-          <Text style={styles.badgeEvent} numberOfLines={1}>{ticket.eventTitle ?? ticket.eventName ?? 'Event Ticket'}</Text>
+          <Text style={styles.badgeEvent} numberOfLines={1}>{t.eventTitle ?? t.eventName ?? 'Event Ticket'}</Text>
         </View>
         <View style={styles.badgeBody}>
           <Text style={styles.badgeName}>{attendeeName}</Text>
-          <Text style={styles.badgeMeta}>{formatEventDate(ticket.eventDate ?? ticket.date)}</Text>
-          {ticket.eventVenue ? <Text style={styles.badgeMeta} numberOfLines={1}>{ticket.eventVenue}</Text> : null}
+          <Text style={styles.badgeMeta}>{formatEventDate(t.eventDate ?? t.date)}</Text>
+          {t.eventVenue ? <Text style={styles.badgeMeta} numberOfLines={1}>{t.eventVenue}</Text> : null}
           <View style={styles.badgeBottom}>
             <View style={styles.badgeCodePill}>
               <Ionicons name="qr-code-outline" size={12} color={Colors.primary} />
-              <Text style={styles.badgeCode}>{ticket.ticketCode ?? ticket.qrCode ?? 'TICKET'}</Text>
+              <Text style={styles.badgeCode}>{t.ticketCode ?? ticket.qrCode ?? 'TICKET'}</Text>
             </View>
             <Text style={styles.badgeQty}>x{ticket.quantity ?? 1}</Text>
           </View>
@@ -57,28 +58,29 @@ function PrintableBadge({ ticket, attendeeName }: { ticket: Ticket; attendeeName
 }
 
 function PrintableFull({ ticket, attendeeName }: { ticket: Ticket; attendeeName: string }) {
+  const t = ticket as any;
   return (
     <View style={styles.fullCard}>
-      <View style={[styles.fullHeader, { backgroundColor: ticket.imageColor ?? Colors.primary }]}>
+      <View style={[styles.fullHeader, { backgroundColor: t.imageColor ?? Colors.primary }]}>
         <Text style={styles.fullHeaderTitle}>CulturePass Event Ticket</Text>
       </View>
       <View style={styles.fullBody}>
-        <Text style={styles.fullEvent}>{ticket.eventTitle ?? ticket.eventName ?? 'Event Ticket'}</Text>
+        <Text style={styles.fullEvent}>{t.eventTitle ?? t.eventName ?? 'Event Ticket'}</Text>
         <View style={styles.fullRow}>
           <Text style={styles.fullLabel}>Attendee</Text>
           <Text style={styles.fullValue}>{attendeeName}</Text>
         </View>
         <View style={styles.fullRow}>
           <Text style={styles.fullLabel}>Date</Text>
-          <Text style={styles.fullValue}>{formatEventDate(ticket.eventDate ?? ticket.date)}</Text>
+          <Text style={styles.fullValue}>{formatEventDate(t.eventDate ?? t.date)}</Text>
         </View>
         <View style={styles.fullRow}>
           <Text style={styles.fullLabel}>Time</Text>
-          <Text style={styles.fullValue}>{ticket.eventTime ?? 'TBA'}</Text>
+          <Text style={styles.fullValue}>{t.eventTime ?? 'TBA'}</Text>
         </View>
         <View style={styles.fullRow}>
           <Text style={styles.fullLabel}>Venue</Text>
-          <Text style={styles.fullValue}>{ticket.eventVenue ?? 'TBA'}</Text>
+          <Text style={styles.fullValue}>{t.eventVenue ?? 'TBA'}</Text>
         </View>
         <View style={styles.fullRow}>
           <Text style={styles.fullLabel}>Tier</Text>
@@ -86,7 +88,7 @@ function PrintableFull({ ticket, attendeeName }: { ticket: Ticket; attendeeName:
         </View>
         <View style={styles.fullRow}>
           <Text style={styles.fullLabel}>Ticket Code</Text>
-          <Text style={styles.fullCode}>{ticket.ticketCode ?? ticket.qrCode ?? 'TICKET'}</Text>
+          <Text style={styles.fullCode}>{t.ticketCode ?? ticket.qrCode ?? 'TICKET'}</Text>
         </View>
       </View>
     </View>

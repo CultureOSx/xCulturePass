@@ -4,8 +4,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors } from '@/constants/theme';
-import { useColors } from '@/hooks/useColors';
+import { CultureTokens } from '@/constants/theme';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useState, useMemo } from 'react';
@@ -20,7 +19,7 @@ const FAQ_CATEGORIES: FaqCategory[] = [
     id: 'start',
     label: 'Getting Started',
     icon: 'rocket-outline',
-    color: Colors.primary,
+    color: CultureTokens.indigo,
     items: [
       { q: 'What is culturepass.app?', a: 'culturepass.app is a lifestyle and community platform for cultural diaspora communities across Australia, New Zealand, UAE, UK, and Canada. It helps you discover local cultural events, join communities, access exclusive perks, and connect with people who share your heritage.' },
       { q: 'How do I create an account?', a: 'Tap "Create Account" on the welcome screen. Enter your email and a password (min 6 characters), then follow the steps to set your location and interests. You can also sign in with Google on web.' },
@@ -33,7 +32,7 @@ const FAQ_CATEGORIES: FaqCategory[] = [
     id: 'account',
     label: 'Account & Profile',
     icon: 'person-circle-outline',
-    color: Colors.secondary,
+    color: CultureTokens.saffron,
     items: [
       { q: 'How do I edit my profile?', a: 'Go to Settings → Edit Profile (or tap your avatar on the Profile tab). You can update your display name, bio, profile photo, city, social links, and interests.' },
       { q: 'How do I change my password?', a: 'Go to Settings → Privacy & Security → Change Password. You\'ll receive a reset link at your registered email address.' },
@@ -47,7 +46,7 @@ const FAQ_CATEGORIES: FaqCategory[] = [
     id: 'events',
     label: 'Events & Tickets',
     icon: 'ticket-outline',
-    color: Colors.accent,
+    color: CultureTokens.coral,
     items: [
       { q: 'How do I buy tickets?', a: 'Browse events on the Discover or Explore tab. Tap an event → select your ticket tier → choose your payment method (Wallet or saved card) → confirm. Your ticket QR code will appear in My Tickets.' },
       { q: 'Where do I find my tickets?', a: 'Go to Settings → My Tickets, or tap the Tickets section on your Profile tab. Tickets show your QR code for event check-in.' },
@@ -60,7 +59,7 @@ const FAQ_CATEGORIES: FaqCategory[] = [
     id: 'membership',
     label: 'Membership & Perks',
     icon: 'star-outline',
-    color: Colors.gold,
+    color: CultureTokens.gold,
     items: [
       { q: 'What membership tiers are available?', a: 'culturepass.app offers Free, Plus (~$4.99/mo), and Elite (~$9.99/mo) tiers. Higher tiers unlock early ticket access, exclusive perks, VIP upgrades, and cashback on purchases.' },
       { q: 'How do I upgrade my membership?', a: 'Go to Settings → My Membership → tap Upgrade. Choose your plan and complete payment. Your benefits activate immediately.' },
@@ -74,7 +73,7 @@ const FAQ_CATEGORIES: FaqCategory[] = [
     id: 'technical',
     label: 'Technical Issues',
     icon: 'build-outline',
-    color: Colors.info,
+    color: CultureTokens.teal,
     items: [
       { q: 'The app is showing a white / blank screen', a: 'Try force-closing the app and reopening. On web, try clearing your browser cache (Ctrl+Shift+R / Cmd+Shift+R). If the issue persists, try logging out and back in.' },
       { q: 'I can\'t sign in — what should I do?', a: 'Check you\'re using the correct email and password. Try "Forgot Password" to reset. Make sure you have a stable internet connection. If issues continue, email support@culturepass.au.' },
@@ -87,23 +86,22 @@ const FAQ_CATEGORIES: FaqCategory[] = [
 ];
 
 const CONTACT_OPTIONS = [
-  { icon: 'mail', label: 'Email Support', sub: 'support@culturepass.app', color: Colors.primary, action: () => Linking.openURL('mailto:support@culturepass.app') },
-  { icon: 'call', label: 'Phone Support', sub: '1800 285 887 (Mon–Fri 9am–6pm AEST)', color: Colors.success, action: () => Linking.openURL('tel:1800285887') },
-  { icon: 'chatbubbles', label: 'Live Chat', sub: 'Available 9am–6pm AEST on weekdays', color: Colors.info, action: () => Linking.openURL('mailto:support@culturepass.app?subject=Live%20Chat%20Request&body=Hi%20CulturePass%20team%2C%20I%20need%20help%20with...') },
+  { icon: 'mail', label: 'Email Support', sub: 'support@culturepass.app', color: CultureTokens.indigo, action: () => Linking.openURL('mailto:support@culturepass.app') },
+  { icon: 'call', label: 'Phone Support', sub: '1800 285 887 (Mon–Fri 9am–6pm AEST)', color: CultureTokens.success, action: () => Linking.openURL('tel:1800285887') },
+  { icon: 'chatbubbles', label: 'Live Chat', sub: 'Available 9am–6pm AEST on weekdays', color: CultureTokens.teal, action: () => Linking.openURL('mailto:support@culturepass.app?subject=Live%20Chat%20Request&body=Hi%20CulturePass%20team%2C%20I%20need%20help%20with...') },
   { icon: 'logo-twitter', label: 'Twitter / X', sub: '@CulturePassApp', color: '#1DA1F2', action: () => Linking.openURL('https://twitter.com/CulturePassApp') },
 ];
 
 const QUICK_LINKS = [
-  { icon: 'ticket-outline', label: 'My Tickets', route: '/tickets', color: Colors.secondary },
-  { icon: 'wallet-outline', label: 'Wallet', route: '/payment/wallet', color: Colors.success },
-  { icon: 'star-outline', label: 'Membership', route: '/membership/upgrade', color: Colors.gold },
-  { icon: 'shield-checkmark-outline', label: 'Privacy', route: '/legal/privacy', color: Colors.info },
+  { icon: 'ticket-outline', label: 'My Tickets', route: '/tickets', color: CultureTokens.coral },
+  { icon: 'wallet-outline', label: 'Wallet', route: '/payment/wallet', color: CultureTokens.success },
+  { icon: 'star-outline', label: 'Membership', route: '/membership/upgrade', color: CultureTokens.gold },
+  { icon: 'shield-checkmark-outline', label: 'Privacy', route: '/legal/privacy', color: CultureTokens.teal },
 ];
 
 export default function HelpScreen() {
   const insets = useSafeAreaInsets();
   const webTop = isWeb ? 0 : 0;
-  const colors = useColors();
 
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -131,23 +129,23 @@ export default function HelpScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color={Colors.text} />
+          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
         </Pressable>
         <Text style={styles.headerTitle}>Help & Support</Text>
-        <View style={{ width: 40 }} />
+        <View style={{ width: 44 }} />
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 40 + (isWeb ? 34 : insets.bottom) }}
+        contentContainerStyle={{ paddingBottom: 40 + (isWeb ? 34 : insets.bottom), paddingTop: 8 }}
         keyboardShouldPersistTaps="handled"
       >
         {/* Hero */}
         <View style={styles.heroCard}>
           <View style={styles.heroIcon}>
-            <Ionicons name="help-buoy" size={32} color={colors.textInverse} />
+            <Ionicons name="help-buoy" size={36} color="#0B0B14" />
           </View>
-          <Text style={[styles.heroTitle, { color: colors.textInverse }]}>How can we help?</Text>
+          <Text style={styles.heroTitle}>How can we help?</Text>
           <Text style={styles.heroSub}>
             Find answers to common questions or reach out to our support team.
           </Text>
@@ -155,11 +153,11 @@ export default function HelpScreen() {
 
         {/* Search */}
         <View style={styles.searchWrap}>
-          <Ionicons name="search" size={18} color={Colors.textSecondary} />
+          <Ionicons name="search" size={20} color="rgba(255,255,255,0.5)" />
           <TextInput
             style={styles.searchInput}
             placeholder="Search help articles…"
-            placeholderTextColor={Colors.textSecondary}
+            placeholderTextColor="rgba(255,255,255,0.4)"
             value={search}
             onChangeText={setSearch}
             returnKeyType="search"
@@ -167,7 +165,7 @@ export default function HelpScreen() {
           />
           {search.length > 0 && (
             <Pressable onPress={() => setSearch('')} hitSlop={8}>
-              <Ionicons name="close-circle" size={18} color={Colors.textSecondary} />
+              <Ionicons name="close-circle" size={20} color="rgba(255,255,255,0.5)" />
             </Pressable>
           )}
         </View>
@@ -186,7 +184,7 @@ export default function HelpScreen() {
                     router.push(ql.route as never);
                   }}
                 >
-                  <View style={[styles.quickIcon, { backgroundColor: ql.color + '18' }]}>
+                  <View style={[styles.quickIcon, { backgroundColor: ql.color + '15' }]}>
                     <Ionicons name={ql.icon as any} size={22} color={ql.color} />
                   </View>
                   <Text style={styles.quickLabel}>{ql.label}</Text>
@@ -208,7 +206,7 @@ export default function HelpScreen() {
                 style={[styles.pill, activeCategory === null && styles.pillActive]}
                 onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setActiveCategory(null); }}
               >
-                <Text style={[styles.pillText, activeCategory === null && styles.pillTextActive]}>All</Text>
+                <Text style={[styles.pillText, activeCategory === null && styles.pillTextActive]}>All Topics</Text>
               </Pressable>
               {FAQ_CATEGORIES.map(cat => (
                 <Pressable
@@ -221,8 +219,8 @@ export default function HelpScreen() {
                 >
                   <Ionicons
                     name={cat.icon as any}
-                    size={13}
-                    color={activeCategory === cat.id ? colors.textInverse : Colors.text}
+                    size={14}
+                    color={activeCategory === cat.id ? '#0B0B14' : 'rgba(255,255,255,0.6)'}
                   />
                   <Text style={[styles.pillText, activeCategory === cat.id && styles.pillTextActive]}>
                     {cat.label}
@@ -236,7 +234,7 @@ export default function HelpScreen() {
         {/* FAQ Sections */}
         {search.trim() && totalResults === 0 ? (
           <View style={styles.emptySearch}>
-            <Ionicons name="search" size={40} color={Colors.textSecondary} />
+            <Ionicons name="search" size={44} color="rgba(255,255,255,0.3)" />
             <Text style={styles.emptyTitle}>No results for &ldquo;{search}&rdquo;</Text>
             <Text style={styles.emptySub}>Try different keywords or browse the categories above.</Text>
           </View>
@@ -244,10 +242,10 @@ export default function HelpScreen() {
           filteredCategories.map((cat, ci) => (
             <View key={cat.id} style={styles.section}>
               <View style={styles.catHeader}>
-                <View style={[styles.catIcon, { backgroundColor: cat.color + '18' }]}>
-                  <Ionicons name={cat.icon as any} size={16} color={cat.color} />
+                <View style={[styles.catIcon, { backgroundColor: cat.color + '15' }]}>
+                  <Ionicons name={cat.icon as any} size={18} color={cat.color} />
                 </View>
-                <Text style={styles.sectionTitle}>{cat.label}</Text>
+                <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{cat.label}</Text>
                 <Text style={styles.catCount}>{cat.items.length}</Text>
               </View>
               {cat.items.map((faq, fi) => {
@@ -256,7 +254,7 @@ export default function HelpScreen() {
                 return (
                   <Pressable
                     key={key}
-                    style={[styles.faqCard, isOpen && styles.faqCardOpen]}
+                    style={[styles.faqCard, isOpen && { borderColor: cat.color + '40', backgroundColor: cat.color + '10' }]}
                     onPress={() => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       setExpandedFaq(isOpen ? null : key);
@@ -266,8 +264,8 @@ export default function HelpScreen() {
                       <Text style={styles.faqQuestion}>{faq.q}</Text>
                       <Ionicons
                         name={isOpen ? 'chevron-up' : 'chevron-down'}
-                        size={18}
-                        color={isOpen ? Colors.primary : Colors.textSecondary}
+                        size={20}
+                        color={isOpen ? cat.color : 'rgba(255,255,255,0.5)'}
                       />
                     </View>
                     {isOpen && (
@@ -287,7 +285,7 @@ export default function HelpScreen() {
             {CONTACT_OPTIONS.map((opt, i) => (
               <View key={opt.label}>
                 <Pressable
-                  style={({ pressed }) => [styles.contactItem, pressed && { backgroundColor: Colors.backgroundSecondary }]}
+                  style={({ pressed }) => [styles.contactItem, pressed && { backgroundColor: 'rgba(255,255,255,0.06)' }]}
                   onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); opt.action(); }}
                 >
                   <View style={[styles.contactIcon, { backgroundColor: opt.color + '15' }]}>
@@ -297,7 +295,7 @@ export default function HelpScreen() {
                     <Text style={styles.contactLabel}>{opt.label}</Text>
                     <Text style={styles.contactSub}>{opt.sub}</Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={16} color={Colors.textSecondary} />
+                  <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.3)" />
                 </Pressable>
                 {i < CONTACT_OPTIONS.length - 1 && <View style={styles.divider} />}
               </View>
@@ -310,21 +308,21 @@ export default function HelpScreen() {
           <Text style={styles.sectionTitle}>Legal</Text>
           <View style={styles.contactCard}>
             {[
-              { label: 'Privacy Policy', icon: 'shield-checkmark-outline', color: Colors.info, route: '/legal/privacy' },
-              { label: 'Terms of Service', icon: 'document-text-outline', color: Colors.secondary, route: '/legal/terms' },
-              { label: 'Cookie Policy', icon: 'finger-print-outline', color: Colors.accent, route: '/legal/cookies' },
-              { label: 'Community Guidelines', icon: 'people-circle-outline', color: Colors.success, route: '/legal/guidelines' },
+              { label: 'Privacy Policy', icon: 'shield-checkmark-outline', color: CultureTokens.teal, route: '/legal/privacy' },
+              { label: 'Terms of Service', icon: 'document-text-outline', color: CultureTokens.saffron, route: '/legal/terms' },
+              { label: 'Cookie Policy', icon: 'finger-print-outline', color: CultureTokens.coral, route: '/legal/cookies' },
+              { label: 'Community Guidelines', icon: 'people-circle-outline', color: CultureTokens.success, route: '/legal/guidelines' },
             ].map((item, i, arr) => (
               <View key={item.label}>
                 <Pressable
-                  style={({ pressed }) => [styles.contactItem, pressed && { backgroundColor: Colors.backgroundSecondary }]}
+                  style={({ pressed }) => [styles.contactItem, pressed && { backgroundColor: 'rgba(255,255,255,0.06)' }]}
                   onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push(item.route as never); }}
                 >
                   <View style={[styles.contactIcon, { backgroundColor: item.color + '15' }]}>
                     <Ionicons name={item.icon as any} size={20} color={item.color} />
                   </View>
                   <Text style={[styles.contactLabel, { flex: 1 }]}>{item.label}</Text>
-                  <Ionicons name="chevron-forward" size={16} color={Colors.textSecondary} />
+                  <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.3)" />
                 </Pressable>
                 {i < arr.length - 1 && <View style={styles.divider} />}
               </View>
@@ -335,7 +333,7 @@ export default function HelpScreen() {
         {/* App Info */}
         <View style={styles.aboutSection}>
           <View style={styles.aboutLogo}>
-            <Ionicons name="globe" size={28} color={Colors.primary} />
+            <Ionicons name="globe" size={32} color={CultureTokens.indigo} />
           </View>
           <Text style={styles.aboutName}>culturepass.app</Text>
           <Text style={styles.aboutVersion}>Version 1.0.0</Text>
@@ -348,147 +346,146 @@ export default function HelpScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1, backgroundColor: '#0B0B14' },
 
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingVertical: 12,
   },
   backBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: Colors.card, alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: Colors.cardBorder,
+    width: 44, height: 44, borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.05)', alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
   },
-  headerTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: Colors.text },
+  headerTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
 
   // Hero
   heroCard: {
-    marginHorizontal: 20, marginBottom: 16,
-    backgroundColor: Colors.primary, borderRadius: 20,
-    padding: 24, alignItems: 'center',
+    marginHorizontal: 20, marginBottom: 20,
+    backgroundColor: CultureTokens.indigo, borderRadius: 24,
+    padding: 24, alignItems: 'center', shadowColor: CultureTokens.indigo,
+    shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 16,
+    elevation: 10,
   },
   heroIcon: {
-    width: 60, height: 60, borderRadius: 30,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center', justifyContent: 'center', marginBottom: 12,
+    width: 64, height: 64, borderRadius: 32,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center', justifyContent: 'center', marginBottom: 16,
   },
-  heroTitle: { fontSize: 20, fontFamily: 'Poppins_700Bold', marginBottom: 6 },
+  heroTitle: { fontSize: 22, fontFamily: 'Poppins_700Bold', marginBottom: 6, color: '#0B0B14' },
   heroSub: {
-    fontSize: 13, fontFamily: 'Poppins_400Regular',
-    color: 'rgba(255,255,255,0.85)', textAlign: 'center', lineHeight: 19,
+    fontSize: 14, fontFamily: 'Poppins_500Medium', color: 'rgba(11,11,20,0.8)',
+    textAlign: 'center', lineHeight: 22, paddingHorizontal: 10,
   },
 
   // Search
   searchWrap: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    marginHorizontal: 20, marginBottom: 16,
-    backgroundColor: Colors.card, borderRadius: 14,
-    paddingHorizontal: 14, paddingVertical: 12,
-    borderWidth: 1, borderColor: Colors.cardBorder,
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    marginHorizontal: 20, marginBottom: 20,
+    backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 16,
+    paddingHorizontal: 16, paddingVertical: 14,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
   },
   searchInput: {
-    flex: 1, fontSize: 15,
-    fontFamily: 'Poppins_400Regular', color: Colors.text,
+    flex: 1, fontSize: 15, fontFamily: 'Poppins_400Regular', color: '#FFFFFF',
   },
 
   // Quick links
-  quickRow: { flexDirection: 'row', gap: 10 },
+  quickRow: { flexDirection: 'row', gap: 12 },
   quickCard: {
-    flex: 1, alignItems: 'center', gap: 8,
-    backgroundColor: Colors.card, borderRadius: 14,
-    paddingVertical: 14,
-    borderWidth: 1, borderColor: Colors.cardBorder,
+    flex: 1, alignItems: 'center', gap: 10,
+    backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 16,
+    paddingVertical: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
   },
-  quickIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  quickLabel: { fontSize: 11, fontFamily: 'Poppins_500Medium', color: Colors.text, textAlign: 'center' },
+  quickIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  quickLabel: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF', textAlign: 'center' },
 
   // Category pills
-  pillsRow: { paddingHorizontal: 20, paddingBottom: 8, gap: 8, flexDirection: 'row' },
+  pillsRow: { paddingHorizontal: 20, paddingBottom: 12, gap: 10, flexDirection: 'row', marginBottom: 6 },
   pill: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    paddingHorizontal: 14, paddingVertical: 7,
-    borderRadius: 20, backgroundColor: Colors.card,
-    borderWidth: 1, borderColor: Colors.cardBorder,
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingHorizontal: 16, paddingVertical: 10,
+    borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
   },
-  pillActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  pillText: { fontSize: 12, fontFamily: 'Poppins_500Medium', color: Colors.text },
-  pillTextActive: { color: Colors.textInverse },
+  pillActive: { backgroundColor: CultureTokens.indigo, borderColor: CultureTokens.indigo },
+  pillText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: 'rgba(255,255,255,0.6)' },
+  pillTextActive: { color: '#0B0B14' },
 
   // Section
-  section: { paddingHorizontal: 20, marginBottom: 20 },
-  sectionTitle: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: Colors.text, marginBottom: 10 },
-  catHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
-  catIcon: { width: 28, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  section: { paddingHorizontal: 20, marginBottom: 28 },
+  sectionTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', marginBottom: 14 },
+  catHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
+  catIcon: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   catCount: {
-    marginLeft: 'auto', fontSize: 12,
-    fontFamily: 'Poppins_500Medium', color: Colors.textSecondary,
+    marginLeft: 'auto', fontSize: 13, fontFamily: 'Poppins_600SemiBold',
+    color: 'rgba(255,255,255,0.4)',
   },
 
   // FAQ
   faqCard: {
-    backgroundColor: Colors.card, borderRadius: 14,
-    padding: 16, borderWidth: 1, borderColor: Colors.cardBorder, marginBottom: 8,
+    backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 16,
+    padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', marginBottom: 10,
   },
-  faqCardOpen: { borderColor: Colors.primary + '40', backgroundColor: Colors.primarySoft },
   faqHeader: {
     flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'flex-start', gap: 12,
+    alignItems: 'flex-start', gap: 16,
   },
   faqQuestion: {
-    fontSize: 14, fontFamily: 'Poppins_600SemiBold',
-    color: Colors.text, flex: 1, lineHeight: 20,
+    fontSize: 15, fontFamily: 'Poppins_600SemiBold',
+    color: '#FFFFFF', flex: 1, lineHeight: 22,
   },
   faqAnswer: {
-    fontSize: 13, fontFamily: 'Poppins_400Regular',
-    color: Colors.text, marginTop: 10, lineHeight: 20,
+    fontSize: 14, fontFamily: 'Poppins_400Regular',
+    color: 'rgba(255,255,255,0.7)', marginTop: 12, lineHeight: 24,
   },
 
   // Empty search
-  emptySearch: { alignItems: 'center', paddingVertical: 48, paddingHorizontal: 40 },
+  emptySearch: { alignItems: 'center', paddingVertical: 56, paddingHorizontal: 40 },
   emptyTitle: {
-    fontSize: 16, fontFamily: 'Poppins_600SemiBold',
-    color: Colors.text, marginTop: 12, marginBottom: 6, textAlign: 'center',
+    fontSize: 18, fontFamily: 'Poppins_600SemiBold',
+    color: '#FFFFFF', marginTop: 16, marginBottom: 8, textAlign: 'center',
   },
   emptySub: {
-    fontSize: 13, fontFamily: 'Poppins_400Regular',
-    color: Colors.text, textAlign: 'center', lineHeight: 20,
+    fontSize: 14, fontFamily: 'Poppins_400Regular',
+    color: 'rgba(255,255,255,0.5)', textAlign: 'center', lineHeight: 22,
   },
 
   // Contact
   contactCard: {
-    backgroundColor: Colors.card, borderRadius: 16,
-    borderWidth: 1, borderColor: Colors.cardBorder, overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 20,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', overflow: 'hidden',
   },
-  contactItem: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 12 },
-  contactIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  contactLabel: { fontSize: 15, fontFamily: 'Poppins_500Medium', color: Colors.text },
+  contactItem: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 14 },
+  contactIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  contactLabel: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
   contactSub: {
-    fontSize: 12, fontFamily: 'Poppins_400Regular',
-    color: Colors.text, marginTop: 1,
+    fontSize: 13, fontFamily: 'Poppins_400Regular',
+    color: 'rgba(255,255,255,0.6)', marginTop: 2,
   },
-  divider: { height: 1, backgroundColor: Colors.divider, marginLeft: 66 },
+  divider: { height: 1, backgroundColor: 'rgba(255,255,255,0.05)', marginLeft: 74 },
 
   // About
   aboutSection: {
     alignItems: 'center', paddingHorizontal: 40,
-    paddingVertical: 20, marginBottom: 8,
+    paddingVertical: 24, paddingBottom: 60,
   },
   aboutLogo: {
-    width: 56, height: 56, borderRadius: 16,
-    backgroundColor: Colors.primary + '15',
-    alignItems: 'center', justifyContent: 'center', marginBottom: 10,
+    width: 64, height: 64, borderRadius: 20,
+    backgroundColor: CultureTokens.indigo + '15',
+    alignItems: 'center', justifyContent: 'center', marginBottom: 16,
   },
-  aboutName: { fontSize: 20, fontFamily: 'Poppins_700Bold', color: Colors.text },
+  aboutName: { fontSize: 22, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
   aboutVersion: {
-    fontSize: 12, fontFamily: 'Poppins_400Regular',
-    color: Colors.textSecondary, marginBottom: 8,
+    fontSize: 13, fontFamily: 'Poppins_500Medium',
+    color: 'rgba(255,255,255,0.5)', marginBottom: 12,
   },
   aboutTagline: {
-    fontSize: 13, fontFamily: 'Poppins_500Medium',
-    color: Colors.text, textAlign: 'center', marginBottom: 4,
+    fontSize: 14, fontFamily: 'Poppins_400Regular', lineHeight: 22,
+    color: 'rgba(255,255,255,0.7)', textAlign: 'center', marginBottom: 6,
   },
   aboutCountries: {
-    fontSize: 11, fontFamily: 'Poppins_400Regular',
-    color: Colors.textSecondary, textAlign: 'center',
+    fontSize: 12, fontFamily: 'Poppins_500Medium',
+    color: 'rgba(255,255,255,0.4)', textAlign: 'center',
   },
 });

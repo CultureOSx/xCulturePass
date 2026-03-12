@@ -6,7 +6,7 @@ import * as Haptics from 'expo-haptics';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/query-client';
 import { useAuth } from '@/lib/auth';
-import { useColors } from '@/hooks/useColors';
+import { CultureTokens } from '@/constants/theme';
 
 interface Notification {
   id: string;
@@ -19,14 +19,14 @@ interface Notification {
   createdAt: string | null;
 }
 
-const NOTIF_TYPE_INFO: Record<string, { icon: string; colorKey: 'info' | 'accent' | 'secondary' | 'success' | 'warning' | 'primary' }> = {
-  system:    { icon: 'settings',    colorKey: 'info' },
-  event:     { icon: 'calendar',    colorKey: 'accent' },
-  perk:      { icon: 'gift',        colorKey: 'secondary' },
-  community: { icon: 'people',      colorKey: 'success' },
-  payment:   { icon: 'wallet',      colorKey: 'success' },
-  follow:    { icon: 'person-add',  colorKey: 'warning' },
-  review:    { icon: 'star',        colorKey: 'primary' },
+const NOTIF_TYPE_INFO: Record<string, { icon: string; color: string }> = {
+  system:    { icon: 'settings',    color: CultureTokens.teal },
+  event:     { icon: 'calendar',    color: CultureTokens.coral },
+  perk:      { icon: 'gift',        color: CultureTokens.saffron },
+  community: { icon: 'people',      color: CultureTokens.success },
+  payment:   { icon: 'wallet',      color: CultureTokens.success },
+  follow:    { icon: 'person-add',  color: CultureTokens.gold },
+  review:    { icon: 'star',        color: CultureTokens.indigo },
 };
 
 function timeAgo(date: string): string {
@@ -44,7 +44,6 @@ function timeAgo(date: string): string {
 export default function NotificationsScreen() {
   const insets = useSafeAreaInsets();
   const webTop = 0;
-  const colors = useColors();
   const { userId } = useAuth();
 
   const { data: notifications = [], isLoading } = useQuery<Notification[]>({
@@ -67,41 +66,31 @@ export default function NotificationsScreen() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/notifications', userId] }),
   });
 
-  const resolveTypeColor = (colorKey: 'info' | 'accent' | 'secondary' | 'success' | 'warning' | 'primary'): string => {
-    if (colorKey === 'info') return colors.info;
-    if (colorKey === 'accent') return colors.accent;
-    if (colorKey === 'secondary') return colors.secondary;
-    if (colorKey === 'success') return colors.success;
-    if (colorKey === 'warning') return colors.warning;
-    return colors.primary;
-  };
-
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
-  // Fallback for web navigation: show a simple message if no notifications
   if (Platform.OS === 'web' && notifications.length === 0 && !isLoading) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40 }}>
-        <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#2C2A72' }}>Notifications</Text>
-        <Text style={{ marginTop: 12, color: '#636366' }}>Your notifications will appear here.</Text>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40, backgroundColor: '#0B0B14' }}>
+        <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#FFFFFF' }}>Notifications</Text>
+        <Text style={{ marginTop: 12, color: 'rgba(255,255,255,0.6)' }}>Your notifications will appear here.</Text>
       </View>
     );
   }
 
   return (
-    <View style={[s.container, { paddingTop: insets.top + webTop, backgroundColor: colors.background }]}>
+    <View style={[s.container, { paddingTop: insets.top + webTop }]}>
       {/* Header */}
       <View style={s.header}>
-        <Pressable style={[s.backBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]} onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={22} color={colors.text} />
+        <Pressable style={s.backBtn} onPress={() => router.back()}>
+          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
         </Pressable>
-        <Text style={[s.headerTitle, { color: colors.text }]}>Notifications</Text>
+        <Text style={s.headerTitle}>Notifications</Text>
         {unreadCount > 0 ? (
           <Pressable
-            style={[s.markAllBtn, { backgroundColor: colors.primaryGlow }]}
+            style={s.markAllBtn}
             onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); markAllReadMutation.mutate(); }}
           >
-            <Text style={[s.markAllText, { color: colors.primary }]}>Read All</Text>
+            <Text style={s.markAllText}>Read All</Text>
           </Pressable>
         ) : (
           <View style={{ width: 64 }} />
@@ -110,33 +99,34 @@ export default function NotificationsScreen() {
 
       {/* Unread banner */}
       {unreadCount > 0 && (
-        <View style={[s.unreadBanner, { backgroundColor: colors.primaryGlow }]}>
-          <Ionicons name="notifications" size={15} color={colors.primary} />
-          <Text style={[s.unreadText, { color: colors.primary }]}>
+        <View style={s.unreadBanner}>
+          <Ionicons name="notifications" size={16} color={CultureTokens.indigo} />
+          <Text style={s.unreadText}>
             {unreadCount} unread notification{unreadCount > 1 ? 's' : ''}
           </Text>
         </View>
       )}
 
-      <ScrollView
-        style={s.list}
-        contentContainerStyle={{ paddingBottom: 40 + (Platform.OS === 'web' ? 34 : insets.bottom) }}
-        showsVerticalScrollIndicator={false}
-      >
-        {isLoading ? (
-          <View style={s.empty}>
-            <ActivityIndicator size="large" color={colors.primary} />
+      {isLoading ? (
+        <View style={s.empty}>
+          <ActivityIndicator size="large" color={CultureTokens.indigo} />
+        </View>
+      ) : notifications.length === 0 ? (
+        <View style={s.empty}>
+          <View style={s.emptyIconBg}>
+            <Ionicons name="notifications-off-outline" size={56} color="rgba(255,255,255,0.5)" />
           </View>
-        ) : notifications.length === 0 ? (
-          <View style={s.empty}>
-            <Ionicons name="notifications-off-outline" size={52} color={colors.textSecondary} />
-            <Text style={[s.emptyText, { color: colors.text }]}>No notifications yet</Text>
-            <Text style={[s.emptySub, { color: colors.text }]}>We&apos;ll let you know when something happens</Text>
-          </View>
-        ) : (
-          notifications.map((notif) => {
+          <Text style={s.emptyText}>No notifications yet</Text>
+          <Text style={s.emptySub}>We&apos;ll let you know when something happens</Text>
+        </View>
+      ) : (
+        <ScrollView
+          style={s.list}
+          contentContainerStyle={{ paddingBottom: 40 + (Platform.OS === 'web' ? 34 : insets.bottom), paddingTop: 8 }}
+          showsVerticalScrollIndicator={false}
+        >
+          {notifications.map((notif) => {
             const typeInfo = NOTIF_TYPE_INFO[notif.type] ?? NOTIF_TYPE_INFO.system;
-            const typeColor = resolveTypeColor(typeInfo.colorKey);
             return (
               <Pressable
                 key={notif.id}
@@ -150,57 +140,59 @@ export default function NotificationsScreen() {
                 }}
                 style={[
                   s.notifCard,
-                  { backgroundColor: colors.surface, borderColor: colors.borderLight },
-                  !notif.isRead && { borderColor: colors.primary + '35', backgroundColor: colors.primaryGlow },
+                  !notif.isRead && s.notifCardUnread,
                 ]}
               >
-                <View style={[s.notifIcon, { backgroundColor: typeColor + '15' }]}> 
-                  <Ionicons name={typeInfo.icon as never} size={20} color={typeColor} />
+                <View style={[s.notifIcon, { backgroundColor: typeInfo.color + '15' }]}> 
+                  <Ionicons name={typeInfo.icon as never} size={22} color={typeInfo.color} />
                 </View>
                 <View style={s.notifContent}>
                   <View style={s.notifHeader}>
                     <Text
-                      style={[s.notifTitle, { color: colors.text }, !notif.isRead && { fontFamily: 'Poppins_600SemiBold' }]}
+                      style={[s.notifTitle, !notif.isRead && s.notifTitleUnread]}
                       numberOfLines={1}
                     >
                       {notif.title}
                     </Text>
-                    {!notif.isRead && <View style={[s.unreadDot, { backgroundColor: colors.primary }]} />}
+                    {!notif.isRead && <View style={s.unreadDot} />}
                   </View>
-                  <Text style={[s.notifMessage, { color: colors.text }]} numberOfLines={2}>{notif.message}</Text>
-                  {notif.createdAt && <Text style={[s.notifTime, { color: colors.textSecondary }]}>{timeAgo(notif.createdAt)}</Text>}
+                  <Text style={[s.notifMessage, !notif.isRead && { color: 'rgba(255,255,255,0.8)' }]} numberOfLines={2}>{notif.message}</Text>
+                  {notif.createdAt && <Text style={s.notifTime}>{timeAgo(notif.createdAt)}</Text>}
                 </View>
               </Pressable>
             );
-          })
-        )}
-      </ScrollView>
+          })}
+        </ScrollView>
+      )}
     </View>
   );
 }
 
 const s = StyleSheet.create({
-  container:   { flex: 1 },
+  container:   { flex: 1, backgroundColor: '#0B0B14' },
   header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
-  backBtn:     { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-  headerTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold' },
-  markAllBtn:  { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
-  markAllText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
+  backBtn:     { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  headerTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+  markAllBtn:  { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, backgroundColor: CultureTokens.indigo + '20' },
+  markAllText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.indigo },
 
-  unreadBanner:{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingVertical: 10, marginHorizontal: 16, marginBottom: 8, borderRadius: 12 },
-  unreadText:  { fontSize: 13, fontFamily: 'Poppins_500Medium' },
+  unreadBanner:{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 22, paddingVertical: 14, marginHorizontal: 20, marginBottom: 12, borderRadius: 16, backgroundColor: CultureTokens.indigo + '15', borderWidth: 1, borderColor: CultureTokens.indigo + '30' },
+  unreadText:  { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.indigo },
 
-  list:        { flex: 1, paddingHorizontal: 16 },
-  empty:       { alignItems: 'center', paddingTop: 80, gap: 10 },
-  emptyText:   { fontSize: 16, fontFamily: 'Poppins_600SemiBold' },
-  emptySub:    { fontSize: 13, fontFamily: 'Poppins_400Regular' },
+  list:        { flex: 1, paddingHorizontal: 20 },
+  empty:       { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 100 },
+  emptyIconBg: { width: 100, height: 100, borderRadius: 30, backgroundColor: 'rgba(255,255,255,0.03)', alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
+  emptyText:   { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', marginBottom: 6 },
+  emptySub:    { fontSize: 14, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.5)', textAlign: 'center' },
 
-  notifCard:    { flexDirection: 'row', gap: 12, borderRadius: 14, padding: 14, borderWidth: 1, marginBottom: 8 },
-  notifIcon:    { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  notifContent: { flex: 1 },
-  notifHeader:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 },
-  notifTitle:   { fontSize: 14, fontFamily: 'Poppins_500Medium', flex: 1 },
-  unreadDot:    { width: 8, height: 8, borderRadius: 4, marginLeft: 8 },
-  notifMessage: { fontSize: 13, fontFamily: 'Poppins_400Regular', lineHeight: 18, marginBottom: 4 },
-  notifTime:    { fontSize: 11, fontFamily: 'Poppins_400Regular' },
+  notifCard:       { flexDirection: 'row', gap: 14, borderRadius: 18, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.03)', marginBottom: 10 },
+  notifCardUnread: { borderColor: CultureTokens.indigo + '40', backgroundColor: CultureTokens.indigo + '10' },
+  notifIcon:       { width: 46, height: 46, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  notifContent:    { flex: 1 },
+  notifHeader:     { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 4 },
+  notifTitle:      { fontSize: 15, fontFamily: 'Poppins_500Medium', color: '#FFFFFF', flex: 1 },
+  notifTitleUnread:{ fontFamily: 'Poppins_700Bold' },
+  unreadDot:       { width: 10, height: 10, borderRadius: 5, marginLeft: 10, backgroundColor: CultureTokens.indigo, marginTop: 4 },
+  notifMessage:    { fontSize: 14, fontFamily: 'Poppins_400Regular', lineHeight: 20, color: 'rgba(255,255,255,0.6)', marginBottom: 8 },
+  notifTime:       { fontSize: 12, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.4)' },
 });

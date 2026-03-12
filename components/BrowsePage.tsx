@@ -3,7 +3,7 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors } from '@/constants/theme';
+import { CultureTokens } from '@/constants/theme';
 import { useState, useMemo } from 'react';
 import * as Haptics from 'expo-haptics';
 import { FilterChipRow, FilterItem } from '@/components/FilterChip';
@@ -50,7 +50,7 @@ interface BrowsePageProps {
 
 export default function BrowsePage({
   title,
-  accentColor = Colors.primary,
+  accentColor = CultureTokens.indigo,
   accentIcon = 'compass',
   categories,
   categoryKey = 'category',
@@ -65,7 +65,7 @@ export default function BrowsePage({
   refreshControl,
 }: BrowsePageProps) {
   const insets = useSafeAreaInsets();
-  const topInset = Platform.OS === 'web' ? 67 : insets.top;
+  const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
   const [selectedCat, setSelectedCat] = useState('All');
 
@@ -124,7 +124,7 @@ export default function BrowsePage({
                       <Image source={{ uri: item.imageUrl }} style={styles.promoImage} contentFit="cover" transition={200} />
                     ) : (
                       <View style={[styles.promoImage, { backgroundColor: accentColor + '15', alignItems: 'center', justifyContent: 'center' }]}>
-                        <Ionicons name={accentIcon as any} size={28} color={accentColor} />
+                        <Ionicons name={accentIcon as any} size={32} color={accentColor} />
                       </View>
                     )}
                     <View style={styles.promoInfo}>
@@ -134,7 +134,7 @@ export default function BrowsePage({
                         {item.priceLabel && <Text style={[styles.promoPrice, { color: accentColor }]}>{item.priceLabel}</Text>}
                         {item.rating != null && (
                           <View style={styles.ratingRow}>
-                            <Ionicons name="star" size={11} color="#FFB347" />
+                            <Ionicons name="star" size={12} color={CultureTokens.gold} />
                             <Text style={styles.ratingText}>{item.rating}</Text>
                           </View>
                         )}
@@ -180,7 +180,9 @@ export default function BrowsePage({
 
           {filtered.length === 0 ? (
             <View style={styles.emptyWrap}>
-              <Ionicons name={emptyIcon as any} size={48} color={Colors.textTertiary} />
+              <View style={styles.emptyIconBg}>
+                <Ionicons name={emptyIcon as any} size={48} color="rgba(255,255,255,0.4)" />
+              </View>
               <Text style={styles.emptyText}>{emptyMessage}</Text>
             </View>
           ) : (
@@ -194,7 +196,7 @@ export default function BrowsePage({
                     <Image source={{ uri: item.imageUrl }} style={styles.cardImage} contentFit="cover" transition={200} />
                   ) : (
                     <View style={[styles.cardImage, { backgroundColor: accentColor + '15', alignItems: 'center', justifyContent: 'center' }]}>
-                      <Ionicons name={accentIcon as any} size={24} color={accentColor} />
+                      <Ionicons name={accentIcon as any} size={28} color={accentColor} />
                     </View>
                   )}
                   <View style={styles.cardInfo}>
@@ -202,7 +204,7 @@ export default function BrowsePage({
                       <Text style={styles.cardName} numberOfLines={1}>{item.title}</Text>
                       {item.isPromoted && (
                         <View style={[styles.miniPromoBadge, { backgroundColor: accentColor + '15' }]}>
-                          <Ionicons name="star" size={8} color={accentColor} />
+                          <Ionicons name="star" size={10} color={accentColor} />
                         </View>
                       )}
                     </View>
@@ -211,13 +213,13 @@ export default function BrowsePage({
                     <View style={styles.cardBottom}>
                       {item.priceLabel && <Text style={[styles.cardPrice, { color: accentColor }]}>{item.priceLabel}</Text>}
                       {item.badge && (
-                        <View style={[styles.cardBadge, { backgroundColor: accentColor + '12' }]}>
+                        <View style={[styles.cardBadge, { backgroundColor: accentColor + '15' }]}>
                           <Text style={[styles.cardBadgeText, { color: accentColor }]}>{item.badge}</Text>
                         </View>
                       )}
                       {item.rating != null && (
                         <View style={styles.ratingRow}>
-                          <Ionicons name="star" size={12} color="#FFB347" />
+                          <Ionicons name="star" size={12} color={CultureTokens.gold} />
                           <Text style={styles.ratingText}>{item.rating}{item.reviews ? ` (${item.reviews})` : ''}</Text>
                         </View>
                       )}
@@ -241,22 +243,22 @@ function Header({ title, accentColor, accentIcon }: { title: string; accentColor
       <Pressable
         onPress={() => { if (router.canGoBack()) router.back(); else router.replace('/'); }}
         style={styles.backBtn}
-        hitSlop={10}
+        hitSlop={12}
       >
-        <Ionicons name="chevron-back" size={22} color={Colors.text} />
+        <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
       </Pressable>
       <View style={styles.headerCenter}>
         <View style={[styles.headerIcon, { backgroundColor: accentColor + '15' }]}>
-          <Ionicons name={accentIcon as any} size={16} color={accentColor} />
+          <Ionicons name={accentIcon as any} size={18} color={accentColor} />
         </View>
         <Text style={styles.headerTitle}>{title}</Text>
       </View>
       <Pressable
         style={styles.backBtn}
-        hitSlop={10}
+        hitSlop={12}
         onPress={() => router.push('/search')}
       >
-        <Ionicons name="search-outline" size={20} color={Colors.text} />
+        <Ionicons name="search-outline" size={20} color="#FFFFFF" />
       </Pressable>
     </View>
   );
@@ -265,50 +267,53 @@ function Header({ title, accentColor, accentIcon }: { title: string; accentColor
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: '#0B0B14',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingVertical: 12,
   },
   backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.surface,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerCenter: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
   },
   headerIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
+    width: 32,
+    height: 32,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: {
     fontSize: 20,
     fontFamily: 'Poppins_700Bold',
-    color: Colors.text,
+    color: '#FFFFFF',
+    letterSpacing: -0.3,
   },
   loadingWrap: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
+    gap: 16,
   },
   loadingText: {
-    fontSize: 14,
-    fontFamily: 'Poppins_400Regular',
-    color: Colors.textSecondary,
+    fontSize: 15,
+    fontFamily: 'Poppins_500Medium',
+    color: 'rgba(255,255,255,0.6)',
   },
   section: {
     marginBottom: 24,
@@ -316,172 +321,185 @@ const styles = StyleSheet.create({
   sectionHead: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
     paddingHorizontal: 20,
-    marginBottom: 14,
+    marginBottom: 16,
+    paddingTop: 10,
   },
   sectionDot: {
-    width: 4,
+    width: 6,
     height: 20,
-    borderRadius: 2,
+    borderRadius: 3,
   },
   sectionTitle: {
     fontSize: 18,
     fontFamily: 'Poppins_700Bold',
-    color: Colors.text,
+    color: '#FFFFFF',
     flex: 1,
   },
   promotedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
   promotedBadgeText: {
-    fontSize: 10,
-    fontFamily: 'Poppins_600SemiBold',
+    fontSize: 11,
+    fontFamily: 'Poppins_700Bold',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   promoCard: {
-    width: 200,
-    backgroundColor: Colors.card,
-    borderRadius: 16,
+    width: 240,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 20,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   promoImage: {
     width: '100%',
-    height: 120,
+    height: 140,
   },
   promoInfo: {
-    padding: 12,
-    gap: 3,
+    padding: 16,
+    gap: 4,
   },
   promoName: {
-    fontSize: 15,
+    fontSize: 16,
     fontFamily: 'Poppins_600SemiBold',
-    color: Colors.text,
+    color: '#FFFFFF',
+    lineHeight: 22,
   },
   promoSub: {
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: 'Poppins_400Regular',
-    color: Colors.textSecondary,
+    color: 'rgba(255,255,255,0.6)',
   },
   promoBottom: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: 6,
   },
   promoPrice: {
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: 'Poppins_700Bold',
   },
   ratingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
+    gap: 4,
   },
   ratingText: {
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: 'Poppins_600SemiBold',
-    color: Colors.textSecondary,
+    color: 'rgba(255,255,255,0.6)',
   },
   listSection: {
     paddingHorizontal: 20,
   },
   resultCount: {
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: 'Poppins_500Medium',
-    color: Colors.textSecondary,
-    marginBottom: 12,
+    color: 'rgba(255,255,255,0.5)',
+    marginBottom: 16,
   },
   emptyWrap: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 60,
-    gap: 12,
+    paddingVertical: 80,
+    gap: 16,
+  },
+  emptyIconBg: {
+    width: 90, height: 90, borderRadius: 30,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    alignItems: 'center', justifyContent: 'center',
   },
   emptyText: {
-    fontSize: 15,
+    fontSize: 16,
     fontFamily: 'Poppins_500Medium',
-    color: Colors.textTertiary,
+    color: 'rgba(255,255,255,0.5)',
   },
   card: {
     flexDirection: 'row',
-    backgroundColor: Colors.card,
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 12,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 14,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
-    gap: 14,
+    borderColor: 'rgba(255,255,255,0.1)',
+    gap: 16,
     overflow: 'hidden',
   },
   cardImage: {
-    width: 70,
-    height: 70,
-    borderRadius: 14,
+    width: 80,
+    height: 80,
+    borderRadius: 16,
     overflow: 'hidden',
   },
   cardInfo: {
     flex: 1,
-    gap: 3,
+    gap: 4,
   },
   cardTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
   cardName: {
     fontSize: 16,
     fontFamily: 'Poppins_700Bold',
-    color: Colors.text,
+    color: '#FFFFFF',
     flex: 1,
+    lineHeight: 22,
   },
   miniPromoBadge: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
   cardSub: {
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: 'Poppins_500Medium',
-    color: Colors.textSecondary,
+    color: 'rgba(255,255,255,0.8)',
   },
   cardDesc: {
     fontSize: 13,
     fontFamily: 'Poppins_400Regular',
-    color: Colors.textSecondary,
-    lineHeight: 19,
+    color: 'rgba(255,255,255,0.5)',
+    lineHeight: 20,
+    marginTop: 2,
   },
   cardBottom: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginTop: 4,
+    gap: 10,
+    marginTop: 6,
     flexWrap: 'wrap',
   },
   cardPrice: {
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: 'Poppins_700Bold',
   },
   cardBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
   },
   cardBadgeText: {
     fontSize: 11,
-    fontFamily: 'Poppins_600SemiBold',
+    fontFamily: 'Poppins_700Bold',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   cardMeta: {
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: 'Poppins_400Regular',
-    color: Colors.textTertiary,
+    color: 'rgba(255,255,255,0.4)',
   },
 });

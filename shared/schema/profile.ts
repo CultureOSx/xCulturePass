@@ -78,9 +78,6 @@ export interface Profile {
   language?: string;
   imdbScore?: number;
   posterColor?: string;
-    ownerId?: string;
-    createdAt: string;
-    updatedAt?: string;
   showtimes?: { time: string; cinema?: string; date?: string; price?: number }[];
 
   isPopular?: boolean;

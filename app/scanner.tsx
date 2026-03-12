@@ -12,7 +12,6 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useColors } from '@/hooks/useColors';
 import { router } from 'expo-router';
 import { goBackOrReplace } from '@/lib/navigation';
 import * as Haptics from 'expo-haptics';
@@ -23,6 +22,7 @@ import { useRole } from '@/hooks/useRole';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AuthGuard } from '@/components/AuthGuard';
+import { CultureTokens } from '@/constants/theme';
 
 import { getStyles } from '@/components/scanner/Scanner.styles';
 import {
@@ -42,11 +42,12 @@ export default function ScannerScreen() {
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
-  const colors = useColors();
+  
   const { isOrganizer } = useRole();
   const canUseStaffScanner = isOrganizer;
 
-  const s = useMemo(() => getStyles(colors), [colors]);
+  // Render static glass styles since we migrated out of theme
+  const s = useMemo(() => getStyles({}), []);
 
   const [mode, setMode] = useState<ScanMode>('culturepass');
 
@@ -74,11 +75,11 @@ export default function ScannerScreen() {
   const { addContact, isContactSaved } = useContacts();
 
   const TIER_DISPLAY = useMemo((): Record<string, { label: string; color: string; icon: string }> => ({
-    free:    { label: 'Free',    color: colors.textSecondary, icon: 'shield-outline' },
-    plus:    { label: 'Plus',    color: colors.info,          icon: 'star' },
-    premium: { label: 'Premium', color: colors.warning,       icon: 'diamond' },
-    vip:     { label: 'VIP',     color: colors.secondary,     icon: 'diamond' },
-  }), [colors]);
+    free:    { label: 'Free',    color: 'rgba(255,255,255,0.6)', icon: 'shield-outline' },
+    plus:    { label: 'Plus',    color: CultureTokens.indigo,     icon: 'star' },
+    premium: { label: 'Premium', color: CultureTokens.gold,       icon: 'diamond' },
+    vip:     { label: 'VIP',     color: CultureTokens.saffron,    icon: 'diamond' },
+  }), []);
 
   useEffect(() => {
     if (!ticketResult) ticketLastScanned.current = '';
@@ -281,86 +282,86 @@ export default function ScannerScreen() {
   };
 
   const hintItems = useMemo(() => [
-    { icon: 'finger-print',          color: colors.primary,   label: 'CulturePass ID',  example: 'CP-123456' },
-    { icon: 'code-slash',             color: colors.secondary, label: 'JSON QR Data',    example: '{"type":"culturepass_id","cpid":"CP-..."}' },
-    { icon: 'document-text-outline',  color: colors.accent,    label: 'vCard Data',      example: 'BEGIN:VCARD...' },
-  ], [colors]);
+    { icon: 'finger-print',          color: CultureTokens.indigo,  label: 'CulturePass ID',  example: 'CP-123456' },
+    { icon: 'code-slash',             color: CultureTokens.saffron, label: 'JSON QR Data',    example: '{"type":"culturepass_id","cpid":"CP-..."}' },
+    { icon: 'document-text-outline',  color: CultureTokens.coral,   label: 'vCard Data',      example: 'BEGIN:VCARD...' },
+  ], []);
 
   return (
     <AuthGuard icon="scan-outline" title="Scanner" message="Sign in to scan CulturePass QR cards and manage contacts.">
-    <View style={[s.container, { paddingTop: topInset, backgroundColor: colors.background }]}>
+    <View style={[s.container, { paddingTop: topInset }]}>
 
       {/* Header */}
       <View style={s.header}>
-        <Pressable onPress={() => goBackOrReplace('/(tabs)')} style={[s.headerBtn, { backgroundColor: colors.surface }]}>
-          <Ionicons name="chevron-back" size={22} color={colors.text} />
+        <Pressable onPress={() => goBackOrReplace('/(tabs)')} style={s.headerBtn}>
+          <Ionicons name="chevron-back" size={22} color="#FFFFFF" />
         </Pressable>
-        <Text style={[s.headerTitle, { color: colors.text }]}>
+        <Text style={s.headerTitle}>
           {mode === 'tickets' ? 'Staff Scanner' : 'Scanner'}
         </Text>
         <View style={s.headerRight}>
           {mode === 'tickets' ? (
-            <Pressable style={[s.headerBtn, { backgroundColor: colors.surface }]} onPress={resetSession}>
-              <Ionicons name="refresh-outline" size={20} color={colors.error} />
+            <Pressable style={s.headerBtn} onPress={resetSession}>
+              <Ionicons name="refresh-outline" size={20} color={CultureTokens.error} />
             </Pressable>
           ) : (
-            <Pressable style={[s.headerBtn, { backgroundColor: colors.primaryGlow }]} onPress={() => router.push('/contacts' as never)}>
-              <Ionicons name="people-outline" size={20} color={colors.primary} />
+            <Pressable style={[s.headerBtn, { backgroundColor: CultureTokens.indigo + '20', borderColor: CultureTokens.indigo + '40' }]} onPress={() => router.push('/contacts' as never)}>
+              <Ionicons name="people-outline" size={20} color={CultureTokens.indigo} />
             </Pressable>
           )}
         </View>
       </View>
 
       {/* Mode toggle */}
-      <View style={[s.toggleContainer, { backgroundColor: colors.surface }]}>
+      <View style={s.toggleContainer}>
         <Pressable
-          style={[s.toggleTab, mode === 'culturepass' && { backgroundColor: colors.primary }]}
+          style={[s.toggleTab, mode === 'culturepass' && { backgroundColor: 'rgba(255,255,255,0.1)' }]}
           onPress={() => { setMode('culturepass'); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
         >
-          <Ionicons name="card-outline" size={16} color={mode === 'culturepass' ? colors.textInverse : colors.textSecondary} />
-          <Text style={[s.toggleText, { color: colors.textSecondary }, mode === 'culturepass' && { color: colors.textInverse }]}>CulturePass</Text>
+          <Ionicons name="card-outline" size={16} color={mode === 'culturepass' ? '#FFFFFF' : 'rgba(255,255,255,0.5)'} />
+          <Text style={[s.toggleText, mode === 'culturepass' && { color: '#FFFFFF' }]}>CulturePass</Text>
         </Pressable>
         {canUseStaffScanner && (
           <Pressable
-            style={[s.toggleTab, mode === 'tickets' && { backgroundColor: colors.primary }]}
+            style={[s.toggleTab, mode === 'tickets' && { backgroundColor: 'rgba(255,255,255,0.1)' }]}
             onPress={() => { setMode('tickets'); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
           >
-            <Ionicons name="ticket-outline" size={16} color={mode === 'tickets' ? colors.textInverse : colors.textSecondary} />
-            <Text style={[s.toggleText, { color: colors.textSecondary }, mode === 'tickets' && { color: colors.textInverse }]}>Staff Check-In</Text>
+            <Ionicons name="ticket-outline" size={16} color={mode === 'tickets' ? '#FFFFFF' : 'rgba(255,255,255,0.5)'} />
+            <Text style={[s.toggleText, mode === 'tickets' && { color: '#FFFFFF' }]}>Staff Check-In</Text>
           </Pressable>
         )}
       </View>
 
       {/* Loading overlay */}
       {isLookingUp && (
-        <View style={[s.lookupOverlay, { backgroundColor: colors.background + 'E6' }]}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[s.lookupText, { color: colors.text }]}>Looking up profile…</Text>
+        <View style={s.lookupOverlay}>
+          <ActivityIndicator size="large" color={CultureTokens.indigo} />
+          <Text style={s.lookupText}>Looking up profile…</Text>
         </View>
       )}
 
       {/* ═══════════ STAFF TICKET MODE ═══════════ */}
       {mode === 'tickets' && (
         <>
-          <View style={[s.statsBar, { backgroundColor: colors.surface }]}>
+          <View style={s.statsBar}>
             <View style={s.statItem}>
-              <Text style={[s.statNum, { color: colors.success }]}>{session.accepted}</Text>
-              <Text style={[s.statLabel, { color: colors.textTertiary }]}>Accepted</Text>
+              <Text style={[s.statNum, { color: CultureTokens.success }]}>{session.accepted}</Text>
+              <Text style={s.statLabel}>Accepted</Text>
             </View>
-            <View style={[s.statDivider, { backgroundColor: colors.borderLight }]} />
+            <View style={s.statDivider} />
             <View style={s.statItem}>
-              <Text style={[s.statNum, { color: colors.warning }]}>{session.duplicates}</Text>
-              <Text style={[s.statLabel, { color: colors.textTertiary }]}>Duplicate</Text>
+              <Text style={[s.statNum, { color: CultureTokens.warning }]}>{session.duplicates}</Text>
+              <Text style={s.statLabel}>Duplicate</Text>
             </View>
-            <View style={[s.statDivider, { backgroundColor: colors.borderLight }]} />
+            <View style={s.statDivider} />
             <View style={s.statItem}>
-              <Text style={[s.statNum, { color: colors.error }]}>{session.rejected}</Text>
-              <Text style={[s.statLabel, { color: colors.textTertiary }]}>Invalid</Text>
+              <Text style={[s.statNum, { color: CultureTokens.error }]}>{session.rejected}</Text>
+              <Text style={s.statLabel}>Invalid</Text>
             </View>
-            <View style={[s.statDivider, { backgroundColor: colors.borderLight }]} />
+            <View style={s.statDivider} />
             <View style={s.statItem}>
-              <Text style={[s.statNum, { color: colors.textSecondary }]}>{sessionDuration()}</Text>
-              <Text style={[s.statLabel, { color: colors.textTertiary }]}>Session</Text>
+              <Text style={[s.statNum, { color: 'rgba(255,255,255,0.8)' }]}>{sessionDuration()}</Text>
+              <Text style={s.statLabel}>Session</Text>
             </View>
           </View>
 
@@ -382,7 +383,7 @@ export default function ScannerScreen() {
                 <Text style={s.cameraHint}>Point at a ticket QR code</Text>
               </View>
               <Pressable style={s.closeCameraBtn} onPress={() => setTicketCameraActive(false)}>
-                <Ionicons name="close-circle" size={38} color={colors.textInverse} />
+                <Ionicons name="close-circle" size={38} color="#FFFFFF" />
               </Pressable>
             </View>
           )}
@@ -397,30 +398,30 @@ export default function ScannerScreen() {
               <View style={s.scanInputSection}>
                 <Pressable style={s.camScanBtn} onPress={startTicketCamera}>
                   <LinearGradient
-                    colors={[colors.primary, colors.secondary]}
+                    colors={[CultureTokens.indigo, CultureTokens.saffron]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                     style={s.camScanGradient}
                   >
-                    <Ionicons name="camera" size={28} color={colors.textInverse} />
+                    <Ionicons name="camera" size={28} color="#0B0B14" />
                     <View>
-                      <Text style={s.camScanTitle}>Scan QR Code</Text>
-                      <Text style={s.camScanSub}>Camera · QR · Barcode</Text>
+                      <Text style={[s.camScanTitle, { color: '#0B0B14' }]}>Scan QR Code</Text>
+                      <Text style={[s.camScanSub, { color: 'rgba(11,11,20,0.8)' }]}>Camera · QR · Barcode</Text>
                     </View>
                   </LinearGradient>
                 </Pressable>
 
                 <View style={s.orRow}>
-                  <View style={[s.orLine, { backgroundColor: colors.borderLight }]} />
-                  <Text style={[s.orText, { color: colors.textTertiary }]}>or enter manually</Text>
-                  <View style={[s.orLine, { backgroundColor: colors.borderLight }]} />
+                  <View style={s.orLine} />
+                  <Text style={s.orText}>or enter manually</Text>
+                  <View style={s.orLine} />
                 </View>
 
                 <View style={s.inputRow}>
                   <TextInput
-                    style={[s.codeInput, { backgroundColor: colors.surface, borderColor: colors.borderLight, color: colors.text }]}
+                    style={s.codeInput}
                     placeholder="Enter ticket code…"
-                    placeholderTextColor={colors.textTertiary}
+                    placeholderTextColor="rgba(255,255,255,0.4)"
                     value={ticketCode}
                     onChangeText={v => setTicketCode(v.toUpperCase())}
                     autoCapitalize="characters"
@@ -429,13 +430,13 @@ export default function ScannerScreen() {
                     onSubmitEditing={handleManualTicketScan}
                   />
                   <Pressable
-                    style={[s.scanBtn, { backgroundColor: colors.primary }, isScanning && s.scanBtnDisabled]}
+                    style={[s.scanBtn, { backgroundColor: CultureTokens.indigo }, isScanning && s.scanBtnDisabled]}
                     onPress={handleManualTicketScan}
                     disabled={isScanning}
                   >
                     {isScanning
-                      ? <ActivityIndicator size="small" color={colors.textInverse} />
-                      : <Ionicons name="checkmark-circle" size={22} color={colors.textInverse} />
+                      ? <ActivityIndicator size="small" color="#0B0B14" />
+                      : <Ionicons name="checkmark-circle" size={24} color="#0B0B14" />
                     }
                   </Pressable>
                 </View>
@@ -446,7 +447,6 @@ export default function ScannerScreen() {
               <View style={s.resultWrapper}>
                 <TicketResultCard
                   result={ticketResult}
-                  colors={colors}
                   onClose={() => setTicketResult(null)}
                   onScanNext={() => { setTicketResult(null); startTicketCamera(); }}
                   onPrintBadge={() => {
@@ -460,17 +460,17 @@ export default function ScannerScreen() {
             {scanHistory.length > 0 && !ticketCameraActive && (
               <View style={s.historySection}>
                 <View style={s.historySectionHeader}>
-                  <Text style={[s.historyTitle, { color: colors.text }]}>Scan Log ({scanHistory.length})</Text>
+                  <Text style={s.historyTitle}>Scan Log ({scanHistory.length})</Text>
                 </View>
                 {scanHistory.map((item, idx) => {
                   const cfg = getOutcomeConfig(item);
                   return (
-                    <View key={idx} style={[s.historyItem, { backgroundColor: colors.surface, borderLeftColor: cfg.color }]}>
+                    <View key={idx} style={[s.historyItem, { borderLeftColor: cfg.color }]}>
                       <View style={[s.historyIconWrap, { backgroundColor: cfg.bg }]}>
-                        <Ionicons name={cfg.icon as any} size={18} color={cfg.color} />
+                        <Ionicons name={cfg.icon as any} size={20} color={cfg.color} />
                       </View>
                       <View style={{ flex: 1 }}>
-                        <Text style={[s.historyEventTitle, { color: colors.text }]} numberOfLines={1}>
+                        <Text style={s.historyEventTitle} numberOfLines={1}>
                           {item.ticket?.eventTitle || 'Unknown Event'}
                         </Text>
                         <Text style={[s.historyStatus, { color: cfg.color }]} numberOfLines={1}>
@@ -478,8 +478,8 @@ export default function ScannerScreen() {
                         </Text>
                       </View>
                       {item.ticket?.tierName && (
-                        <View style={[s.historyTierChip, { backgroundColor: colors.primaryGlow }]}>
-                          <Text style={[s.historyTierText, { color: colors.primary }]}>{item.ticket.tierName}</Text>
+                        <View style={[s.historyTierChip, { backgroundColor: CultureTokens.indigo + '15' }]}>
+                          <Text style={[s.historyTierText, { color: CultureTokens.indigo }]}>{item.ticket.tierName}</Text>
                         </View>
                       )}
                     </View>
@@ -490,11 +490,11 @@ export default function ScannerScreen() {
 
             {scanHistory.length === 0 && !ticketResult && !ticketCameraActive && (
               <View style={s.emptyState}>
-                <View style={[s.emptyIconBg, { backgroundColor: colors.primaryGlow }]}>
-                  <Ionicons name="scan" size={40} color={colors.primary} />
+                <View style={s.emptyIconBg}>
+                  <Ionicons name="scan" size={44} color={CultureTokens.indigo} />
                 </View>
-                <Text style={[s.emptyTitle, { color: colors.text }]}>Ready to Check In</Text>
-                <Text style={[s.emptyDesc, { color: colors.textSecondary }]}>Scan a QR code or enter a ticket code above to verify and mark attendance.</Text>
+                <Text style={s.emptyTitle}>Ready to Check In</Text>
+                <Text style={s.emptyDesc}>Scan a QR code or enter a ticket code above to verify and mark attendance.</Text>
               </View>
             )}
           </ScrollView>
@@ -522,7 +522,7 @@ export default function ScannerScreen() {
                 <Text style={s.cameraHint}>Point at a CulturePass QR code</Text>
               </View>
               <Pressable style={s.closeCameraBtn} onPress={() => setCpCameraActive(false)}>
-                <Ionicons name="close-circle" size={38} color={colors.textInverse} />
+                <Ionicons name="close-circle" size={38} color="#FFFFFF" />
               </Pressable>
             </View>
           )}
@@ -535,27 +535,27 @@ export default function ScannerScreen() {
           >
             {!cpCameraActive && !cpContact && (
               <View style={s.scanInputSection}>
-                <Pressable style={[s.cameraStartBtn, { backgroundColor: colors.surface }]} onPress={startCpCamera}>
-                  <View style={[s.cameraIconCircle, { backgroundColor: colors.primary }]}>
-                    <Ionicons name="camera" size={32} color={colors.textInverse} />
+                <Pressable style={s.cameraStartBtn} onPress={startCpCamera}>
+                  <View style={[s.cameraIconCircle, { backgroundColor: CultureTokens.indigo }]}>
+                    <Ionicons name="camera" size={34} color="#0B0B14" />
                   </View>
-                  <Text style={[s.cameraStartTitle, { color: colors.text }]}>Scan QR Code</Text>
-                  <Text style={[s.cameraStartSub, { color: colors.textSecondary }]}>
+                  <Text style={s.cameraStartTitle}>Scan QR Code</Text>
+                  <Text style={s.cameraStartSub}>
                     {Platform.OS === 'web' ? 'Use manual input on web' : 'Tap to open camera'}
                   </Text>
                 </Pressable>
 
                 <View style={s.orRow}>
-                  <View style={[s.orLine, { backgroundColor: colors.borderLight }]} />
-                  <Text style={[s.orText, { color: colors.textTertiary }]}>or enter manually</Text>
-                  <View style={[s.orLine, { backgroundColor: colors.borderLight }]} />
+                  <View style={s.orLine} />
+                  <Text style={s.orText}>or enter manually</Text>
+                  <View style={s.orLine} />
                 </View>
 
                 <View style={s.inputRow}>
                   <TextInput
-                    style={[s.codeInput, { backgroundColor: colors.surface, borderColor: colors.borderLight, color: colors.text }]}
+                    style={s.codeInput}
                     placeholder="CP-123456 or paste QR data…"
-                    placeholderTextColor={colors.textTertiary}
+                    placeholderTextColor="rgba(255,255,255,0.4)"
                     value={cpInput}
                     onChangeText={setCpInput}
                     autoCapitalize="characters"
@@ -564,44 +564,44 @@ export default function ScannerScreen() {
                     onSubmitEditing={handleCpManualScan}
                   />
                   <Pressable
-                    style={[s.scanBtn, { backgroundColor: colors.primary }]}
+                    style={[s.scanBtn, { backgroundColor: CultureTokens.indigo }]}
                     onPress={handleCpManualScan}
                     disabled={isLookingUp}
                   >
-                    <Ionicons name="search" size={22} color={colors.textInverse} />
+                    <Ionicons name="search" size={24} color="#0B0B14" />
                   </Pressable>
                 </View>
               </View>
             )}
 
             {cpContact && (
-              <View style={[s.cpCard, { backgroundColor: colors.surface }]}>
+              <View style={s.cpCard}>
                 <View style={s.cpCardHeader}>
-                  <View style={[s.cpAvatar, { backgroundColor: colors.primaryGlow }]}>
-                    <Text style={[s.cpAvatarText, { color: colors.primary }]}>
+                  <View style={[s.cpAvatar, { backgroundColor: CultureTokens.indigo + '20' }]}>
+                    <Text style={[s.cpAvatarText, { color: CultureTokens.indigo }]}>
                       {(cpContact.name || cpContact.cpid).split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
                     </Text>
                   </View>
                   <Pressable
                     onPress={() => { setCpContact(null); setCpInput(''); cpLastScanned.current = ''; }}
-                    style={[s.closeBtn, { backgroundColor: colors.background }]}
+                    style={s.closeBtn}
                   >
-                    <Ionicons name="close" size={20} color={colors.textTertiary} />
+                    <Ionicons name="close" size={20} color="rgba(255,255,255,0.6)" />
                   </Pressable>
                 </View>
 
-                <Text style={[s.cpName, { color: colors.text }]}>{cpContact.name || 'CulturePass User'}</Text>
-                {cpContact.username && <Text style={[s.cpUsername, { color: colors.textSecondary }]}>@{cpContact.username}</Text>}
+                <Text style={s.cpName}>{cpContact.name || 'CulturePass User'}</Text>
+                {cpContact.username && <Text style={s.cpUsername}>@{cpContact.username}</Text>}
 
                 <View style={s.cpChipRow}>
-                  <View style={[s.cpIdChip, { backgroundColor: colors.primaryGlow }]}>
-                    <Ionicons name="finger-print" size={13} color={colors.primary} />
-                    <Text style={[s.cpIdText, { color: colors.primary }]}>{cpContact.cpid}</Text>
+                  <View style={[s.cpIdChip, { backgroundColor: CultureTokens.indigo + '20' }]}>
+                    <Ionicons name="finger-print" size={14} color={CultureTokens.indigo} />
+                    <Text style={[s.cpIdText, { color: CultureTokens.indigo }]}>{cpContact.cpid}</Text>
                   </View>
                   {cpContact.tier && (
-                    <View style={[s.cpTierChip, { backgroundColor: (TIER_DISPLAY[cpContact.tier]?.color ?? colors.textSecondary) + '15' }]}>
-                      <Ionicons name={(TIER_DISPLAY[cpContact.tier]?.icon ?? 'shield-outline') as never} size={12} color={TIER_DISPLAY[cpContact.tier]?.color ?? colors.textSecondary} />
-                      <Text style={[s.cpTierText, { color: TIER_DISPLAY[cpContact.tier]?.color ?? colors.textSecondary }]}>
+                    <View style={[s.cpTierChip, { backgroundColor: (TIER_DISPLAY[cpContact.tier]?.color ?? 'rgba(255,255,255,0.6)') + '15' }]}>
+                      <Ionicons name={(TIER_DISPLAY[cpContact.tier]?.icon ?? 'shield-outline') as never} size={13} color={TIER_DISPLAY[cpContact.tier]?.color ?? 'rgba(255,255,255,0.6)'} />
+                      <Text style={[s.cpTierText, { color: TIER_DISPLAY[cpContact.tier]?.color ?? 'rgba(255,255,255,0.6)' }]}>
                         {TIER_DISPLAY[cpContact.tier]?.label ?? 'Free'}
                       </Text>
                     </View>
@@ -610,34 +610,34 @@ export default function ScannerScreen() {
 
                 {cpContact.city && (
                   <View style={s.cpLocationRow}>
-                    <Ionicons name="location-outline" size={14} color={colors.textSecondary} />
-                    <Text style={[s.cpLocationText, { color: colors.textSecondary }]}>{cpContact.city}{cpContact.country ? `, ${cpContact.country}` : ''}</Text>
+                    <Ionicons name="location-outline" size={16} color="rgba(255,255,255,0.6)" />
+                    <Text style={s.cpLocationText}>{cpContact.city}{cpContact.country ? `, ${cpContact.country}` : ''}</Text>
                   </View>
                 )}
-                {cpContact.bio && <Text style={[s.cpBio, { color: colors.textSecondary }]} numberOfLines={2}>{cpContact.bio}</Text>}
+                {cpContact.bio && <Text style={s.cpBio} numberOfLines={2}>{cpContact.bio}</Text>}
                 {cpContact.org && (
                   <View style={s.cpLocationRow}>
-                    <Ionicons name="business-outline" size={14} color={colors.textSecondary} />
-                    <Text style={[s.cpLocationText, { color: colors.textSecondary }]}>{cpContact.org}</Text>
+                    <Ionicons name="business-outline" size={16} color="rgba(255,255,255,0.6)" />
+                    <Text style={s.cpLocationText}>{cpContact.org}</Text>
                   </View>
                 )}
 
                 <View style={s.cpActions}>
-                  <Pressable style={[s.cpActionBtn, { backgroundColor: colors.background }]} onPress={handleViewProfile}>
-                    <Ionicons name="person-outline" size={18} color={colors.primary} />
-                    <Text style={[s.cpActionText, { color: colors.primary }]}>View Profile</Text>
+                  <Pressable style={s.cpActionBtn} onPress={handleViewProfile}>
+                    <Ionicons name="person-outline" size={18} color={CultureTokens.indigo} />
+                    <Text style={[s.cpActionText, { color: CultureTokens.indigo }]}>View Profile</Text>
                   </Pressable>
                   <Pressable
-                    style={[s.cpActionBtn, { backgroundColor: colors.background }, contactAlreadySaved && { backgroundColor: colors.success + '10' }]}
+                    style={[s.cpActionBtn, contactAlreadySaved && { backgroundColor: CultureTokens.success + '15', borderColor: CultureTokens.success + '30' }]}
                     onPress={handleSaveContact}
                     disabled={contactAlreadySaved}
                   >
                     <Ionicons
                       name={contactAlreadySaved ? 'checkmark-circle' : 'bookmark-outline'}
                       size={18}
-                      color={contactAlreadySaved ? colors.success : colors.accent}
+                      color={contactAlreadySaved ? CultureTokens.success : CultureTokens.saffron}
                     />
-                    <Text style={[s.cpActionText, { color: contactAlreadySaved ? colors.success : colors.accent }]}>
+                    <Text style={[s.cpActionText, { color: contactAlreadySaved ? CultureTokens.success : CultureTokens.saffron }]}>
                       {contactAlreadySaved ? 'Saved' : 'Save Contact'}
                     </Text>
                   </Pressable>
@@ -646,14 +646,14 @@ export default function ScannerScreen() {
             )}
 
             {!cpContact && !cpCameraActive && (
-              <View style={[s.hintSection, { backgroundColor: colors.surface }]}>
-                <Text style={[s.hintTitle, { color: colors.text }]}>Supported Formats</Text>
+              <View style={s.hintSection}>
+                <Text style={s.hintTitle}>Supported Formats</Text>
                 {hintItems.map(item => (
                   <View key={item.label} style={s.hintItem}>
-                    <Ionicons name={item.icon as never} size={16} color={item.color} />
+                    <Ionicons name={item.icon as never} size={18} color={item.color} />
                     <View style={{ flex: 1 }}>
-                      <Text style={[s.hintLabel, { color: colors.text }]}>{item.label}</Text>
-                      <Text style={[s.hintExample, { color: colors.textTertiary }]} numberOfLines={1}>{item.example}</Text>
+                      <Text style={s.hintLabel}>{item.label}</Text>
+                      <Text style={s.hintExample} numberOfLines={1}>{item.example}</Text>
                     </View>
                   </View>
                 ))}

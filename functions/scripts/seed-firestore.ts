@@ -47,7 +47,7 @@ const EVENTS = [
   {
     title: 'Sydney Kerala Cultural Festival 2026',
     description: 'The biggest Malayalam cultural gathering in the Southern Hemisphere. Live Kathakali dance, traditional cuisine, and community awards. Supported by City of Sydney Council. Families welcome.',
-    communityTag: 'Malayalam',
+    communityId: 'Malayalam',
     venue: 'Darling Harbour Convention Centre',
     address: '14 Darling Dr, Sydney NSW 2000',
     date: soon(14),
@@ -81,7 +81,7 @@ const EVENTS = [
   {
     title: 'Tamil Pongal Celebration — Sydney',
     description: 'Join us to celebrate the harvest festival of Pongal with traditional kolam art, music, and a bonfire ceremony. Co-hosted by Parramatta City Council.',
-    communityTag: 'Tamil',
+    communityId: 'Tamil',
     venue: 'Parramatta Town Hall',
     address: '182 Church St, Parramatta NSW 2150',
     date: soon(7),
@@ -111,7 +111,7 @@ const EVENTS = [
   {
     title: 'Bollywood Night — Live DJ & Dance',
     description: "Sydney's hottest Bollywood party! Dance the night away with live DJ sets, costume competition, and authentic cocktails from the Indian subcontinent.",
-    communityTag: 'Bollywood',
+    communityId: 'Bollywood',
     venue: 'The Star Event Centre',
     address: '80 Pyrmont St, Pyrmont NSW 2009',
     date: soon(21),
@@ -143,7 +143,7 @@ const EVENTS = [
   {
     title: 'Chinese New Year — Dragon Dance Parade',
     description: 'Ring in the Year of the Snake with dragon and lion dances through Chinatown, a lantern festival and dumpling-making workshops. Presented by City of Sydney Council.',
-    communityTag: 'Chinese',
+    communityId: 'Chinese',
     venue: 'Sydney Chinatown',
     address: 'Dixon St, Haymarket NSW 2000',
     date: soon(10),
@@ -173,7 +173,7 @@ const EVENTS = [
   {
     title: 'Indigenous Storytelling Night — NAIDOC Week',
     description: 'An intimate evening of First Nations storytelling, traditional music, and art featuring local Gadigal artists. Proceeds support local Indigenous youth programs.',
-    communityTag: 'Aboriginal',
+    communityId: 'Aboriginal',
     venue: 'Carriageworks',
     address: '245 Wilson St, Eveleigh NSW 2015',
     date: soon(35),
@@ -204,7 +204,7 @@ const EVENTS = [
   {
     title: 'Nigerian Independence Day Gala',
     description: 'Celebrate Nigerian independence with Afrobeat live performances, jollof cook-off, fashion showcase, and traditional masquerade.',
-    communityTag: 'Nigerian',
+    communityId: 'Nigerian',
     venue: 'Doltone House Hyde Park',
     address: '181 Elizabeth St, Sydney NSW 2000',
     date: soon(45),
@@ -236,7 +236,7 @@ const EVENTS = [
   {
     title: 'Lebanese Food & Music Festival',
     description: 'A celebration of Lebanese culture in Lakemba — mezze spreads, live dabke dancing, oud music, and Arabic calligraphy workshops for all ages.',
-    communityTag: 'Lebanese',
+    communityId: 'Lebanese',
     venue: 'Lakemba Park',
     address: 'Railway Pde, Lakemba NSW 2195',
     date: soon(28),
@@ -266,7 +266,7 @@ const EVENTS = [
   {
     title: 'Multicultural Fair — Harmony Day',
     description: 'Canterbury-Bankstown Council presents the annual Harmony Day Fair. 40+ cultural stalls, live performances, food trucks from 20 cultures, and children\'s activities.',
-    communityTag: 'Multicultural',
+    communityId: 'Multicultural',
     venue: 'Bankstown City Plaza',
     address: 'Paul Keating Park, Bankstown NSW 2200',
     date: soon(6),
@@ -296,7 +296,7 @@ const EVENTS = [
   {
     title: 'Sikh Vaisakhi Nagar Kirtan — Sydney',
     description: 'The annual Sikh harvest festival and procession through Parramatta, with free langar (community meal), kirtan performances, and cultural displays.',
-    communityTag: 'Sikh',
+    communityId: 'Sikh',
     venue: 'Parramatta CBD',
     address: 'Church St to Parramatta River, Parramatta NSW 2150',
     date: soon(16),
@@ -328,7 +328,7 @@ const EVENTS = [
   {
     title: 'Melbourne Diwali Lights Festival',
     description: "Melbourne lights up for Diwali at Federation Square. Spectacular light show, rangoli competition, and South Asian street food. City of Melbourne's biggest cultural event.",
-    communityTag: 'South Asian',
+    communityId: 'South Asian',
     venue: 'Federation Square',
     address: 'Corner of Flinders & Swanston St, Melbourne VIC 3000',
     date: soon(12),
@@ -358,7 +358,7 @@ const EVENTS = [
   {
     title: 'Vietnamese Tet New Year Market — Springvale',
     description: "Celebrate Lunar New Year with the Vietnamese community. Traditional music, ao dai fashion show, bánh mì cook-off, and children's activities. Free entry.",
-    communityTag: 'Vietnamese',
+    communityId: 'Vietnamese',
     venue: 'Springvale Town Centre',
     address: 'Springvale Rd, Springvale VIC 3171',
     date: soon(8),
@@ -388,7 +388,7 @@ const EVENTS = [
   {
     title: 'Greek Panigiri — Melbourne Antipodes Festival',
     description: "Melbourne's annual celebration of Hellenic culture. Three days of live Greek music, traditional dance workshops, authentic food, and film screenings.",
-    communityTag: 'Greek',
+    communityId: 'Greek',
     venue: 'Lonsdale St Greek Precinct',
     address: 'Lonsdale St, Melbourne VIC 3000',
     date: soon(22),
@@ -418,7 +418,7 @@ const EVENTS = [
   {
     title: "Moomba Festival — First Nations Day",
     description: "City of Melbourne's Moomba Festival First Nations Day celebration on the Yarra River. Gunditjmara and Wurundjeri artists, cultural performances, and food.",
-    communityTag: 'Aboriginal',
+    communityId: 'Aboriginal',
     venue: 'Alexandra Gardens',
     address: 'Alexandra Ave, Melbourne VIC 3004',
     date: soon(40),
@@ -451,7 +451,7 @@ const EVENTS = [
   {
     title: 'Brisbane Multicultural Month — Pacific Islander Showcase',
     description: "Brisbane City Council's annual Pacific showcase featuring Samoan, Tongan, and Fijian cultural performances, traditional food, and craft market.",
-    communityTag: 'Pacific Islander',
+    communityId: 'Pacific Islander',
     venue: 'South Bank Parklands',
     address: 'Grey St, South Brisbane QLD 4101',
     date: soon(19),
@@ -481,7 +481,7 @@ const EVENTS = [
   {
     title: 'Korean Cultural Day — Gangnam Style Brisbane',
     description: "K-pop dance workshop, Korean street food, traditional hanbok dress-up, and taekwondo demonstrations at South Bank.",
-    communityTag: 'Korean',
+    communityId: 'Korean',
     venue: 'South Bank Cultural Forecourt',
     address: 'Melbourne St, South Brisbane QLD 4101',
     date: soon(26),
@@ -512,7 +512,7 @@ const EVENTS = [
   {
     title: 'Pasifika Festival — Auckland Waterfront',
     description: "The Southern Hemisphere's largest Pacific Island festival on Auckland's waterfront. 16 Pacific nations, over 100 performers, and authentic island food.",
-    communityTag: 'Pacific Islander',
+    communityId: 'Pacific Islander',
     venue: 'Western Springs Park',
     address: 'Great North Rd, Auckland 1010, New Zealand',
     date: soon(15),
@@ -542,7 +542,7 @@ const EVENTS = [
   {
     title: 'Māori New Year — Matariki Lantern Walk',
     description: "Celebrate Matariki (Māori New Year) with a guided lantern walk through Auckland Domain, storytelling by Ngāti Whātua elders, and traditional kai (food).",
-    communityTag: 'Māori',
+    communityId: 'Māori',
     venue: 'Auckland Domain',
     address: 'Park Rd, Grafton, Auckland 1023, New Zealand',
     date: soon(33),
@@ -575,7 +575,7 @@ const EVENTS = [
   {
     title: 'Eid Al Fitr Festival — Dubai Global Village',
     description: 'Celebrate the end of Ramadan at Dubai Global Village with traditional Emirati sweets, henna artists, traditional dance, and live nasheeds.',
-    communityTag: 'Arab',
+    communityId: 'Arab',
     venue: 'Dubai Global Village',
     address: 'Sheikh Mohammed Bin Zayed Rd, Dubai, UAE',
     date: soon(11),
@@ -604,7 +604,7 @@ const EVENTS = [
   {
     title: 'Indian Holi Festival — Dubai',
     description: "Dubai's largest Holi celebration at Dubai Media City Amphitheatre. Colour powder, live Bollywood music, and traditional sweets. All nationalities welcome.",
-    communityTag: 'South Asian',
+    communityId: 'South Asian',
     venue: 'Dubai Media City Amphitheatre',
     address: 'Media City, Dubai, UAE',
     date: soon(9),
@@ -638,7 +638,7 @@ const EVENTS = [
   {
     title: 'Notting Hill Carnival — Community Pre-Party',
     description: "The official community warm-up for Notting Hill Carnival, featuring steel drum workshops, Caribbean food, mas costume making, and soca DJ sets.",
-    communityTag: 'Caribbean',
+    communityId: 'Caribbean',
     venue: 'Ladbroke Grove Community Hall',
     address: 'Ladbroke Grove, London W10 5AA, UK',
     date: soon(18),
@@ -667,7 +667,7 @@ const EVENTS = [
   {
     title: 'Diwali in Trafalgar Square',
     description: 'London Mayor\'s Diwali event at Trafalgar Square. Bollywood dance performances, Indian street food, fireworks, and a spectacular light display.',
-    communityTag: 'South Asian',
+    communityId: 'South Asian',
     venue: 'Trafalgar Square',
     address: 'Trafalgar Square, London WC2N 5DN, UK',
     date: soon(13),
@@ -699,7 +699,7 @@ const EVENTS = [
   {
     title: 'Caribana — Toronto Caribbean Carnival',
     description: "North America's largest Caribbean festival. The King and Queen mas costume parade, steel band competition, and Caribbean Panorama at Exhibition Place.",
-    communityTag: 'Caribbean',
+    communityId: 'Caribbean',
     venue: 'Exhibition Place',
     address: '100 Princes Blvd, Toronto, ON M6K 3C3, Canada',
     date: soon(25),
@@ -732,7 +732,7 @@ const EVENTS = [
   {
     title: 'Taste of the Danforth — Greek Festival',
     description: "Toronto's beloved Greektown festival, celebrating Hellenic culture with souvlaki, live music, traditional dances, and the iconic taste of the Mediterranean.",
-    communityTag: 'Greek',
+    communityId: 'Greek',
     venue: 'Danforth Ave',
     address: 'Danforth Ave, Toronto, ON M4K, Canada',
     date: soon(38),
@@ -764,7 +764,7 @@ const EVENTS = [
   {
     title: 'Vancouver Lunar New Year Parade',
     description: 'Chinatown Lunar New Year parade with traditional lion dances, firecrackers, and a night market with food from across East and Southeast Asia.',
-    communityTag: 'Chinese',
+    communityId: 'Chinese',
     venue: 'Vancouver Chinatown',
     address: 'E Pender St, Vancouver, BC, Canada',
     date: soon(5),
@@ -796,7 +796,7 @@ const EVENTS = [
   {
     title: 'Adelaide Fringe — Multicultural Night Market',
     description: 'Adelaide Fringe special edition multicultural night market at Adelaide Central Market. Street food from 25+ cultures, live music, and family performances.',
-    communityTag: 'Multicultural',
+    communityId: 'Multicultural',
     venue: 'Adelaide Central Market',
     address: '44-60 Gouger St, Adelaide SA 5000',
     date: soon(20),
@@ -826,7 +826,7 @@ const EVENTS = [
   {
     title: 'Kaurna Cultural Walk — Tandanya',
     description: 'A guided cultural walk through Adelaide with Kaurna Elders, exploring traditional stories of the Adelaide Plains. Hosted in partnership with Tandanya National Aboriginal Cultural Institute.',
-    communityTag: 'Aboriginal',
+    communityId: 'Aboriginal',
     venue: 'Tandanya Cultural Institute',
     address: '253 Grenfell St, Adelaide SA 5000',
     date: soon(30),
@@ -857,7 +857,7 @@ const EVENTS = [
   {
     title: 'WOMADelaide — World Music & Dance',
     description: "Adelaide's beloved world music festival returns to Botanic Park. Artists from 30+ countries performing across 6 stages, with immersive cultural experiences.",
-    communityTag: 'World Music',
+    communityId: 'World Music',
     venue: 'Botanic Park',
     address: 'Plane Tree Dr, Adelaide SA 5000',
     date: soon(42),
@@ -892,7 +892,7 @@ const EVENTS = [
   {
     title: 'Perth Diwali Festival — Kings Park',
     description: "Perth's largest Diwali celebration at Kings Park and Botanic Garden. Light installations, Bollywood performances, and street food along Fraser Ave.",
-    communityTag: 'South Asian',
+    communityId: 'South Asian',
     venue: 'Kings Park and Botanic Garden',
     address: 'Fraser Ave, West Perth WA 6005',
     date: soon(13),
@@ -922,7 +922,7 @@ const EVENTS = [
   {
     title: 'Perth Harmony Week — Multicultural Showcase',
     description: 'City of Perth celebrates Harmony Week with multicultural performances, workshops, and a lantern parade through the CBD. Highlights the 170+ nationalities living in Perth.',
-    communityTag: 'Multicultural',
+    communityId: 'Multicultural',
     venue: 'Forrest Place',
     address: 'Forrest Pl, Perth WA 6000',
     date: soon(6),
@@ -952,7 +952,7 @@ const EVENTS = [
   {
     title: 'Noongar Boodja Dreaming Walk',
     description: "A Whadjuk Noongar Elder-led cultural walk through Perth's foreshore, sharing Dreaming stories of Derbarl Yerrigan (the Swan River). Includes traditional fire-making demonstration.",
-    communityTag: 'Aboriginal',
+    communityId: 'Aboriginal',
     venue: 'Elizabeth Quay',
     address: 'The Esplanade, Perth WA 6000',
     date: soon(24),
@@ -984,7 +984,7 @@ const EVENTS = [
   {
     title: 'Multicultural Festival — National Multicultural Festival Canberra',
     description: 'The ACT Government presents Canberra\'s iconic multicultural festival across the city centre. 70+ food stalls, 100+ performances from 60+ nationalities.',
-    communityTag: 'Multicultural',
+    communityId: 'Multicultural',
     venue: 'Civic Square & Garema Place',
     address: 'Civic Square, Canberra ACT 2601',
     date: soon(17),
@@ -1014,7 +1014,7 @@ const EVENTS = [
   {
     title: 'NAIDOC Week — Ngunnawal Country Walk',
     description: 'Walk the land with Ngunnawal Elders around Lake Burley Griffin. Share in the stories of the Ngunnawal people whose country Canberra sits on.',
-    communityTag: 'Aboriginal',
+    communityId: 'Aboriginal',
     venue: 'National Museum of Australia',
     address: 'Lawson Cres, Acton Peninsula ACT 2601',
     date: soon(35),
@@ -1047,7 +1047,7 @@ const EVENTS = [
   {
     title: 'Persian New Year — Nowruz Sydney',
     description: 'Ring in the Persian New Year at Hyde Park. Haft-sin table displays, live classical Persian music, poetry readings, and traditional Iranian food market.',
-    communityTag: 'Persian',
+    communityId: 'Persian',
     venue: 'Hyde Park South',
     address: 'Elizabeth St & College St, Sydney NSW 2000',
     date: soon(8),
@@ -1076,7 +1076,7 @@ const EVENTS = [
   {
     title: 'Filipino Fiesta de Santos — Sydney',
     description: 'A vibrant celebration of Filipino culture featuring the Sinulog procession, lechon roast, Tinikling folk dance, and live OPM music. Organised with City of Sydney.',
-    communityTag: 'Filipino',
+    communityId: 'Filipino',
     venue: 'Auburn Botanic Gardens',
     address: 'Chiswick Rd, Auburn NSW 2144',
     date: soon(31),
@@ -1106,7 +1106,7 @@ const EVENTS = [
   {
     title: 'Japanese Sakura Festival — Dangar Island',
     description: "Celebrate the cherry blossom season at Sydney's Japanese gardens. Traditional tea ceremony, ikebana demonstrations, taiko drumming, and cherry blossom viewing walks.",
-    communityTag: 'Japanese',
+    communityId: 'Japanese',
     venue: 'Auburn Japanese Gardens',
     address: 'Chiswick Rd, Auburn NSW 2144',
     date: soon(18),
@@ -1137,7 +1137,7 @@ const EVENTS = [
   {
     title: 'Melbourne Ramadan Night Market',
     description: 'Celebrate Ramadan with Melbourne\'s Muslim community at the Queen Vic Night Market special edition. Halal food from 30+ vendors, henna artists, and nasheeds after Iftar.',
-    communityTag: 'Muslim',
+    communityId: 'Muslim',
     venue: 'Queen Victoria Market',
     address: 'Queen St, Melbourne VIC 3000',
     date: soon(4),
@@ -1167,7 +1167,7 @@ const EVENTS = [
   {
     title: 'Sri Lankan Independence Day — Melbourne',
     description: 'A colourful celebration of Sri Lankan Independence Day at Dandenong featuring classical Kandyan dance, drumming, Sri Lankan food, and cultural exhibits.',
-    communityTag: 'Sri Lankan',
+    communityId: 'Sri Lankan',
     venue: 'Dandenong Civic Centre',
     address: 'Langhorne St, Dandenong VIC 3175',
     date: soon(23),
@@ -1199,7 +1199,7 @@ const EVENTS = [
   {
     title: 'Auckland Diwali Festival',
     description: "Auckland's largest Indian cultural festival at Aotea Square. Spectacular Bollywood dance, regional Indian food, market stalls, and live entertainment across two stages.",
-    communityTag: 'South Asian',
+    communityId: 'South Asian',
     venue: 'Aotea Square',
     address: 'Aotea Square, Auckland 1010, New Zealand',
     date: soon(14),
@@ -1231,7 +1231,7 @@ const EVENTS = [
   {
     title: 'Sri Lankan Independence Day — Brisbane',
     description: 'A colourful celebration of Sri Lankan Independence with Kandyan dance, drumming, Sri Lankan food, and cultural exhibits at Inala Civic Centre. All welcome.',
-    communityTag: 'Sri Lankan',
+    communityId: 'Sri Lankan',
     venue: 'Inala Civic Centre',
     address: 'Corsair Ave, Inala QLD 4077',
     date: soon(36),
@@ -1263,7 +1263,7 @@ const EVENTS = [
   {
     title: 'Eid Al Adha Celebration — Dubai',
     description: 'A family gathering at Dubai Cultural Village celebrating Eid Al Adha with traditional Emirati food, folk music, camel rides, and children\'s activities.',
-    communityTag: 'Arab',
+    communityId: 'Arab',
     venue: 'Dubai Cultural Village (Al Shindagha)',
     address: 'Al Shindagha Rd, Bur Dubai, UAE',
     date: soon(29),

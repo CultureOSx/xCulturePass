@@ -2,7 +2,6 @@ import { View, Text, Pressable, StyleSheet, TextInput, ScrollView, Platform, Ima
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useColors } from '@/hooks/useColors';
 import { useState, useMemo } from 'react';
 import * as Haptics from 'expo-haptics';
 import { useQuery } from '@tanstack/react-query';
@@ -11,6 +10,8 @@ import { api, type ActivityData } from '@/lib/api';
 import type { EventData, Community, Profile } from '@/shared/schema';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { CultureTokens } from '@/constants/theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useAlgoliaSearch } from '@/hooks/useAlgolia';
 
 const isWeb = Platform.OS === 'web';
 
@@ -30,14 +31,11 @@ const POPULAR_SEARCHES = ['Diwali', 'Comedy Night', 'Bollywood', 'Food Festival'
 
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
-  const colors = useColors();
   const { width } = useWindowDimensions();
   
   const topInset = isWeb ? 72 : insets.top;
   const bottomInset = isWeb ? 34 : insets.bottom;
   const isDesktop = width >= 1024;
-
-  const s = useMemo(() => getStyles(colors), [colors]);
 
   const [query, setQuery] = useState('');
   const [selectedType, setSelectedType] = useState<ResultType | 'all'>('all');
@@ -60,13 +58,16 @@ export default function SearchScreen() {
     return params;
   }, [state.country, state.city]);
 
-  const { data: events = [] } = useQuery<EventData[]>({
-    queryKey: ['/api/events', state.country, state.city],
-    queryFn: async () => {
-      const data = await api.events.list(locationParams);
-      return data.events ?? [];
-    },
+  const { results: algoliaEvents, loading: isAlgoliaLoading } = useAlgoliaSearch({
+    indexName: 'culturepass_events',
+    query,
+    city: state.city,
   });
+
+  // Use Algolia hits for events if configured
+  const eventsToUse = useMemo(() => {
+    return (algoliaEvents as any[])?.length > 0 ? algoliaEvents : [];
+  }, [algoliaEvents]);
 
   const { data: movies = [] } = useQuery<Profile[]>({
     queryKey: ['/api/movies', state.country, state.city],
@@ -103,13 +104,13 @@ export default function SearchScreen() {
 
     const results: SearchResult[] = [];
 
-    events.forEach((e) => {
-      if (toLower(e.title).includes(q) || toLower(e.communityTag).includes(q) || toLower(e.venue).includes(q)) {
+    eventsToUse.forEach((e: any) => {
+      if (toLower(e.title).includes(q) || toLower(e.communityId).includes(q) || toLower(e.venue).includes(q)) {
         results.push({
-          id: e.id,
+          id: e.objectID || e.id,
           type: 'event',
           title: e.title,
-          subtitle: `${asString(e.communityTag)} · ${asString(e.venue)}`,
+          subtitle: `${asString(e.communityId)} · ${asString(e.venue || e.city)}`,
           imageUrl: e.imageUrl,
           icon: TYPE_CONFIG.event.icon,
           color: TYPE_CONFIG.event.color,
@@ -191,7 +192,7 @@ export default function SearchScreen() {
     });
 
     return results;
-  }, [query, events, movies, restaurants, activities, shopping, communities, TYPE_CONFIG]);
+  }, [query, eventsToUse, movies, restaurants, activities, shopping, communities, TYPE_CONFIG]);
 
   const filteredResults = useMemo(() => {
     if (selectedType === 'all') return allResults;
@@ -220,31 +221,37 @@ export default function SearchScreen() {
   return (
     <ErrorBoundary>
       <View style={[s.container, { paddingTop: topInset }]}>
+        <LinearGradient 
+          colors={['rgba(44, 42, 114, 0.15)', 'transparent']} 
+          style={StyleSheet.absoluteFillObject} 
+          pointerEvents="none" 
+        />
         <View style={[s.shell, isDesktop && s.desktopShell]}>
           <View style={s.header}>
             <Pressable 
               onPress={() => router.back()} 
-              style={({ pressed }) => [s.backBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight, transform: [{ scale: pressed ? 0.95 : 1 }] }]} 
+              style={({ pressed }) => [s.backBtn, { transform: [{ scale: pressed ? 0.95 : 1 }] }]} 
               hitSlop={8}
             >
-              <Ionicons name="chevron-back" size={24} color={colors.text} />
+              <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
             </Pressable>
-            <View style={[s.searchBar, { backgroundColor: colors.surface, borderColor: searchFocused ? CultureTokens.indigo : colors.borderLight }]}>
-              <Ionicons name="search" size={20} color={searchFocused ? CultureTokens.indigo : colors.textTertiary} />
+            <View style={[s.searchBar, { borderColor: searchFocused ? CultureTokens.indigo : 'rgba(255,255,255,0.1)' }]}>
+              <Ionicons name="search" size={20} color={searchFocused ? CultureTokens.indigo : 'rgba(255,255,255,0.4)'} />
               <TextInput
-                style={[s.searchInput, { color: colors.text }]}
+                style={s.searchInput}
                 placeholder="Search events, restaurants, movies..."
-                placeholderTextColor={colors.textTertiary}
+                placeholderTextColor="rgba(255,255,255,0.4)"
                 value={query}
                 onChangeText={setQuery}
                 onFocus={() => setSearchFocused(true)}
                 onBlur={() => setSearchFocused(false)}
                 autoFocus
                 returnKeyType="search"
+                selectionColor={CultureTokens.indigo}
               />
               {query.length > 0 && (
                 <Pressable onPress={() => setQuery('')} hitSlop={10} style={{ padding: 4 }}>
-                  <Ionicons name="close-circle" size={20} color={colors.textTertiary} />
+                  <Ionicons name="close-circle" size={20} color="rgba(255,255,255,0.4)" />
                 </Pressable>
               )}
             </View>
@@ -253,19 +260,19 @@ export default function SearchScreen() {
           {query.length > 0 && allResults.length > 0 && (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.typeRow} style={{ flexGrow: 0 }}>
               <Pressable
-                style={[s.typeChip, { backgroundColor: selectedType === 'all' ? CultureTokens.indigo : colors.surface, borderColor: selectedType === 'all' ? CultureTokens.indigo : colors.borderLight }]}
+                style={[s.typeChip, { backgroundColor: selectedType === 'all' ? CultureTokens.indigo : 'rgba(255,255,255,0.05)', borderColor: selectedType === 'all' ? CultureTokens.indigo : 'rgba(255,255,255,0.1)' }]}
                 onPress={() => { if(!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setSelectedType('all'); }}
               >
-                <Text style={[s.typeChipText, { color: selectedType === 'all' ? '#FFFFFF' : colors.textSecondary }]}>All ({typeCounts.all})</Text>
+                <Text style={[s.typeChipText, { color: selectedType === 'all' ? '#FFFFFF' : 'rgba(255,255,255,0.6)' }]}>All ({typeCounts.all})</Text>
               </Pressable>
               {(Object.keys(TYPE_CONFIG) as ResultType[]).filter(t => typeCounts[t]).map(type => (
                 <Pressable
                   key={type}
-                  style={[s.typeChip, { backgroundColor: selectedType === type ? TYPE_CONFIG[type].color : colors.surface, borderColor: selectedType === type ? TYPE_CONFIG[type].color : colors.borderLight }]}
+                  style={[s.typeChip, { backgroundColor: selectedType === type ? TYPE_CONFIG[type].color + '40' : 'rgba(255,255,255,0.05)', borderColor: selectedType === type ? TYPE_CONFIG[type].color : 'rgba(255,255,255,0.1)' }]}
                   onPress={() => { if(!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setSelectedType(type); }}
                 >
                   <Ionicons name={TYPE_CONFIG[type].icon} size={14} color={selectedType === type ? '#FFFFFF' : TYPE_CONFIG[type].color} />
-                  <Text style={[s.typeChipText, { color: selectedType === type ? '#FFFFFF' : colors.textSecondary }]}> 
+                  <Text style={[s.typeChipText, { color: selectedType === type ? '#FFFFFF' : 'rgba(255,255,255,0.6)' }]}> 
                     {TYPE_CONFIG[type].label} ({typeCounts[type]})
                   </Text>
                 </Pressable>
@@ -276,26 +283,26 @@ export default function SearchScreen() {
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: bottomInset + 40 }}>
             {query.length === 0 ? (
               <View style={s.suggestionsContainer}>
-                <Text style={[s.suggestionsTitle, { color: colors.text }]}>Trending Searches</Text>
+                <Text style={s.suggestionsTitle}>Trending Searches</Text>
                 <View style={s.suggestionsGrid}>
                   {POPULAR_SEARCHES.map(term => (
                     <Pressable 
                       key={term} 
-                      style={({ pressed }) => [s.suggestionPill, { backgroundColor: colors.surface, borderColor: colors.borderLight, transform: [{ scale: pressed ? 0.98 : 1 }] }]} 
+                      style={({ pressed }) => [s.suggestionPill, { transform: [{ scale: pressed ? 0.98 : 1 }] }]} 
                       onPress={() => setQuery(term)}
                     >
                       <Ionicons name="trending-up" size={16} color={CultureTokens.indigo} />
-                      <Text style={[s.suggestionText, { color: colors.text }]}>{term}</Text>
+                      <Text style={s.suggestionText}>{term}</Text>
                     </Pressable>
                   ))}
                 </View>
 
-                <Text style={[s.suggestionsTitle, { color: colors.text, marginTop: 32 }]}>Explore Categories</Text>
+                <Text style={[s.suggestionsTitle, { marginTop: 32 }]}>Explore Categories</Text>
                 <View style={s.categoriesGrid}>
                   {(Object.entries(TYPE_CONFIG) as [ResultType, { label: string; icon: keyof typeof Ionicons.glyphMap; color: string }][]).map(([key, config]) => (
                     <Pressable
                       key={key}
-                      style={({ pressed }) => [s.categoryCard, { backgroundColor: colors.surface, borderColor: colors.borderLight, transform: [{ scale: pressed ? 0.98 : 1 }] }]}
+                      style={({ pressed }) => [s.categoryCard, { transform: [{ scale: pressed ? 0.98 : 1 }] }]}
                       onPress={() => {
                         if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                         const routes: Record<ResultType, string> = {
@@ -312,28 +319,28 @@ export default function SearchScreen() {
                       <View style={[s.categoryIcon, { backgroundColor: config.color + '15' }]}>
                         <Ionicons name={config.icon} size={24} color={config.color} />
                       </View>
-                      <Text style={[s.categoryLabel, { color: colors.text }]}>{config.label}</Text>
+                      <Text style={s.categoryLabel}>{config.label}</Text>
                     </Pressable>
                   ))}
                 </View>
               </View>
             ) : filteredResults.length === 0 ? (
               <View style={s.emptyState}>
-                <View style={[s.emptyIconWrap, { backgroundColor: colors.surface }]}>
-                  <Ionicons name="search-outline" size={48} color={colors.textTertiary} />
+                <View style={s.emptyIconWrap}>
+                  <Ionicons name="search-outline" size={48} color="rgba(255,255,255,0.4)" />
                 </View>
-                <Text style={[s.emptyTitle, { color: colors.text }]}>No results found</Text>
-                <Text style={[s.emptyDesc, { color: colors.textSecondary }]}>We couldn&apos;t find anything matching &quot;{query}&quot;. Try different keywords or browse categories.</Text>
+                <Text style={s.emptyTitle}>No results found</Text>
+                <Text style={s.emptyDesc}>We couldn&apos;t find anything matching &quot;{query}&quot;. Try different keywords or browse categories.</Text>
               </View>
             ) : (
               <View style={s.resultsList}>
-                <Text style={[s.resultsCount, { color: colors.textSecondary }]}>
+                <Text style={s.resultsCount}>
                   {filteredResults.length} {filteredResults.length === 1 ? 'match found' : 'matches found'}
                 </Text>
                 {filteredResults.map((result) => (
                   <View key={`${result.type}-${result.id}`}>
                     <Pressable 
-                      style={({ pressed }) => [s.resultCard, { backgroundColor: colors.surface, borderColor: colors.borderLight, transform: [{ scale: pressed ? 0.98 : 1 }] }]} 
+                      style={({ pressed }) => [s.resultCard, { transform: [{ scale: pressed ? 0.98 : 1 }] }]} 
                       onPress={() => handleResultPress(result)}
                     >
                       {result.imageUrl ? (
@@ -346,13 +353,13 @@ export default function SearchScreen() {
                       <View style={s.resultInfo}>
                         <View style={s.resultTypeBadge}>
                           <View style={[s.resultTypeDot, { backgroundColor: result.color }]} />
-                          <Text style={[s.resultTypeText, { color: colors.textSecondary }]}>{TYPE_CONFIG[result.type].label}</Text>
+                          <Text style={s.resultTypeText}>{TYPE_CONFIG[result.type].label}</Text>
                         </View>
-                        <Text style={[s.resultTitle, { color: colors.text }]} numberOfLines={1}>{result.title}</Text>
-                        <Text style={[s.resultSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>{result.subtitle}</Text>
+                        <Text style={s.resultTitle} numberOfLines={1}>{result.title}</Text>
+                        <Text style={s.resultSubtitle} numberOfLines={1}>{result.subtitle}</Text>
                       </View>
-                      <View style={[s.resultArrowBox, { backgroundColor: colors.backgroundSecondary }]}>
-                        <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
+                      <View style={s.resultArrowBox}>
+                        <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.4)" />
                       </View>
                     </Pressable>
                   </View>
@@ -366,45 +373,45 @@ export default function SearchScreen() {
   );
 }
 
-const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#0B0B14' },
   shell: { flex: 1 },
   desktopShell: { maxWidth: 800, width: '100%', alignSelf: 'center' },
   header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingVertical: 12 },
-  backBtn: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-  searchBar: { flex: 1, flexDirection: 'row', alignItems: 'center', borderRadius: 16, paddingHorizontal: 16, gap: 10, borderWidth: 1, height: 48, overflow: 'hidden' },
-  searchInput: { flex: 1, fontSize: 16, fontFamily: 'Poppins_500Medium', paddingVertical: 0, minWidth: 0 },
+  backBtn: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  searchBar: { flex: 1, flexDirection: 'row', alignItems: 'center', borderRadius: 16, paddingHorizontal: 16, gap: 10, borderWidth: 1, height: 48, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.05)' },
+  searchInput: { flex: 1, fontSize: 16, fontFamily: 'Poppins_500Medium', paddingVertical: 0, minWidth: 0, color: '#FFFFFF' },
   
   typeRow: { paddingHorizontal: 20, gap: 10, paddingBottom: 16, paddingTop: 4 },
   typeChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12, borderWidth: 1 },
   typeChipText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
   
   suggestionsContainer: { paddingHorizontal: 20, paddingTop: 20 },
-  suggestionsTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', marginBottom: 16 },
+  suggestionsTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', marginBottom: 16, color: '#FFFFFF' },
   suggestionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  suggestionPill: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, borderWidth: 1 },
-  suggestionText: { fontSize: 14, fontFamily: 'Poppins_500Medium' },
+  suggestionPill: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, borderWidth: 1, backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' },
+  suggestionText: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: '#FFFFFF' },
   
   categoriesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  categoryCard: { width: '31%' as never, flexGrow: 1, borderRadius: 20, padding: 20, alignItems: 'center', gap: 12, borderWidth: 1 },
+  categoryCard: { width: '31%' as never, flexGrow: 1, borderRadius: 20, padding: 20, alignItems: 'center', gap: 12, borderWidth: 1, backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.1)' },
   categoryIcon: { width: 56, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  categoryLabel: { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
+  categoryLabel: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
   
   emptyState: { alignItems: 'center', paddingTop: 80, gap: 12, paddingHorizontal: 40 },
-  emptyIconWrap: { width: 90, height: 90, borderRadius: 45, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  emptyTitle: { fontSize: 20, fontFamily: 'Poppins_700Bold' },
-  emptyDesc: { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22 },
+  emptyIconWrap: { width: 90, height: 90, borderRadius: 45, alignItems: 'center', justifyContent: 'center', marginBottom: 8, backgroundColor: 'rgba(255,255,255,0.03)' },
+  emptyTitle: { fontSize: 20, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+  emptyDesc: { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, color: 'rgba(255,255,255,0.6)' },
   
   resultsList: { paddingHorizontal: 20, paddingTop: 12 },
-  resultsCount: { fontSize: 14, fontFamily: 'Poppins_500Medium', marginBottom: 16 },
-  resultCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 20, padding: 14, marginBottom: 12, borderWidth: 1, gap: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2 },
+  resultsCount: { fontSize: 14, fontFamily: 'Poppins_500Medium', marginBottom: 16, color: 'rgba(255,255,255,0.6)' },
+  resultCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 20, padding: 14, marginBottom: 12, borderWidth: 1, backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.1)', gap: 14 },
   resultImage: { width: 64, height: 64, borderRadius: 14 },
   resultIconBox: { width: 64, height: 64, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   resultInfo: { flex: 1, gap: 3 },
   resultTypeBadge: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   resultTypeDot: { width: 8, height: 8, borderRadius: 4 },
-  resultTypeText: { fontSize: 11, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 0.5 },
-  resultTitle: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', paddingRight: 8 },
-  resultSubtitle: { fontSize: 13, fontFamily: 'Poppins_400Regular' },
-  resultArrowBox: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  resultTypeText: { fontSize: 11, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 0.5, color: 'rgba(255,255,255,0.6)' },
+  resultTitle: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', paddingRight: 8, color: '#FFFFFF' },
+  resultSubtitle: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.6)' },
+  resultArrowBox: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)' },
 });

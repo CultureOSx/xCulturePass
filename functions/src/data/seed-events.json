@@ -2,7 +2,7 @@
   {
     "title": "Sydney Kerala Cultural Festival 2026",
     "description": "The biggest Malayalam cultural gathering in the Southern Hemisphere. Live music, Kathakali dance, traditional cuisine, and community awards. Families welcome.",
-    "communityTag": "Malayalam",
+    "communityId": "Malayalam",
     "venue": "Darling Harbour Convention Centre",
     "address": "14 Darling Dr, Sydney NSW 2000",
     "city": "Sydney",
@@ -35,7 +35,7 @@
   {
     "title": "Tamil Pongal Celebration — Sydney",
     "description": "Join us to celebrate the harvest festival of Pongal with traditional kolam art, music, delicious food, and a bonfire ceremony.",
-    "communityTag": "Tamil",
+    "communityId": "Tamil",
     "venue": "Parramatta Town Hall",
     "address": "182 Church St, Parramatta NSW 2150",
     "city": "Sydney",
@@ -64,7 +64,7 @@
   {
     "title": "Bollywood Night — Live DJ & Dance",
     "description": "The hottest Bollywood party in Sydney! Dance the night away with live DJ sets, costume competition, and authentic cocktails.",
-    "communityTag": "Bollywood",
+    "communityId": "Bollywood",
     "venue": "The Star Event Centre",
     "address": "80 Pyrmont St, Pyrmont NSW 2009",
     "city": "Sydney",
@@ -96,7 +96,7 @@
   {
     "title": "Filipino Cultural Showcase — Sinulog Sydney",
     "description": "Celebrate the Sinulog Festival with traditional Cebuano street dancing, lechon feast, Filipino arts and crafts market.",
-    "communityTag": "Filipino",
+    "communityId": "Filipino",
     "venue": "Sydney Olympic Park",
     "address": "Olympic Blvd, Sydney Olympic Park NSW 2127",
     "city": "Sydney",
@@ -128,7 +128,7 @@
   {
     "title": "Chinese New Year — Dragon Dance Parade",
     "description": "Ring in the Year of the Snake with spectacular dragon and lion dances through Chinatown, followed by a lantern festival and dumpling-making workshops.",
-    "communityTag": "Chinese",
+    "communityId": "Chinese",
     "venue": "Sydney Chinatown",
     "address": "Dixon St, Haymarket NSW 2000",
     "city": "Sydney",
@@ -157,7 +157,7 @@
   {
     "title": "Melbourne Diwali Lights Festival",
     "description": "The city of Melbourne lights up for Diwali! Join thousands for the spectacular Federation Square light show, rangoli competition, and South Asian street food.",
-    "communityTag": "South Asian",
+    "communityId": "South Asian",
     "venue": "Federation Square",
     "address": "Corner of Flinders & Swanston St, Melbourne VIC 3000",
     "city": "Melbourne",

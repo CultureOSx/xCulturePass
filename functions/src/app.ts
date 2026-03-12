@@ -124,7 +124,7 @@ export type AppEvent = {
   id: string;
   title: string;
   description: string;
-  communityTag: string;
+  communityId: string;
   venue: string;
   date: string;
   time: string;
@@ -525,8 +525,8 @@ const users: AppUser[] = [
 ];
 
 const events: AppEvent[] = [
-  { id: 'e1', title: 'Startup Launch Night Sydney', communityTag: 'Startup', venue: 'Sydney CBD', date: '2026-03-15', time: '18:00', city: 'Sydney', country: 'Australia', description: 'Networking + founder demos.', imageColor: '#E85D3A', organizerId: 'b1', createdAt: nowIso(), updatedAt: nowIso() },
-  { id: 'e2', title: 'Bollywood Beats Festival', communityTag: 'Indian', venue: 'Parramatta Park', date: '2026-04-02', time: '17:30', city: 'Sydney', country: 'Australia', description: 'Music, dance, and food.', imageColor: '#9B59B6', organizerId: 'c1', createdAt: nowIso(), updatedAt: nowIso() },
+  { id: 'e1', title: 'Startup Launch Night Sydney', communityId: 'Startup', venue: 'Sydney CBD', date: '2026-03-15', time: '18:00', city: 'Sydney', country: 'Australia', description: 'Networking + founder demos.', imageColor: '#E85D3A', organizerId: 'b1', createdAt: nowIso(), updatedAt: nowIso() },
+  { id: 'e2', title: 'Bollywood Beats Festival', communityId: 'Indian', venue: 'Parramatta Park', date: '2026-04-02', time: '17:30', city: 'Sydney', country: 'Australia', description: 'Music, dance, and food.', imageColor: '#9B59B6', organizerId: 'c1', createdAt: nowIso(), updatedAt: nowIso() },
 ];
 
 const profiles: AppProfile[] = [
@@ -998,7 +998,7 @@ function buildEventText(event: AppEvent): string {
     event.title,
     event.description,
     event.category,
-    event.communityTag,
+    event.communityId,
     event.city,
   ]
     .filter(Boolean)
@@ -1198,7 +1198,7 @@ const fallbackEvents: FirestoreEvent[] = events.map((event) => ({
   id: event.id,
   title: event.title,
   description: event.description,
-  communityTag: event.communityTag ?? 'General',
+  communityId: event.communityId ?? 'General',
   venue: event.venue,
   date: event.date,
   time: event.time ?? '',
@@ -1206,7 +1206,7 @@ const fallbackEvents: FirestoreEvent[] = events.map((event) => ({
   country: event.country,
   imageUrl: event.imageUrl,
   imageColor: event.imageColor,
-  category: event.category ?? event.communityTag ?? 'Culture',
+  category: event.category ?? event.communityId ?? 'Culture',
   organizer: event.organizer,
   organizerId: event.organizerId,
   capacity: event.capacity,
@@ -1716,11 +1716,11 @@ function getSearchCorpus(): SearchableItem[] {
     id: event.id,
     type: 'event',
     title: event.title,
-    subtitle: `${event.communityTag} · ${event.venue}`,
+    subtitle: `${event.communityId} · ${event.venue}`,
     description: event.description,
     city: event.city,
     country: event.country,
-    tags: [event.communityTag],
+    tags: [event.communityId],
     date: event.date,
   }));
   const profileItems: SearchableItem[] = profiles.map((profile) => ({
@@ -1790,6 +1790,7 @@ app.get('/auth/me', requireAuth, authMeHandler);
 const authRegisterHandler = async (req: Request, res: Response) => {
   const uid = req.user!.id;
   const { displayName, city, state, postcode, country, username } = req.body ?? {};
+  const requestedRole = ['user', 'organizer'].includes(req.body?.role) ? req.body.role : 'user';
   try {
     const snap = await db.collection('users').doc(uid).get();
     if (!snap.exists) {
@@ -1802,6 +1803,7 @@ const authRegisterHandler = async (req: Request, res: Response) => {
         postcode: postcode != null ? Number(postcode) : null,
         country: country ?? 'Australia',
         culturePassId: generateSecureId('CP-U'),
+        role: requestedRole,
         createdAt: nowIso(),
       };
       await db.collection('users').doc(uid).set(profile);
@@ -1809,10 +1811,10 @@ const authRegisterHandler = async (req: Request, res: Response) => {
       await Promise.all([
         db.collection('users').doc(uid).collection('wallet').doc('main').set({ balanceCents: 0, currency: 'AUD', points: 0 }),
         db.collection('users').doc(uid).collection('membership').doc('current').set({ tier: 'free', isActive: true }),
-        db.collection('notifications').add({ userId: uid, title: 'Welcome to CulturePass!', message: 'Your account is ready.', type: 'system', isRead: false, createdAt: nowIso() }),
+        db.collection('notifications').add({ userId: uid, title: `Welcome to CulturePass!`, message: `Your ${requestedRole} account is ready.`, type: 'system', isRead: false, createdAt: nowIso() }),
         // Set Firebase custom claims so the auth middleware reads correct role/tier
         authAdmin.setCustomUserClaims(uid, {
-          role: 'user',
+          role: requestedRole,
           tier: 'free',
           ...(city && { city: String(city) }),
           country: String(country ?? 'Australia'),
@@ -1950,23 +1952,23 @@ app.post('/api/admin/seed', async (req, res) => {
   };
 
   const SEED_EVENTS = [
-    { title: 'Sydney Kerala Cultural Festival 2026', description: 'The biggest Malayalam cultural gathering in the Southern Hemisphere. Live music, Kathakali dance, traditional cuisine, and community awards. Families welcome.', communityTag: 'Malayalam', venue: 'Darling Harbour Convention Centre', address: '14 Darling Dr, Sydney NSW 2000', date: soon(14), time: '10:00 AM', city: 'Sydney', country: 'Australia', imageUrl: 'https://images.unsplash.com/photo-1598300056393-4aac492f4344?w=800', imageColor: '#E8472A', cultureTag: ['Kerala', 'Malayalam', 'South Indian'], tags: ['festival', 'culture', 'family', 'dance'], category: 'Festival', eventType: 'In-Person', ageSuitability: 'All Ages', priceTier: 'mid', priceCents: 2500, priceLabel: '$25', isFree: false, isFeatured: true, capacity: 2000, attending: 847, organizerId: 'seed-org-1', organizer: 'Kerala Community Sydney', organizerReputationScore: 92, status: 'published' as const, cpid: 'CP-E-KCFSYD', tiers: [{ name: 'General', priceCents: 2500, available: 1200 }, { name: 'Family Pack (4)', priceCents: 8000, available: 200 }, { name: 'VIP', priceCents: 7500, available: 50 }] },
-    { title: 'Tamil Pongal Celebration — Sydney', description: 'Join us to celebrate the harvest festival of Pongal with traditional kolam art, music, delicious food, and a bonfire ceremony.', communityTag: 'Tamil', venue: 'Parramatta Town Hall', address: '182 Church St, Parramatta NSW 2150', date: soon(7), time: '09:00 AM', city: 'Sydney', country: 'Australia', imageUrl: 'https://images.unsplash.com/photo-1606298855672-3efb63017be8?w=800', imageColor: '#F59E0B', cultureTag: ['Tamil', 'South Indian'], tags: ['pongal', 'harvest', 'family'], category: 'Cultural', eventType: 'In-Person', ageSuitability: 'All Ages', priceTier: 'free', priceCents: 0, priceLabel: 'Free', isFree: true, isFeatured: true, capacity: 800, attending: 412, organizerId: 'seed-org-2', organizer: 'Tamil Sangam NSW', organizerReputationScore: 88, status: 'published' as const, cpid: 'CP-E-PONGSYD', tiers: [] },
-    { title: 'Bollywood Night — Live DJ & Dance', description: 'The hottest Bollywood party in Sydney! Dance the night away with live DJ sets, costume competition, and authentic cocktails.', communityTag: 'Bollywood', venue: 'The Star Event Centre', address: '80 Pyrmont St, Pyrmont NSW 2009', date: soon(21), time: '08:00 PM', city: 'Sydney', country: 'Australia', imageUrl: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=800', imageColor: '#7C3AED', cultureTag: ['Bollywood', 'South Asian', 'Hindi'], tags: ['party', 'dance', 'dj', 'nightlife'], category: 'Nightlife', eventType: 'In-Person', ageSuitability: '18+', priceTier: 'mid', priceCents: 3500, priceLabel: '$35', isFree: false, isFeatured: true, capacity: 600, attending: 521, organizerId: 'seed-org-3', organizer: 'Desi Nights Sydney', organizerReputationScore: 85, status: 'published' as const, cpid: 'CP-E-BNISYD', tiers: [{ name: 'Standard', priceCents: 3500, available: 400 }, { name: 'VIP Table', priceCents: 15000, available: 20 }] },
-    { title: 'Filipino Cultural Showcase — Sinulog Sydney', description: 'Celebrate the Sinulog Festival with traditional Cebuano street dancing, lechon feast, Filipino arts and crafts market.', communityTag: 'Filipino', venue: 'Sydney Olympic Park', address: 'Olympic Blvd, Sydney Olympic Park NSW 2127', date: soon(30), time: '11:00 AM', city: 'Sydney', country: 'Australia', imageUrl: 'https://images.unsplash.com/photo-1527529482837-4698179dc6ce?w=800', imageColor: '#EF4444', cultureTag: ['Filipino', 'Cebuano', 'Southeast Asian'], tags: ['festival', 'dance', 'food', 'sinulog'], category: 'Festival', eventType: 'In-Person', ageSuitability: 'All Ages', priceTier: 'low', priceCents: 1500, priceLabel: '$15', isFree: false, isFeatured: false, capacity: 1000, attending: 234, organizerId: 'seed-org-4', organizer: 'Fil-Oz Cultural Foundation', organizerReputationScore: 79, status: 'published' as const, cpid: 'CP-E-FILSYD', tiers: [{ name: 'Adult', priceCents: 1500, available: 700 }, { name: 'Child (under 12)', priceCents: 500, available: 200 }] },
-    { title: 'Chinese New Year — Dragon Dance Parade', description: 'Ring in the Year of the Snake with spectacular dragon and lion dances through Chinatown, followed by a lantern festival and dumpling-making workshops.', communityTag: 'Chinese', venue: 'Sydney Chinatown', address: 'Dixon St, Haymarket NSW 2000', date: soon(10), time: '06:00 PM', city: 'Sydney', country: 'Australia', imageUrl: 'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?w=800', imageColor: '#DC2626', cultureTag: ['Chinese', 'East Asian'], tags: ['new year', 'parade', 'lantern', 'family'], category: 'Festival', eventType: 'In-Person', ageSuitability: 'All Ages', priceTier: 'free', priceCents: 0, priceLabel: 'Free', isFree: true, isFeatured: true, capacity: 5000, attending: 3211, organizerId: 'seed-org-5', organizer: 'Sydney Chinese Community Association', organizerReputationScore: 96, status: 'published' as const, cpid: 'CP-E-CNYSYD', tiers: [] },
-    { title: 'Nigerian Independence Day Gala', description: 'Celebrate 66 years of Nigerian independence with Afrobeat live performances, jollof cook-off, fashion showcase, and traditional masquerade.', communityTag: 'Nigerian', venue: 'Doltone House Hyde Park', address: '181 Elizabeth St, Sydney NSW 2000', date: soon(45), time: '07:00 PM', city: 'Sydney', country: 'Australia', imageUrl: 'https://images.unsplash.com/photo-1566753323558-f4e0952af115?w=800', imageColor: '#16A34A', cultureTag: ['Nigerian', 'African', 'Afrobeat'], tags: ['independence', 'gala', 'music', 'food'], category: 'Gala', eventType: 'In-Person', ageSuitability: '18+', priceTier: 'premium', priceCents: 8500, priceLabel: '$85', isFree: false, isFeatured: false, capacity: 300, attending: 187, organizerId: 'seed-org-6', organizer: 'Nigerian Community Australia', organizerReputationScore: 82, status: 'published' as const, cpid: 'CP-E-NIGSYD', tiers: [{ name: 'Standard', priceCents: 8500, available: 200 }, { name: 'VIP', priceCents: 20000, available: 30 }] },
-    { title: 'Greek Easter — Panigiri Festival', description: 'Traditional Greek Easter celebration with live bouzouki music, traditional dancing lessons, souvlaki feast, and Orthodox Easter ceremony.', communityTag: 'Greek', venue: 'Rockdale Town Hall', address: '2 Bryant St, Rockdale NSW 2216', date: soon(18), time: '05:00 PM', city: 'Sydney', country: 'Australia', imageUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800', imageColor: '#1D4ED8', cultureTag: ['Greek', 'Mediterranean', 'European'], tags: ['easter', 'panigiri', 'music', 'dance', 'food'], category: 'Cultural', eventType: 'In-Person', ageSuitability: 'All Ages', priceTier: 'low', priceCents: 2000, priceLabel: '$20', isFree: false, isFeatured: false, capacity: 500, attending: 302, organizerId: 'seed-org-7', organizer: 'Hellenic Community of NSW', organizerReputationScore: 91, status: 'published' as const, cpid: 'CP-E-GRKSYD', tiers: [{ name: 'General', priceCents: 2000, available: 400 }] },
-    { title: 'Indigenous Storytelling Night — NAIDOC Week', description: 'An intimate evening of First Nations storytelling, traditional music, and art featuring local Gadigal artists. Proceeds go to local indigenous youth programs.', communityTag: 'Aboriginal', venue: 'Carriageworks', address: '245 Wilson St, Eveleigh NSW 2015', date: soon(35), time: '07:30 PM', city: 'Sydney', country: 'Australia', imageUrl: 'https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?w=800', imageColor: '#92400E', cultureTag: ['Aboriginal', 'First Nations', 'Indigenous'], indigenousTags: ['Gadigal', 'Naidoc'], tags: ['storytelling', 'art', 'naidoc', 'cultural'], category: 'Arts', eventType: 'In-Person', ageSuitability: 'All Ages', priceTier: 'low', priceCents: 1500, priceLabel: '$15', isFree: false, isFeatured: true, capacity: 200, attending: 156, organizerId: 'seed-org-8', organizer: 'Gadigal Art Collective', organizerReputationScore: 94, status: 'published' as const, cpid: 'CP-E-INDSYD', tiers: [{ name: 'General', priceCents: 1500, available: 100 }] },
-    { title: 'Melbourne Diwali Lights Festival', description: 'The city of Melbourne lights up for Diwali! Join thousands for the spectacular Federation Square light show, rangoli competition, and South Asian street food.', communityTag: 'South Asian', venue: 'Federation Square', address: 'Corner of Flinders & Swanston St, Melbourne VIC 3000', date: soon(12), time: '07:00 PM', city: 'Melbourne', country: 'Australia', imageUrl: 'https://images.unsplash.com/photo-1467810563316-b5476525c0f9?w=800', imageColor: '#F97316', cultureTag: ['South Asian', 'Hindu', 'Diwali'], tags: ['diwali', 'lights', 'festival', 'outdoor'], category: 'Festival', eventType: 'In-Person', ageSuitability: 'All Ages', priceTier: 'free', priceCents: 0, priceLabel: 'Free', isFree: true, isFeatured: true, capacity: 10000, attending: 7234, organizerId: 'seed-org-9', organizer: 'Festival of India Melbourne', organizerReputationScore: 97, status: 'published' as const, cpid: 'CP-E-DIVMLB', tiers: [] },
-    { title: 'Vietnamese Tet New Year Market', description: "Celebrate Lunar New Year with the Vietnamese community. Traditional music, ao dai fashion show, bánh mì cook-off, and children's activities.", communityTag: 'Vietnamese', venue: 'Springvale Town Centre', address: 'Springvale Rd, Springvale VIC 3171', date: soon(8), time: '10:00 AM', city: 'Melbourne', country: 'Australia', imageUrl: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800', imageColor: '#FBBF24', cultureTag: ['Vietnamese', 'Southeast Asian'], tags: ['tet', 'new year', 'market', 'food'], category: 'Market', eventType: 'In-Person', ageSuitability: 'All Ages', priceTier: 'free', priceCents: 0, priceLabel: 'Free', isFree: true, isFeatured: false, capacity: 3000, attending: 1876, organizerId: 'seed-org-10', organizer: 'Vietnamese Community Australia', organizerReputationScore: 87, status: 'published' as const, cpid: 'CP-E-TETMLB', tiers: [] },
+    { title: 'Sydney Kerala Cultural Festival 2026', description: 'The biggest Malayalam cultural gathering in the Southern Hemisphere. Live music, Kathakali dance, traditional cuisine, and community awards. Families welcome.', communityId: 'Malayalam', venue: 'Darling Harbour Convention Centre', address: '14 Darling Dr, Sydney NSW 2000', date: soon(14), time: '10:00 AM', city: 'Sydney', country: 'Australia', imageUrl: 'https://images.unsplash.com/photo-1598300056393-4aac492f4344?w=800', imageColor: '#E8472A', cultureTag: ['Kerala', 'Malayalam', 'South Indian'], tags: ['festival', 'culture', 'family', 'dance'], category: 'Festival', eventType: 'In-Person', ageSuitability: 'All Ages', priceTier: 'mid', priceCents: 2500, priceLabel: '$25', isFree: false, isFeatured: true, capacity: 2000, attending: 847, organizerId: 'seed-org-1', organizer: 'Kerala Community Sydney', organizerReputationScore: 92, status: 'published' as const, cpid: 'CP-E-KCFSYD', tiers: [{ name: 'General', priceCents: 2500, available: 1200 }, { name: 'Family Pack (4)', priceCents: 8000, available: 200 }, { name: 'VIP', priceCents: 7500, available: 50 }] },
+    { title: 'Tamil Pongal Celebration — Sydney', description: 'Join us to celebrate the harvest festival of Pongal with traditional kolam art, music, delicious food, and a bonfire ceremony.', communityId: 'Tamil', venue: 'Parramatta Town Hall', address: '182 Church St, Parramatta NSW 2150', date: soon(7), time: '09:00 AM', city: 'Sydney', country: 'Australia', imageUrl: 'https://images.unsplash.com/photo-1606298855672-3efb63017be8?w=800', imageColor: '#F59E0B', cultureTag: ['Tamil', 'South Indian'], tags: ['pongal', 'harvest', 'family'], category: 'Cultural', eventType: 'In-Person', ageSuitability: 'All Ages', priceTier: 'free', priceCents: 0, priceLabel: 'Free', isFree: true, isFeatured: true, capacity: 800, attending: 412, organizerId: 'seed-org-2', organizer: 'Tamil Sangam NSW', organizerReputationScore: 88, status: 'published' as const, cpid: 'CP-E-PONGSYD', tiers: [] },
+    { title: 'Bollywood Night — Live DJ & Dance', description: 'The hottest Bollywood party in Sydney! Dance the night away with live DJ sets, costume competition, and authentic cocktails.', communityId: 'Bollywood', venue: 'The Star Event Centre', address: '80 Pyrmont St, Pyrmont NSW 2009', date: soon(21), time: '08:00 PM', city: 'Sydney', country: 'Australia', imageUrl: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=800', imageColor: '#7C3AED', cultureTag: ['Bollywood', 'South Asian', 'Hindi'], tags: ['party', 'dance', 'dj', 'nightlife'], category: 'Nightlife', eventType: 'In-Person', ageSuitability: '18+', priceTier: 'mid', priceCents: 3500, priceLabel: '$35', isFree: false, isFeatured: true, capacity: 600, attending: 521, organizerId: 'seed-org-3', organizer: 'Desi Nights Sydney', organizerReputationScore: 85, status: 'published' as const, cpid: 'CP-E-BNISYD', tiers: [{ name: 'Standard', priceCents: 3500, available: 400 }, { name: 'VIP Table', priceCents: 15000, available: 20 }] },
+    { title: 'Filipino Cultural Showcase — Sinulog Sydney', description: 'Celebrate the Sinulog Festival with traditional Cebuano street dancing, lechon feast, Filipino arts and crafts market.', communityId: 'Filipino', venue: 'Sydney Olympic Park', address: 'Olympic Blvd, Sydney Olympic Park NSW 2127', date: soon(30), time: '11:00 AM', city: 'Sydney', country: 'Australia', imageUrl: 'https://images.unsplash.com/photo-1527529482837-4698179dc6ce?w=800', imageColor: '#EF4444', cultureTag: ['Filipino', 'Cebuano', 'Southeast Asian'], tags: ['festival', 'dance', 'food', 'sinulog'], category: 'Festival', eventType: 'In-Person', ageSuitability: 'All Ages', priceTier: 'low', priceCents: 1500, priceLabel: '$15', isFree: false, isFeatured: false, capacity: 1000, attending: 234, organizerId: 'seed-org-4', organizer: 'Fil-Oz Cultural Foundation', organizerReputationScore: 79, status: 'published' as const, cpid: 'CP-E-FILSYD', tiers: [{ name: 'Adult', priceCents: 1500, available: 700 }, { name: 'Child (under 12)', priceCents: 500, available: 200 }] },
+    { title: 'Chinese New Year — Dragon Dance Parade', description: 'Ring in the Year of the Snake with spectacular dragon and lion dances through Chinatown, followed by a lantern festival and dumpling-making workshops.', communityId: 'Chinese', venue: 'Sydney Chinatown', address: 'Dixon St, Haymarket NSW 2000', date: soon(10), time: '06:00 PM', city: 'Sydney', country: 'Australia', imageUrl: 'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?w=800', imageColor: '#DC2626', cultureTag: ['Chinese', 'East Asian'], tags: ['new year', 'parade', 'lantern', 'family'], category: 'Festival', eventType: 'In-Person', ageSuitability: 'All Ages', priceTier: 'free', priceCents: 0, priceLabel: 'Free', isFree: true, isFeatured: true, capacity: 5000, attending: 3211, organizerId: 'seed-org-5', organizer: 'Sydney Chinese Community Association', organizerReputationScore: 96, status: 'published' as const, cpid: 'CP-E-CNYSYD', tiers: [] },
+    { title: 'Nigerian Independence Day Gala', description: 'Celebrate 66 years of Nigerian independence with Afrobeat live performances, jollof cook-off, fashion showcase, and traditional masquerade.', communityId: 'Nigerian', venue: 'Doltone House Hyde Park', address: '181 Elizabeth St, Sydney NSW 2000', date: soon(45), time: '07:00 PM', city: 'Sydney', country: 'Australia', imageUrl: 'https://images.unsplash.com/photo-1566753323558-f4e0952af115?w=800', imageColor: '#16A34A', cultureTag: ['Nigerian', 'African', 'Afrobeat'], tags: ['independence', 'gala', 'music', 'food'], category: 'Gala', eventType: 'In-Person', ageSuitability: '18+', priceTier: 'premium', priceCents: 8500, priceLabel: '$85', isFree: false, isFeatured: false, capacity: 300, attending: 187, organizerId: 'seed-org-6', organizer: 'Nigerian Community Australia', organizerReputationScore: 82, status: 'published' as const, cpid: 'CP-E-NIGSYD', tiers: [{ name: 'Standard', priceCents: 8500, available: 200 }, { name: 'VIP', priceCents: 20000, available: 30 }] },
+    { title: 'Greek Easter — Panigiri Festival', description: 'Traditional Greek Easter celebration with live bouzouki music, traditional dancing lessons, souvlaki feast, and Orthodox Easter ceremony.', communityId: 'Greek', venue: 'Rockdale Town Hall', address: '2 Bryant St, Rockdale NSW 2216', date: soon(18), time: '05:00 PM', city: 'Sydney', country: 'Australia', imageUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800', imageColor: '#1D4ED8', cultureTag: ['Greek', 'Mediterranean', 'European'], tags: ['easter', 'panigiri', 'music', 'dance', 'food'], category: 'Cultural', eventType: 'In-Person', ageSuitability: 'All Ages', priceTier: 'low', priceCents: 2000, priceLabel: '$20', isFree: false, isFeatured: false, capacity: 500, attending: 302, organizerId: 'seed-org-7', organizer: 'Hellenic Community of NSW', organizerReputationScore: 91, status: 'published' as const, cpid: 'CP-E-GRKSYD', tiers: [{ name: 'General', priceCents: 2000, available: 400 }] },
+    { title: 'Indigenous Storytelling Night — NAIDOC Week', description: 'An intimate evening of First Nations storytelling, traditional music, and art featuring local Gadigal artists. Proceeds go to local indigenous youth programs.', communityId: 'Aboriginal', venue: 'Carriageworks', address: '245 Wilson St, Eveleigh NSW 2015', date: soon(35), time: '07:30 PM', city: 'Sydney', country: 'Australia', imageUrl: 'https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?w=800', imageColor: '#92400E', cultureTag: ['Aboriginal', 'First Nations', 'Indigenous'], indigenousTags: ['Gadigal', 'Naidoc'], tags: ['storytelling', 'art', 'naidoc', 'cultural'], category: 'Arts', eventType: 'In-Person', ageSuitability: 'All Ages', priceTier: 'low', priceCents: 1500, priceLabel: '$15', isFree: false, isFeatured: true, capacity: 200, attending: 156, organizerId: 'seed-org-8', organizer: 'Gadigal Art Collective', organizerReputationScore: 94, status: 'published' as const, cpid: 'CP-E-INDSYD', tiers: [{ name: 'General', priceCents: 1500, available: 100 }] },
+    { title: 'Melbourne Diwali Lights Festival', description: 'The city of Melbourne lights up for Diwali! Join thousands for the spectacular Federation Square light show, rangoli competition, and South Asian street food.', communityId: 'South Asian', venue: 'Federation Square', address: 'Corner of Flinders & Swanston St, Melbourne VIC 3000', date: soon(12), time: '07:00 PM', city: 'Melbourne', country: 'Australia', imageUrl: 'https://images.unsplash.com/photo-1467810563316-b5476525c0f9?w=800', imageColor: '#F97316', cultureTag: ['South Asian', 'Hindu', 'Diwali'], tags: ['diwali', 'lights', 'festival', 'outdoor'], category: 'Festival', eventType: 'In-Person', ageSuitability: 'All Ages', priceTier: 'free', priceCents: 0, priceLabel: 'Free', isFree: true, isFeatured: true, capacity: 10000, attending: 7234, organizerId: 'seed-org-9', organizer: 'Festival of India Melbourne', organizerReputationScore: 97, status: 'published' as const, cpid: 'CP-E-DIVMLB', tiers: [] },
+    { title: 'Vietnamese Tet New Year Market', description: "Celebrate Lunar New Year with the Vietnamese community. Traditional music, ao dai fashion show, bánh mì cook-off, and children's activities.", communityId: 'Vietnamese', venue: 'Springvale Town Centre', address: 'Springvale Rd, Springvale VIC 3171', date: soon(8), time: '10:00 AM', city: 'Melbourne', country: 'Australia', imageUrl: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800', imageColor: '#FBBF24', cultureTag: ['Vietnamese', 'Southeast Asian'], tags: ['tet', 'new year', 'market', 'food'], category: 'Market', eventType: 'In-Person', ageSuitability: 'All Ages', priceTier: 'free', priceCents: 0, priceLabel: 'Free', isFree: true, isFeatured: false, capacity: 3000, attending: 1876, organizerId: 'seed-org-10', organizer: 'Vietnamese Community Australia', organizerReputationScore: 87, status: 'published' as const, cpid: 'CP-E-TETMLB', tiers: [] },
     // Brisbane
-    { title: 'Multicultural Street Food Festival — Brisbane', description: "A weekend-long celebration of Brisbane's multicultural food scene, with 80+ stalls from every corner of the globe.", communityTag: 'Multicultural', venue: 'South Bank Parklands', address: 'Grey St, South Brisbane QLD 4101', date: soon(20), time: '10:00 AM', city: 'Brisbane', country: 'Australia', imageUrl: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800', imageColor: '#F59E0B', cultureTag: ['Multicultural', 'Food', 'Community'], tags: ['food', 'market', 'multicultural', 'outdoor'], category: 'Market', eventType: 'In-Person', ageSuitability: 'All Ages', priceTier: 'free', priceCents: 0, priceLabel: 'Free', isFree: true, isFeatured: true, capacity: 5000, attending: 2134, organizerId: 'seed-org-11', organizer: 'Brisbane Multicultural Alliance', organizerReputationScore: 90, status: 'published' as const, cpid: 'CP-E-MSFBRB', tiers: [] },
-    { title: 'Pacific Islander Cultural Day — Brisbane', description: 'Celebrate the vibrant cultures of the Pacific with traditional dance, music, and food from Samoa, Tonga, Fiji, and more.', communityTag: 'Pacific Islander', venue: 'Roma Street Parkland', address: '1 Parkland Blvd, Brisbane City QLD 4000', date: soon(25), time: '11:00 AM', city: 'Brisbane', country: 'Australia', imageUrl: 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=800', imageColor: '#0EA5E9', cultureTag: ['Pacific Islander', 'Samoan', 'Tongan', 'Fijian'], tags: ['dance', 'music', 'food', 'pacific'], category: 'Cultural', eventType: 'In-Person', ageSuitability: 'All Ages', priceTier: 'low', priceCents: 1000, priceLabel: '$10', isFree: false, isFeatured: true, capacity: 1500, attending: 567, organizerId: 'seed-org-12', organizer: 'Pacific Community Queensland', organizerReputationScore: 84, status: 'published' as const, cpid: 'CP-E-PICBRB', tiers: [{ name: 'General', priceCents: 1000, available: 1200 }] },
+    { title: 'Multicultural Street Food Festival — Brisbane', description: "A weekend-long celebration of Brisbane's multicultural food scene, with 80+ stalls from every corner of the globe.", communityId: 'Multicultural', venue: 'South Bank Parklands', address: 'Grey St, South Brisbane QLD 4101', date: soon(20), time: '10:00 AM', city: 'Brisbane', country: 'Australia', imageUrl: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800', imageColor: '#F59E0B', cultureTag: ['Multicultural', 'Food', 'Community'], tags: ['food', 'market', 'multicultural', 'outdoor'], category: 'Market', eventType: 'In-Person', ageSuitability: 'All Ages', priceTier: 'free', priceCents: 0, priceLabel: 'Free', isFree: true, isFeatured: true, capacity: 5000, attending: 2134, organizerId: 'seed-org-11', organizer: 'Brisbane Multicultural Alliance', organizerReputationScore: 90, status: 'published' as const, cpid: 'CP-E-MSFBRB', tiers: [] },
+    { title: 'Pacific Islander Cultural Day — Brisbane', description: 'Celebrate the vibrant cultures of the Pacific with traditional dance, music, and food from Samoa, Tonga, Fiji, and more.', communityId: 'Pacific Islander', venue: 'Roma Street Parkland', address: '1 Parkland Blvd, Brisbane City QLD 4000', date: soon(25), time: '11:00 AM', city: 'Brisbane', country: 'Australia', imageUrl: 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=800', imageColor: '#0EA5E9', cultureTag: ['Pacific Islander', 'Samoan', 'Tongan', 'Fijian'], tags: ['dance', 'music', 'food', 'pacific'], category: 'Cultural', eventType: 'In-Person', ageSuitability: 'All Ages', priceTier: 'low', priceCents: 1000, priceLabel: '$10', isFree: false, isFeatured: true, capacity: 1500, attending: 567, organizerId: 'seed-org-12', organizer: 'Pacific Community Queensland', organizerReputationScore: 84, status: 'published' as const, cpid: 'CP-E-PICBRB', tiers: [{ name: 'General', priceCents: 1000, available: 1200 }] },
     // Perth
-    { title: 'Indian Classical Music Evening — Perth', description: 'An intimate evening of Indian classical music featuring Hindustani and Carnatic traditions, with tabla, sitar, and vocal performances.', communityTag: 'South Asian', venue: 'Perth Concert Hall', address: '5 St Georges Terrace, Perth WA 6000', date: soon(16), time: '07:30 PM', city: 'Perth', country: 'Australia', imageUrl: 'https://images.unsplash.com/photo-1507838153414-b4b713384a76?w=800', imageColor: '#7C3AED', cultureTag: ['South Asian', 'Indian', 'Classical Music'], tags: ['music', 'classical', 'performance'], category: 'Arts', eventType: 'In-Person', ageSuitability: 'All Ages', priceTier: 'mid', priceCents: 4500, priceLabel: '$45', isFree: false, isFeatured: true, capacity: 400, attending: 289, organizerId: 'seed-org-13', organizer: 'Indian Arts Society WA', organizerReputationScore: 91, status: 'published' as const, cpid: 'CP-E-ICMPER', tiers: [{ name: 'Standard', priceCents: 4500, available: 300 }, { name: 'Premium', priceCents: 9000, available: 50 }] },
+    { title: 'Indian Classical Music Evening — Perth', description: 'An intimate evening of Indian classical music featuring Hindustani and Carnatic traditions, with tabla, sitar, and vocal performances.', communityId: 'South Asian', venue: 'Perth Concert Hall', address: '5 St Georges Terrace, Perth WA 6000', date: soon(16), time: '07:30 PM', city: 'Perth', country: 'Australia', imageUrl: 'https://images.unsplash.com/photo-1507838153414-b4b713384a76?w=800', imageColor: '#7C3AED', cultureTag: ['South Asian', 'Indian', 'Classical Music'], tags: ['music', 'classical', 'performance'], category: 'Arts', eventType: 'In-Person', ageSuitability: 'All Ages', priceTier: 'mid', priceCents: 4500, priceLabel: '$45', isFree: false, isFeatured: true, capacity: 400, attending: 289, organizerId: 'seed-org-13', organizer: 'Indian Arts Society WA', organizerReputationScore: 91, status: 'published' as const, cpid: 'CP-E-ICMPER', tiers: [{ name: 'Standard', priceCents: 4500, available: 300 }, { name: 'Premium', priceCents: 9000, available: 50 }] },
     // Adelaide
-    { title: 'Adelaide OzAsia Festival Showcase', description: 'A celebration of Asian-Australian arts and culture featuring theatre, dance, music, and visual arts from across Asia and the diaspora.', communityTag: 'Asian-Australian', venue: 'Adelaide Festival Centre', address: 'King William Rd, Adelaide SA 5000', date: soon(28), time: '06:00 PM', city: 'Adelaide', country: 'Australia', imageUrl: 'https://images.unsplash.com/photo-1545213156-d8e7c7a84e31?w=800', imageColor: '#EC4899', cultureTag: ['Asian-Australian', 'Arts', 'Theatre'], tags: ['arts', 'theatre', 'dance', 'music'], category: 'Arts', eventType: 'In-Person', ageSuitability: 'All Ages', priceTier: 'mid', priceCents: 3500, priceLabel: '$35', isFree: false, isFeatured: false, capacity: 800, attending: 421, organizerId: 'seed-org-14', organizer: 'OzAsia Festival', organizerReputationScore: 95, status: 'published' as const, cpid: 'CP-E-OZAADL', tiers: [{ name: 'General', priceCents: 3500, available: 600 }] },
+    { title: 'Adelaide OzAsia Festival Showcase', description: 'A celebration of Asian-Australian arts and culture featuring theatre, dance, music, and visual arts from across Asia and the diaspora.', communityId: 'Asian-Australian', venue: 'Adelaide Festival Centre', address: 'King William Rd, Adelaide SA 5000', date: soon(28), time: '06:00 PM', city: 'Adelaide', country: 'Australia', imageUrl: 'https://images.unsplash.com/photo-1545213156-d8e7c7a84e31?w=800', imageColor: '#EC4899', cultureTag: ['Asian-Australian', 'Arts', 'Theatre'], tags: ['arts', 'theatre', 'dance', 'music'], category: 'Arts', eventType: 'In-Person', ageSuitability: 'All Ages', priceTier: 'mid', priceCents: 3500, priceLabel: '$35', isFree: false, isFeatured: false, capacity: 800, attending: 421, organizerId: 'seed-org-14', organizer: 'OzAsia Festival', organizerReputationScore: 95, status: 'published' as const, cpid: 'CP-E-OZAADL', tiers: [{ name: 'General', priceCents: 3500, available: 600 }] },
   ];
 
   // Seed communities / profiles
@@ -2018,6 +2020,7 @@ app.get('/api/events', async (req, res) => {
     const dateFrom     = qstr(req.query.dateFrom).trim()     || undefined;
     const dateTo       = qstr(req.query.dateTo).trim()       || undefined;
     const organizerId  = qstr(req.query.organizerId).trim()  || undefined;
+    const communityId  = qstr(req.query.communityId).trim()  || undefined;
     const isFeatured   = qstr(req.query.isFeatured) === 'true' ? true : undefined;
     
     // Geolocation Bounding
@@ -2031,7 +2034,7 @@ app.get('/api/events', async (req, res) => {
     const page       = Math.max(1, parseInt(qstr(req.query.page)    || '1',  10) || 1);
     const pageSize   = Math.min(100, Math.max(1, parseInt(qstr(req.query.pageSize) || '20', 10) || 20));
     
-    const filtersApplied = [city, country, category, eventType, dateFrom, dateTo, isFeatured, organizerId, centerLat, centerLng].some(
+    const filtersApplied = [city, country, category, eventType, dateFrom, dateTo, isFeatured, organizerId, communityId, centerLat, centerLng].some(
       (value) => value != null
     );
 
@@ -2040,7 +2043,7 @@ app.get('/api/events', async (req, res) => {
     }
 
     const result = await eventsService.list(
-      { city, country, category, eventType, dateFrom, dateTo, isFeatured, organizerId, centerLat, centerLng, radiusInKm },
+      { city, country, category, eventType, dateFrom, dateTo, isFeatured, organizerId, communityId, centerLat, centerLng, radiusInKm },
       { page, pageSize }
     );
 
@@ -2113,7 +2116,7 @@ app.post('/api/events', requireAuth, requireRole('organizer', 'admin'), moderati
     const newEvent: AppEvent = {
       id: `e-dev-${Date.now()}`,
       title: String(b.title),
-      communityTag: String(b.communityTag ?? 'General'),
+      communityId: String(b.communityId ?? 'General'),
       venue: String(b.venue ?? ''),
       date: String(b.date),
       time: String(b.time ?? ''),
@@ -2143,10 +2146,24 @@ app.post('/api/events', requireAuth, requireRole('organizer', 'admin'), moderati
   }
 
   try {
+    let bestCouncil: AppCouncil | undefined;
+    let highestScore = 0;
+    for (const c of councils) {
+      const score = councilMatchScore(c, {
+        postcode: resolvedLocation.postcode,
+        city: resolvedLocation.city,
+        state: resolvedLocation.state,
+      });
+      if (score > highestScore) {
+        highestScore = score;
+        bestCouncil = c;
+      }
+    }
+
     const event = await eventsService.create({
       title:       String(b.title),
       description: String(b.description ?? ''),
-      communityTag: String(b.communityTag ?? (Array.isArray(b.cultureTag) ? b.cultureTag[0] : '') ?? ''),
+      communityId: String(b.communityId ?? (Array.isArray(b.cultureTag) ? b.cultureTag[0] : '') ?? ''),
       venue:    String(b.venue ?? ''),
       address:  b.address   ? String(b.address) : undefined,
       date:     String(b.date),
@@ -2154,6 +2171,8 @@ app.post('/api/events', requireAuth, requireRole('organizer', 'admin'), moderati
       city:     resolvedLocation.city,
       state:    resolvedLocation.state,
       postcode: resolvedLocation.postcode,
+      council:  bestCouncil?.name,
+      suburb:   resolvedLocation.city, // The exact "place_name" from postal lookup
       latitude: resolvedLocation.latitude,
       longitude: resolvedLocation.longitude,
       country:  resolvedLocation.country,
@@ -2224,6 +2243,22 @@ app.put('/api/events/:id', requireAuth, moderationCheck, async (req, res) => {
       resolvedLocation = resolvedLocationResult.location;
     }
 
+    let bestCouncil: AppCouncil | undefined;
+    if (resolvedLocation) {
+      let highestScore = 0;
+      for (const c of councils) {
+        const score = councilMatchScore(c, {
+          postcode: resolvedLocation.postcode,
+          city: resolvedLocation.city,
+          state: resolvedLocation.state,
+        });
+        if (score > highestScore) {
+          highestScore = score;
+          bestCouncil = c;
+        }
+      }
+    }
+
     const updated = await eventsService.update(qparam(req.params.id), {
       ...(b.title        != null && { title:       String(b.title) }),
       ...(b.description  != null && { description: String(b.description) }),
@@ -2234,6 +2269,8 @@ app.put('/api/events/:id', requireAuth, moderationCheck, async (req, res) => {
       ...(resolvedLocation && { city:        resolvedLocation.city }),
       ...(resolvedLocation && { state:       resolvedLocation.state }),
       ...(resolvedLocation && { postcode:    resolvedLocation.postcode }),
+      ...(resolvedLocation && { suburb:      resolvedLocation.city }),
+      ...(resolvedLocation && { council:     bestCouncil?.name }),
       ...(resolvedLocation && { latitude:    resolvedLocation.latitude }),
       ...(resolvedLocation && { longitude:   resolvedLocation.longitude }),
       ...(resolvedLocation && { country:     resolvedLocation.country }),
@@ -2698,7 +2735,7 @@ app.get('/api/businesses/:id', async (req, res) => {
 // ---------------------------------------------------------------------------
 
 function mapCollection(prefix: string) {
-  return events.map((e, i) => ({ id: `${prefix}${i + 1}`, title: e.title, name: e.title, city: e.city, country: e.country, imageUrl: e.imageUrl, category: e.communityTag, description: e.description, venue: e.venue, language: 'English', genre: [e.communityTag], posterUrl: e.imageUrl, priceRange: '$$', location: e.venue, priceLabel: '$25' }));
+  return events.map((e, i) => ({ id: `${prefix}${i + 1}`, title: e.title, name: e.title, city: e.city, country: e.country, imageUrl: e.imageUrl, category: e.communityId, description: e.description, venue: e.venue, language: 'English', genre: [e.communityId], posterUrl: e.imageUrl, priceRange: '$$', location: e.venue, priceLabel: '$25' }));
 }
 const movies = mapCollection('m');
 const restaurants = mapCollection('r');
@@ -2708,7 +2745,7 @@ const fallbackActivities: AppActivity[] = events.slice(0, 16).map((e, i) => ({
   id: `a-${i + 1}`,
   name: e.title,
   description: e.description,
-  category: e.category ?? e.communityTag ?? 'Activity',
+  category: e.category ?? e.communityId ?? 'Activity',
   duration: '2-3 Hours',
   ageGroup: 'All Ages',
   city: e.city,
@@ -5378,7 +5415,7 @@ app.get('/api/discover/trending', (req, res) => {
   const tagWeights = profile?.culturalTagWeights ?? {};
   const active = events.filter((e) => !e.deletedAt);
   const sorted = active.map((e) => {
-    const tags = [...(e.cultureTag ?? []), e.communityTag].map((t) => t?.toLowerCase()).filter(Boolean);
+    const tags = [...(e.cultureTag ?? []), e.communityId].map((t) => t?.toLowerCase()).filter(Boolean);
     const tagBoost = tags.some((t) => t && tagWeights[t] != null) ? 10 : 0;
     return { event: e, score: (e.organizerReputationScore ?? 50) + tagBoost };
   }).sort((a, b) => b.score - a.score).slice(0, 10).map((s) => s.event);
@@ -5451,7 +5488,7 @@ app.get('/api/discover/:userId', async (req, res) => {
     const eventText = buildEventText(event);
 
     // Cultural tag affinity
-    const eventTags = [...(event.cultureTag ?? []), event.communityTag].map((t) => t?.toLowerCase()).filter(Boolean);
+    const eventTags = [...(event.cultureTag ?? []), event.communityId].map((t) => t?.toLowerCase()).filter(Boolean);
     let tagScore = 0;
     for (const tag of eventTags) {
       if (tag && tagWeights[tag] != null) tagScore = Math.max(tagScore, tagWeights[tag]);
@@ -5577,7 +5614,7 @@ app.post('/api/discover/feedback', (req, res) => {
     const delta = signal === 'up' ? 0.1 : -0.05;
     const newTagWeights = { ...current.culturalTagWeights };
     const newTypeWeights = { ...current.eventTypeWeights };
-    for (const tag of [...(event.cultureTag ?? []), event.communityTag]) {
+    for (const tag of [...(event.cultureTag ?? []), event.communityId]) {
       if (tag) { const key = tag.toLowerCase(); newTagWeights[key] = Math.max(0, Math.min(1, (newTagWeights[key] ?? 0.5) + delta)); }
     }
     if (event.eventType) { const key = event.eventType.toLowerCase(); newTypeWeights[key] = Math.max(0, Math.min(1, (newTypeWeights[key] ?? 0.5) + delta)); }
@@ -5593,7 +5630,7 @@ app.post('/api/discover/feedback', (req, res) => {
 app.get('/api/cultural-tags', (_req, res) => res.json(culturalTagStore));
 app.get('/api/cultural-tags/:slug/events', (req, res) => {
   const slug = req.params.slug.toLowerCase();
-  const matched = events.filter((e) => { if (e.deletedAt) return false; const tags = [...(e.cultureTag ?? []), e.communityTag].map((t) => t?.toLowerCase()).filter(Boolean); return tags.some((t) => t === slug || t?.replace(/\s+/g, '-') === slug); });
+  const matched = events.filter((e) => { if (e.deletedAt) return false; const tags = [...(e.cultureTag ?? []), e.communityId].map((t) => t?.toLowerCase()).filter(Boolean); return tags.some((t) => t === slug || t?.replace(/\s+/g, '-') === slug); });
   res.json(matched);
 });
 app.post('/api/cultural-tags', requireAuth, requireRole('admin'), (req, res) => {
@@ -5624,7 +5661,7 @@ app.get('/api/communities/:id/members', (req, res) => {
 app.get('/api/communities/:id/recommended-events', (req, res) => {
   const community = profiles.find((p) => p.id === qparam(req.params.id) && p.entityType === 'community');
   if (!community) return res.status(404).json({ error: 'Community not found' });
-  const communityEvents = events.filter((e) => !e.deletedAt && (e.communityTag?.toLowerCase() === community.category?.toLowerCase() || e.cultureTag?.some((t) => t.toLowerCase() === community.category?.toLowerCase())));
+  const communityEvents = events.filter((e) => !e.deletedAt && (e.communityId?.toLowerCase() === community.category?.toLowerCase() || e.cultureTag?.some((t) => t.toLowerCase() === community.category?.toLowerCase())));
   res.json(communityEvents.slice(0, 10));
 });
 app.get('/api/users/:id/communities', (req, res) => {

@@ -11,7 +11,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { manipulateAsync, SaveFormat } from '@/lib/image-manipulator';
 import { fetch } from 'expo/fetch';
 import { useAuth } from '@/lib/auth';
-import { useColors } from '@/hooks/useColors';
+import { CultureTokens } from '@/constants/theme';
 
 interface UserData {
   id: string;
@@ -42,7 +42,6 @@ export default function EditProfileScreen() {
   const insets     = useSafeAreaInsets();
   const webTop     = 0;
   const webBottom  = Platform.OS === 'web' ? 34 : 0;
-  const colors     = useColors();
   const { userId } = useAuth();
 
   const { data: user } = useQuery<UserData>({
@@ -82,11 +81,7 @@ export default function EditProfileScreen() {
   function buildValidatedImageUrl(imageUri: string): string {
     try {
       const url = new URL(imageUri);
-      
-      if (!['data:', 'blob:', 'file:'].includes(url.protocol)) {
-        throw new Error('Invalid protocol');
-      }
-      
+      if (!['data:', 'blob:', 'file:'].includes(url.protocol)) throw new Error('Invalid protocol');
       return url.href;
     } catch {
       throw new Error('Invalid URL');
@@ -102,11 +97,7 @@ export default function EditProfileScreen() {
 
       let uploadUri = uri;
       try {
-        const jpegFormat =
-          SaveFormat && typeof SaveFormat === 'object' && 'JPEG' in SaveFormat
-            ? SaveFormat.JPEG
-            : undefined;
-
+        const jpegFormat = SaveFormat && typeof SaveFormat === 'object' && 'JPEG' in SaveFormat ? SaveFormat.JPEG : undefined;
         const processed = await manipulateAsync(
           uri,
           actions,
@@ -127,14 +118,10 @@ export default function EditProfileScreen() {
         formData.append('image', blob as unknown as Blob, 'profile.jpg');
       } else {
         const mimeType = uploadUri.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
-        formData.append('image', {
-          uri: uploadUri,
-          name: 'profile.jpg',
-          type: mimeType,
-        } as unknown as Blob);
+        formData.append('image', { uri: uploadUri, name: 'profile.jpg', type: mimeType } as unknown as Blob);
       }
 
-      const base      = getApiUrl();
+      const base = getApiUrl();
       const uploadRes = await fetch(`${base}api/uploads/image`, { method: 'POST', body: formData });
       if (!uploadRes.ok) throw new Error('Upload failed');
       return uploadRes.json() as Promise<UploadedImage>;
@@ -226,18 +213,16 @@ export default function EditProfileScreen() {
 
   const isBusy = updateMutation.isPending || uploadMutation.isPending;
 
-  const inputStyle = [s.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.borderLight }];
-
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={90}>
-      <View style={[s.container, { paddingTop: insets.top + webTop, backgroundColor: colors.background }]}>
+      <View style={[s.container, { paddingTop: insets.top + webTop }]}>
         <View style={s.header}>
-          <Pressable onPress={() => router.back()} style={[s.backBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-            <Ionicons name="close" size={24} color={colors.text} />
+          <Pressable onPress={() => router.back()} style={s.backBtn}>
+            <Ionicons name="close" size={24} color="#FFFFFF" />
           </Pressable>
-          <Text style={[s.headerTitle, { color: colors.text }]}>Edit Profile</Text>
-          <Pressable onPress={handleSave} disabled={isBusy} style={[s.saveBtn, { backgroundColor: colors.primary }]}>
-            <Text style={[s.saveBtnText, { color: colors.textInverse }, isBusy && { opacity: 0.5 }]}> 
+          <Text style={s.headerTitle}>Edit Profile</Text>
+          <Pressable onPress={handleSave} disabled={isBusy} style={s.saveBtn}>
+            <Text style={[s.saveBtnText, isBusy && { opacity: 0.5 }]}> 
               {isBusy ? 'Saving...' : 'Save'}
             </Text>
           </Pressable>
@@ -251,26 +236,26 @@ export default function EditProfileScreen() {
           {/* Avatar */}
           <View style={s.avatarSection}>
             <View
-              style={[s.avatarDropZone, { borderColor: colors.borderLight }]}
+              style={s.avatarDropZone}
               {...(Platform.OS === 'web' ? { onDrop: handleDropForWeb, onDragOver: (e: { preventDefault: () => void }) => e.preventDefault() } : {}) as object}
             >
               {avatarUri ? (
                 <Image source={{ uri: avatarUri }} style={s.avatarImage} />
               ) : (
-                <View style={[s.avatar, { backgroundColor: colors.primaryGlow, borderColor: colors.primary + '30' }]}>
-                  <Ionicons name="person" size={40} color={colors.primary} />
+                <View style={s.avatar}>
+                  <Ionicons name="person" size={40} color={CultureTokens.indigo} />
                 </View>
               )}
             </View>
 
             <View style={s.photoActionsRow}>
-              <Pressable style={[s.changePhotoBtn, { backgroundColor: colors.primaryGlow }]} onPress={handleChoosePhoto}>
-                <Ionicons name="camera" size={16} color={colors.primary} />
-                <Text style={[s.changePhotoText, { color: colors.primary }]}>Pick Photo</Text>
+              <Pressable style={s.changePhotoBtn} onPress={handleChoosePhoto}>
+                <Ionicons name="camera" size={16} color={CultureTokens.indigo} />
+                <Text style={s.changePhotoText}>Pick Photo</Text>
               </Pressable>
-              <Pressable style={[s.changePhotoBtn, { backgroundColor: colors.primaryGlow }]} onPress={() => setAvatarRotation(p => (p + 90) % 360)}>
-                <Ionicons name="refresh" size={16} color={colors.primary} />
-                <Text style={[s.changePhotoText, { color: colors.primary }]}>Rotate</Text>
+              <Pressable style={s.changePhotoBtn} onPress={() => setAvatarRotation(p => (p + 90) % 360)}>
+                <Ionicons name="refresh" size={16} color={CultureTokens.indigo} />
+                <Text style={s.changePhotoText}>Rotate</Text>
               </Pressable>
             </View>
 
@@ -278,93 +263,93 @@ export default function EditProfileScreen() {
               {(['original', 'large', 'medium'] as const).map((preset) => (
                 <Pressable
                   key={preset}
-                  style={[s.resizeChip, { borderColor: colors.borderLight }, avatarScale === preset && { backgroundColor: colors.primaryGlow, borderColor: colors.primary }]}
+                  style={[s.resizeChip, avatarScale === preset && s.resizeChipActive]}
                   onPress={() => setAvatarScale(preset)}
                 >
-                  <Text style={[s.resizeChipText, { color: avatarScale === preset ? colors.primary : colors.text }]}>{preset}</Text>
+                  <Text style={[s.resizeChipText, avatarScale === preset && s.resizeChipTextActive]}>{preset}</Text>
                 </Pressable>
               ))}
             </View>
 
-            {isBusy && <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 8 }} />}
-              {Platform.OS === 'web' && <Text style={[s.dragHint, { color: colors.text }]}>Tip: Drag & drop image here on web.</Text>}
+            {isBusy && <ActivityIndicator size="small" color={CultureTokens.indigo} style={{ marginTop: 8 }} />}
+              {Platform.OS === 'web' && <Text style={s.dragHint}>Tip: Drag & drop image here on web.</Text>}
           </View>
 
           {/* Personal info */}
           <View style={s.formSection}>
-            <Text style={[s.sectionLabel, { color: colors.text }]}>Personal Information</Text>
+            <Text style={s.sectionLabel}>Personal Information</Text>
 
-            <Text style={[s.fieldLabel, { color: colors.text }]}>Display Name *</Text>
-            <TextInput style={inputStyle} value={form.displayName} onChangeText={v => setForm(p => ({ ...p, displayName: v }))}
-              placeholder="Your full name" placeholderTextColor={colors.textSecondary} />
+            <Text style={s.fieldLabel}>Display Name *</Text>
+            <TextInput style={s.input} value={form.displayName} onChangeText={v => setForm(p => ({ ...p, displayName: v }))}
+              placeholder="Your full name" placeholderTextColor="rgba(255,255,255,0.4)" />
 
-            <Text style={[s.fieldLabel, { color: colors.text }]}>Email</Text>
-            <TextInput style={inputStyle} value={form.email} onChangeText={v => setForm(p => ({ ...p, email: v }))}
-              placeholder="your@email.com" placeholderTextColor={colors.textSecondary} keyboardType="email-address" autoCapitalize="none" />
+            <Text style={s.fieldLabel}>Email</Text>
+            <TextInput style={s.input} value={form.email} onChangeText={v => setForm(p => ({ ...p, email: v }))}
+              placeholder="your@email.com" placeholderTextColor="rgba(255,255,255,0.4)" keyboardType="email-address" autoCapitalize="none" />
 
-            <Text style={[s.fieldLabel, { color: colors.text }]}>Phone</Text>
-            <TextInput style={inputStyle} value={form.phone} onChangeText={v => setForm(p => ({ ...p, phone: v }))}
-              placeholder="+61 400 000 000" placeholderTextColor={colors.textSecondary} keyboardType="phone-pad" />
+            <Text style={s.fieldLabel}>Phone</Text>
+            <TextInput style={s.input} value={form.phone} onChangeText={v => setForm(p => ({ ...p, phone: v }))}
+              placeholder="+61 400 000 000" placeholderTextColor="rgba(255,255,255,0.4)" keyboardType="phone-pad" />
 
-            <Text style={[s.fieldLabel, { color: colors.text }]}>Bio</Text>
-            <TextInput style={[...inputStyle, s.bioInput]} value={form.bio} onChangeText={v => setForm(p => ({ ...p, bio: v }))}
-              placeholder="Tell us about yourself..." placeholderTextColor={colors.textSecondary} multiline numberOfLines={4} textAlignVertical="top" maxLength={280} />
-            <Text style={[s.charCount, { color: colors.textSecondary }]}>{form.bio.length}/280</Text>
+            <Text style={s.fieldLabel}>Bio</Text>
+            <TextInput style={[s.input, s.bioInput]} value={form.bio} onChangeText={v => setForm(p => ({ ...p, bio: v }))}
+              placeholder="Tell us about yourself..." placeholderTextColor="rgba(255,255,255,0.4)" multiline numberOfLines={4} textAlignVertical="top" maxLength={280} />
+            <Text style={s.charCount}>{form.bio.length}/280</Text>
           </View>
 
           {/* Location */}
           <View style={s.formSection}>
-            <Text style={[s.sectionLabel, { color: colors.text }]}>Location</Text>
+            <Text style={s.sectionLabel}>Location</Text>
 
             <View style={s.rowFields}>
               <View style={s.halfField}>
-                <Text style={[s.fieldLabel, { color: colors.text }]}>City</Text>
-                <TextInput style={inputStyle} value={form.city} onChangeText={v => setForm(p => ({ ...p, city: v }))}
-                  placeholder="Sydney" placeholderTextColor={colors.textSecondary} />
+                <Text style={s.fieldLabel}>City</Text>
+                <TextInput style={s.input} value={form.city} onChangeText={v => setForm(p => ({ ...p, city: v }))}
+                  placeholder="Sydney" placeholderTextColor="rgba(255,255,255,0.4)" />
               </View>
 
               <View style={s.halfField}>
-                <Text style={[s.fieldLabel, { color: colors.text }]}>State</Text>
-                <TextInput style={inputStyle} value={form.state} onChangeText={v => setForm(p => ({ ...p, state: v }))}
-                  placeholder="NSW" placeholderTextColor={colors.textSecondary} autoCapitalize="characters" />
+                <Text style={s.fieldLabel}>State</Text>
+                <TextInput style={s.input} value={form.state} onChangeText={v => setForm(p => ({ ...p, state: v }))}
+                  placeholder="NSW" placeholderTextColor="rgba(255,255,255,0.4)" autoCapitalize="characters" />
               </View>
             </View>
 
             <View style={s.rowFields}>
               <View style={s.halfField}>
-                <Text style={[s.fieldLabel, { color: colors.text }]}>Postcode</Text>
-                <TextInput style={inputStyle} value={form.postcode} onChangeText={v => setForm(p => ({ ...p, postcode: v }))}
-                  placeholder="2000" placeholderTextColor={colors.textSecondary} keyboardType="number-pad" />
+                <Text style={s.fieldLabel}>Postcode</Text>
+                <TextInput style={s.input} value={form.postcode} onChangeText={v => setForm(p => ({ ...p, postcode: v }))}
+                  placeholder="2000" placeholderTextColor="rgba(255,255,255,0.4)" keyboardType="number-pad" />
               </View>
 
               <View style={s.halfField}>
-                <Text style={[s.fieldLabel, { color: colors.text }]}>Country</Text>
-                <TextInput style={inputStyle} value={form.country} onChangeText={v => setForm(p => ({ ...p, country: v }))}
-                  placeholder="Australia" placeholderTextColor={colors.textSecondary} />
+                <Text style={s.fieldLabel}>Country</Text>
+                <TextInput style={s.input} value={form.country} onChangeText={v => setForm(p => ({ ...p, country: v }))}
+                  placeholder="Australia" placeholderTextColor="rgba(255,255,255,0.4)" />
               </View>
             </View>
           </View>
 
           {/* Social links */}
           <View style={s.formSection}>
-            <Text style={[s.sectionLabel, { color: colors.text }]}>Social Links</Text>
+            <Text style={s.sectionLabel}>Social Links</Text>
 
             {[
               { icon: 'logo-instagram', color: '#E4405F', field: 'instagram' as const, placeholder: 'Instagram URL' },
               { icon: 'logo-twitter',   color: '#1DA1F2', field: 'twitter'   as const, placeholder: 'Twitter URL'   },
               { icon: 'logo-linkedin',  color: '#0A66C2', field: 'linkedin'  as const, placeholder: 'LinkedIn URL'  },
-              { icon: 'globe-outline',  color: colors.primary, field: 'website' as const, placeholder: 'Website URL' },
+              { icon: 'globe-outline',  color: CultureTokens.indigo, field: 'website' as const, placeholder: 'Website URL' },
             ].map(({ icon, color, field, placeholder }) => (
               <View key={field} style={s.socialRow}>
                 <View style={[s.socialIcon, { backgroundColor: color + '15' }]}>
                   <Ionicons name={icon as never} size={18} color={color} />
                 </View>
                 <TextInput
-                  style={[...inputStyle, { flex: 1 }]}
+                  style={[s.input, { flex: 1, marginTop: 0 }]}
                   value={form[field]}
                   onChangeText={v => setForm(p => ({ ...p, [field]: v }))}
                   placeholder={placeholder}
-                  placeholderTextColor={colors.textSecondary}
+                  placeholderTextColor="rgba(255,255,255,0.4)"
                   autoCapitalize="none"
                 />
               </View>
@@ -377,31 +362,33 @@ export default function EditProfileScreen() {
 }
 
 const s = StyleSheet.create({
-  container:        { flex: 1 },
-  header:           { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
-  backBtn:          { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-  headerTitle:      { fontSize: 18, fontFamily: 'Poppins_700Bold' },
-  saveBtn:          { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 },
-  saveBtnText:      { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
-  avatarSection:    { alignItems: 'center', paddingVertical: 20 },
-  avatarDropZone:   { borderWidth: 1, borderStyle: 'dashed', borderRadius: 60, padding: 6, marginBottom: 10 },
-  avatar:           { width: 100, height: 100, borderRadius: 50, alignItems: 'center', justifyContent: 'center', borderWidth: 3 },
+  container:        { flex: 1, backgroundColor: '#0B0B14' },
+  header:           { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12, zIndex: 10 },
+  backBtn:          { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  headerTitle:      { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+  saveBtn:          { paddingHorizontal: 24, paddingVertical: 12, borderRadius: 20, backgroundColor: CultureTokens.indigo },
+  saveBtnText:      { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
+  avatarSection:    { alignItems: 'center', paddingVertical: 24, paddingHorizontal: 20 },
+  avatarDropZone:   { borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(255,255,255,0.2)', borderRadius: 60, padding: 6, marginBottom: 16, backgroundColor: 'rgba(255,255,255,0.02)' },
+  avatar:           { width: 100, height: 100, borderRadius: 50, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: CultureTokens.indigo + '40', backgroundColor: CultureTokens.indigo + '15' },
   avatarImage:      { width: 100, height: 100, borderRadius: 50 },
-  photoActionsRow:  { flexDirection: 'row', gap: 10 },
-  changePhotoBtn:   { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
-  changePhotoText:  { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
-  resizeRow:        { flexDirection: 'row', gap: 8, marginTop: 10 },
-  resizeChip:       { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, borderWidth: 1 },
-  resizeChipText:   { fontSize: 12, fontFamily: 'Poppins_500Medium', textTransform: 'capitalize' as const },
-  dragHint:         { marginTop: 8, fontSize: 11, fontFamily: 'Poppins_400Regular' },
-  formSection:      { paddingHorizontal: 20, marginBottom: 24 },
-  sectionLabel:     { fontSize: 16, fontFamily: 'Poppins_700Bold', marginBottom: 12 },
-  fieldLabel:       { fontSize: 13, fontFamily: 'Poppins_600SemiBold', marginBottom: 6, marginTop: 12 },
-  input:            { borderRadius: 12, padding: 14, fontSize: 15, fontFamily: 'Poppins_400Regular', borderWidth: 1 },
-  bioInput:         { minHeight: 100, paddingTop: 14 },
-  charCount:        { fontSize: 11, fontFamily: 'Poppins_400Regular', textAlign: 'right', marginTop: 4 },
-  rowFields:        { flexDirection: 'row', gap: 12 },
+  photoActionsRow:  { flexDirection: 'row', gap: 12 },
+  changePhotoBtn:   { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 16, backgroundColor: CultureTokens.indigo + '15' },
+  changePhotoText:  { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.indigo },
+  resizeRow:        { flexDirection: 'row', gap: 8, marginTop: 14 },
+  resizeChip:       { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'transparent' },
+  resizeChipActive: { backgroundColor: CultureTokens.indigo + '20', borderColor: CultureTokens.indigo },
+  resizeChipText:   { fontSize: 12, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.6)', textTransform: 'capitalize' as const },
+  resizeChipTextActive: { color: CultureTokens.indigo },
+  dragHint:         { marginTop: 12, fontSize: 12, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.5)' },
+  formSection:      { paddingHorizontal: 20, marginBottom: 28 },
+  sectionLabel:     { fontSize: 18, fontFamily: 'Poppins_700Bold', marginBottom: 16, color: '#FFFFFF' },
+  fieldLabel:       { fontSize: 13, fontFamily: 'Poppins_600SemiBold', marginBottom: 8, marginTop: 16, color: 'rgba(255,255,255,0.8)' },
+  input:            { borderRadius: 16, padding: 16, fontSize: 15, fontFamily: 'Poppins_400Regular', borderWidth: 1, backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.1)', color: '#FFFFFF' },
+  bioInput:         { minHeight: 120, paddingTop: 16 },
+  charCount:        { fontSize: 11, fontFamily: 'Poppins_400Regular', textAlign: 'right', marginTop: 6, color: 'rgba(255,255,255,0.4)' },
+  rowFields:        { flexDirection: 'row', gap: 14 },
   halfField:        { flex: 1 },
-  socialRow:        { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10 },
-  socialIcon:       { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  socialRow:        { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 16 },
+  socialIcon:       { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
 });

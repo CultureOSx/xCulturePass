@@ -41,8 +41,8 @@ const PERK_CATEGORIES = ['tickets', 'events', 'dining', 'shopping', 'wallet'];
 const initialForm = {
   name: '', description: '', city: '', state: '', postcode: '', country: 'Australia', contactEmail: '', phone: '',
   website: '', category: '', abn: '', socialMedia: '', date: '', time: '',
-  venue: '', address: '', price: '', capacity: '', perkType: '',
-  discountValue: '', providerName: '', perkCategory: '',
+  venue: '', address: '', price: '', capacity: '', externalTicketUrl: '', perkType: '',
+  discountValue: '', providerName: '', perkCategory: '', communityId: '',
 };
 
 type DerivedLocation = {
@@ -202,7 +202,9 @@ export default function SubmitScreen() {
         contactEmail: form.contactEmail.trim() || null,
         priceCents: form.price.trim() ? Math.round(Number(form.price.trim()) * 100) : 0,
         capacity: form.capacity.trim() ? Number(form.capacity.trim()) : null,
+        externalTicketUrl: form.externalTicketUrl.trim() || null,
         isFree: !form.price.trim() || Number(form.price.trim()) <= 0,
+        communityId: form.communityId || null,
       });
     } else if (activeTab === 'perk') {
       if (!form.perkType) { Alert.alert('Required', 'Please select a perk type.'); return; }
@@ -385,6 +387,15 @@ export default function SubmitScreen() {
                     placeholder="100" placeholderTextColor={colors.textTertiary} keyboardType="numeric" />
                 </View>
               </View>
+              <Text style={[s.fieldLabel, { color: colors.textSecondary }]}>External Ticket Link (Optional)</Text>
+              <TextInput style={[s.input, { backgroundColor: colors.surface, borderColor: colors.borderLight, color: colors.text }]}
+                value={form.externalTicketUrl} onChangeText={v => setForm(p => ({ ...p, externalTicketUrl: v }))}
+                placeholder="https://..." placeholderTextColor={colors.textTertiary} keyboardType="url" autoCapitalize="none" />
+                
+              <Text style={[s.fieldLabel, { color: colors.textSecondary }]}>Community (Optional)</Text>
+              <TextInput style={[s.input, { backgroundColor: colors.surface, borderColor: colors.borderLight, color: colors.text }]}
+                value={form.communityId} onChangeText={v => setForm(p => ({ ...p, communityId: v }))}
+                placeholder="Enter Community ID" placeholderTextColor={colors.textTertiary} />
             </View>
           )}
 
@@ -441,7 +452,7 @@ export default function SubmitScreen() {
           )}
 
           {/* Location */}
-          {(activeTab !== 'event' && activeTab !== 'perk') && (
+          {activeTab !== 'perk' && (
             <View style={s.formSection}>
               <Text style={[s.sectionLabel, { color: colors.text }]}>Location</Text>
               <View style={s.rowFields}>

@@ -1,7 +1,7 @@
 import { View, Text, Pressable, StyleSheet, ScrollView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useColors } from '@/hooks/useColors';
+import { CultureTokens } from '@/constants/theme';
 import { router } from 'expo-router';
 
 const SECTIONS = [
@@ -22,32 +22,31 @@ const SECTIONS = [
 export default function PrivacyScreen() {
   const insets = useSafeAreaInsets();
   const webTop = 0;
-  const colors = useColors();
 
   return (
-    <View style={[s.container, { paddingTop: insets.top + webTop, backgroundColor: colors.background }]}>
+    <View style={[s.container, { paddingTop: insets.top + webTop }]}>
       <View style={s.header}>
-        <Pressable onPress={() => router.back()} style={[s.backBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
+        <Pressable onPress={() => router.back()} style={s.backBtn}>
+          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
         </Pressable>
-        <Text style={[s.headerTitle, { color: colors.text }]}>Privacy Policy</Text>
-        <View style={{ width: 40 }} />
+        <Text style={s.headerTitle}>Privacy Policy</Text>
+        <View style={{ width: 44 }} />
       </View>
 
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 40 + (Platform.OS === 'web' ? 34 : insets.bottom) }} showsVerticalScrollIndicator={false}>
-        <View style={[s.intro, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-          <View style={[s.iconWrap, { backgroundColor: colors.success + '15' }]}>
-            <Ionicons name="shield-checkmark" size={28} color={colors.success} />
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 40 + (Platform.OS === 'web' ? 34 : insets.bottom), paddingTop: 10 }} showsVerticalScrollIndicator={false}>
+        <View style={s.intro}>
+          <View style={s.iconWrap}>
+            <Ionicons name="shield-checkmark" size={28} color={CultureTokens.success} />
           </View>
-          <Text style={[s.introTitle, { color: colors.text }]}>Privacy Policy</Text>
-          <Text style={[s.introDate, { color: colors.primary }]}>Last updated: 1 February 2026</Text>
-          <Text style={[s.introPara, { color: colors.text }]}>CulturePass Pty Ltd (&quot;we&quot;, &quot;our&quot;, &quot;us&quot;) is committed to protecting your privacy. This policy explains how we collect, use, and safeguard your personal information.</Text>
+          <Text style={s.introTitle}>Privacy Policy</Text>
+          <Text style={s.introDate}>Last updated: 1 February 2026</Text>
+          <Text style={s.introPara}>CulturePass Pty Ltd (&quot;we&quot;, &quot;our&quot;, &quot;us&quot;) is committed to protecting your privacy. This policy explains how we collect, use, and safeguard your personal information.</Text>
         </View>
 
         {SECTIONS.map((sec, i) => (
           <View key={i} style={s.section}>
-            <Text style={[s.sectionTitle, { color: colors.text }]}>{sec.title}</Text>
-            <Text style={[s.sectionBody, { color: colors.text }]}>{sec.body}</Text>
+            <Text style={s.sectionTitle}>{sec.title}</Text>
+            <Text style={s.sectionBody}>{sec.body}</Text>
           </View>
         ))}
       </ScrollView>
@@ -56,16 +55,16 @@ export default function PrivacyScreen() {
 }
 
 const s = StyleSheet.create({
-  container:    { flex: 1 },
+  container:    { flex: 1, backgroundColor: '#0B0B14' },
   header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
-  backBtn:      { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-  headerTitle:  { fontSize: 18, fontFamily: 'Poppins_700Bold' },
-  intro:        { marginHorizontal: 20, marginBottom: 24, borderRadius: 18, padding: 20, borderWidth: 1, alignItems: 'center' },
-  iconWrap:     { width: 56, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-  introTitle:   { fontSize: 20, fontFamily: 'Poppins_700Bold', marginBottom: 4 },
-  introDate:    { fontSize: 12, fontFamily: 'Poppins_500Medium', marginBottom: 12 },
-  introPara:    { fontSize: 13, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 20 },
-  section:      { marginHorizontal: 20, marginBottom: 16 },
-  sectionTitle: { fontSize: 15, fontFamily: 'Poppins_700Bold', marginBottom: 8 },
-  sectionBody:  { fontSize: 13, fontFamily: 'Poppins_400Regular', lineHeight: 21 },
+  backBtn:      { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  headerTitle:  { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+  intro:        { marginHorizontal: 20, marginBottom: 24, borderRadius: 20, padding: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.03)', alignItems: 'center' },
+  iconWrap:     { width: 60, height: 60, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 16, backgroundColor: CultureTokens.success + '15' },
+  introTitle:   { fontSize: 20, fontFamily: 'Poppins_700Bold', marginBottom: 4, color: '#FFFFFF' },
+  introDate:    { fontSize: 12, fontFamily: 'Poppins_500Medium', marginBottom: 14, color: CultureTokens.indigo },
+  introPara:    { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, color: 'rgba(255,255,255,0.7)' },
+  section:      { marginHorizontal: 20, marginBottom: 24 },
+  sectionTitle: { fontSize: 16, fontFamily: 'Poppins_700Bold', marginBottom: 8, color: '#FFFFFF', letterSpacing: 0.3 },
+  sectionBody:  { fontSize: 14, fontFamily: 'Poppins_400Regular', lineHeight: 24, color: 'rgba(255,255,255,0.6)' },
 });

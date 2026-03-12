@@ -1,5 +1,4 @@
 import React from 'react';
-import { QueryClientProvider } from '@tanstack/react-query';
 import {
   Platform,
   StyleSheet,
@@ -30,6 +29,7 @@ import { useColors } from '@/hooks/useColors';
 import { useRole } from '@/hooks/useRole';
 import { WebSidebar } from '@/components/web/WebSidebar';
 import { queryClient } from '@/lib/query-client';
+import { api } from '@/lib/api';
 
 // ---------------------------------------------------------------------------
 // Tab definitions
@@ -314,36 +314,49 @@ export default function TabLayout() {
     }
   }, [isWeb, pathname]);
 
+  // ⚡ Smart Data Prefetching: Prime the React Query cache
+  React.useEffect(() => {
+    // Prefetch general events (agnostic to city mostly initially)
+    queryClient.prefetchQuery({
+      queryKey: ['/api/events', undefined, undefined],
+      queryFn: async () => {
+         const { events } = await api.events.list({ pageSize: 50 });
+         return events ?? [];
+      },
+    });
+    // Prefetch communities
+    queryClient.prefetchQuery({
+      queryKey: ['/api/communities', undefined, undefined],
+      queryFn: () => api.communities.list({}),
+    });
+  }, []);
+
   // Desktop web: no sidebar, use top tab navigation for web-optimized parity
   if (isDesktop) {
     return (
-      <QueryClientProvider client={queryClient}>
-        <View style={{ flex: 1, overflow: 'hidden' }}>
-          <Tabs
-            initialRouteName="index"
-            screenOptions={{ headerShown: false }}
-            tabBar={Platform.OS === 'web' ? undefined : (props) => <CustomTabBar {...props} position="top" />}
-          >
-            <TabScreens />
-          </Tabs>
-        </View>
-      </QueryClientProvider>
+      <View style={{ flex: 1, overflow: 'hidden' }}>
+        <Tabs
+          initialRouteName="index"
+          screenOptions={{ headerShown: false }}
+          tabBar={Platform.OS === 'web' ? undefined : (props) => <CustomTabBar {...props} position="top" />}
+        >
+          <TabScreens />
+        </Tabs>
+      </View>
     );
   }
 
   // Mobile / tablet: bottom floating tab bar
   return (
-    <QueryClientProvider client={queryClient}>
-      <View style={{ flex: 1, overflow: 'hidden' }}>
-        <Tabs
-          initialRouteName="index"
-          screenOptions={{ headerShown: false }}
-          tabBar={(props) => <CustomTabBar {...props} position="bottom" />}
-        >
-          <TabScreens />
-        </Tabs>
-      </View>
-    </QueryClientProvider>
+    <View style={{ flex: 1, overflow: 'hidden' }}>
+      <Tabs
+        initialRouteName="index"
+        screenOptions={{ headerShown: false }}
+        tabBar={(props) => <CustomTabBar {...props} position="bottom" />}
+      >
+        <TabScreens />
+      </Tabs>
+    </View>
   );
 }
 
