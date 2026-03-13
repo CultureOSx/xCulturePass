@@ -1,9 +1,12 @@
+import { useColors } from '@/hooks/useColors';
 import { View, Text, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { styles } from '../styles';
+import { getStyles } from '../styles';
 import { CP } from '../constants';
 
 export function LoadingSkeleton({ topInset }: { topInset: number }) {
+  const colors = useColors();
+  const styles = getStyles(colors);
   return (
     <View style={styles.container}>
       <LinearGradient

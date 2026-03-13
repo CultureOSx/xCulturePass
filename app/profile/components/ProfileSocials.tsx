@@ -1,4 +1,5 @@
 import React from 'react';
+import { useColors } from '@/hooks/useColors';
 import { View, Pressable, StyleSheet, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -9,6 +10,8 @@ interface ProfileSocialsProps {
 }
 
 export function ProfileSocials({ activeSocials, socialLinks, entityColor }: ProfileSocialsProps) {
+  const colors = useColors();
+  const styles = getStyles(colors);
   if (activeSocials.length === 0) return null;
 
   return (
@@ -29,7 +32,7 @@ export function ProfileSocials({ activeSocials, socialLinks, entityColor }: Prof
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   socialRow: {
     flexDirection: 'row',
     paddingHorizontal: 20,

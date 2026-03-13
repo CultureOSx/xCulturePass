@@ -15,9 +15,11 @@ const NOTIFICATION_SETTINGS = [
 ];
 
 export default function NotificationSettingsScreen() {
+  const colors = useColors();
+  const styles = getStyles(colors);
   const insets = useSafeAreaInsets();
   const webTop = 0;
-  const colors = useColors();
+  
   const [settings, setSettings] = useState<Record<string, boolean>>({
     eventReminders:   true,
     communityUpdates: true,
@@ -38,35 +40,35 @@ export default function NotificationSettingsScreen() {
   };
 
   return (
-    <View style={[s.container, { paddingTop: insets.top + webTop, backgroundColor: colors.background }]}>
-      <View style={s.header}>
-        <Pressable style={[s.backBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]} onPress={() => router.back()}>
+    <View style={[styles.container, { paddingTop: insets.top + webTop, backgroundColor: colors.background }]}>
+      <View style={styles.header}>
+        <Pressable style={[styles.backBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={22} color={colors.text} />
         </Pressable>
-        <Text style={[s.headerTitle, { color: colors.text }]}>Notifications</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Notifications</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 + (Platform.OS === 'web' ? 34 : insets.bottom) }}>
         {/* Hero */}
-        <LinearGradient colors={[colors.warning, colors.error]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.heroCard}>
-          <View style={s.heroIconWrap}>
+        <LinearGradient colors={[colors.warning, colors.error]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.heroCard}>
+          <View style={styles.heroIconWrap}>
             <Ionicons name="notifications" size={30} color={colors.textInverse} />
           </View>
-          <Text style={[s.heroTitle, { color: colors.textInverse }]}>Notification Preferences</Text>
-          <Text style={[s.heroSub, { color: colors.textInverse }]}>Choose what updates you want to receive</Text>
+          <Text style={[styles.heroTitle, { color: colors.textInverse }]}>Notification Preferences</Text>
+          <Text style={[styles.heroSub, { color: colors.textInverse }]}>Choose what updates you want to receive</Text>
         </LinearGradient>
 
-        <View style={s.section}>
+        <View style={styles.section}>
           {NOTIFICATION_SETTINGS.map((item) => (
-            <View key={item.key} style={[s.settingCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
-              <View style={s.settingRow}>
-                <View style={[s.settingIcon, { backgroundColor: resolveColor(item.colorKey) + '15' }]}> 
+            <View key={item.key} style={[styles.settingCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+              <View style={styles.settingRow}>
+                <View style={[styles.settingIcon, { backgroundColor: resolveColor(item.colorKey) + '15' }]}> 
                   <Ionicons name={item.icon} size={20} color={resolveColor(item.colorKey)} />
                 </View>
-                <View style={s.settingInfo}>
-                  <Text style={[s.settingTitle, { color: colors.text }]}>{item.title}</Text>
-                  <Text style={[s.settingDesc, { color: colors.text }]}>{item.description}</Text>
+                <View style={styles.settingInfo}>
+                  <Text style={[styles.settingTitle, { color: colors.text }]}>{item.title}</Text>
+                  <Text style={[styles.settingDesc, { color: colors.text }]}>{item.description}</Text>
                 </View>
                 <Switch
                   value={settings[item.key]}
@@ -79,9 +81,9 @@ export default function NotificationSettingsScreen() {
           ))}
         </View>
 
-        <View style={s.note}>
+        <View style={styles.note}>
           <Ionicons name="information-circle-outline" size={18} color={colors.textSecondary} />
-          <Text style={[s.noteText, { color: colors.textSecondary }]}> 
+          <Text style={[styles.noteText, { color: colors.textSecondary }]}> 
             You can change these preferences at any time. Critical account and security notifications will always be sent.
           </Text>
         </View>
@@ -90,7 +92,7 @@ export default function NotificationSettingsScreen() {
   );
 }
 
-const s = StyleSheet.create({
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   container:    { flex: 1 },
   header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
   backBtn:      { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },

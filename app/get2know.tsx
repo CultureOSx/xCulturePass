@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { useColors } from '@/hooks/useColors';
 import { CultureTokens } from '@/constants/theme';
 
 const HERO_IMAGE =
@@ -76,6 +77,8 @@ const STACK = [
 ] as const;
 
 export default function Get2KnowPage() {
+  const colors = useColors();
+  const styles = getStyles(colors);
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
@@ -102,11 +105,11 @@ export default function Get2KnowPage() {
         contentContainerStyle={{ paddingBottom: insets.bottom + 56 }}
       >
         <ImageBackground source={{ uri: HERO_IMAGE }} style={styles.heroBg}>
-          <LinearGradient colors={['rgba(11,11,20,0.8)', 'rgba(11,11,20,0.4)', '#0B0B14']} style={styles.heroOverlay}>
+          <LinearGradient colors={['rgba(11,11,20,0.8)', 'rgba(11,11,20,0.4)', colors.background]} style={styles.heroOverlay}>
             <View style={[styles.container, { paddingHorizontal: sidePad }]}> 
               <View style={[styles.heroContent, { paddingTop: isDesktop ? 160 : 120, paddingBottom: isDesktop ? 160 : 96 }]}> 
                 <Pressable onPress={() => router.back()} style={styles.backBtn}>
-                  <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+                  <Ionicons name="chevron-back" size={24} color={colors.text} />
                   <Text style={styles.backBtnText}>Back</Text>
                 </Pressable>
                 
@@ -140,7 +143,7 @@ export default function Get2KnowPage() {
                     <Ionicons name="qr-code-outline" size={32} color={CultureTokens.indigo} />
                   </View>
                   <View style={styles.qrPreview}>
-                    <Ionicons name="qr-code" size={140} color="#FFFFFF" />
+                    <Ionicons name="qr-code" size={140} color={colors.text} />
                   </View>
                   <View style={styles.qrActions}>
                     <Button variant="primary" fullWidth onPress={shareQrPromo}>
@@ -156,7 +159,7 @@ export default function Get2KnowPage() {
           </LinearGradient>
         </ImageBackground>
 
-        <Section title="Culture Is Fragmented" spacing={sectionY} sidePad={sidePad}>
+        <Section title="Culture Is Fragmented" spacing={sectionY} sidePad={sidePad} colors={colors}>
           <View style={[styles.split, isDesktop && styles.splitDesktop]}>
             <View style={styles.splitCol}>
               {PROBLEMS.map((item) => (
@@ -171,7 +174,7 @@ export default function Get2KnowPage() {
           </View>
         </Section>
 
-        <Section title="One App. Entire Ecosystem." subtitle="Social + Commerce + Governance in one unified system." spacing={sectionY} sidePad={sidePad} surface>
+        <Section title="One App. Entire Ecosystem." subtitle="Social + Commerce + Governance in one unified system." spacing={sectionY} sidePad={sidePad} colors={colors} surface>
           <View style={[styles.grid4, isDesktop && styles.grid4Desktop]}>
             {ECOSYSTEM.map((block) => (
               <Card key={block.title} style={styles.ecoCard} padding={24}>
@@ -187,7 +190,7 @@ export default function Get2KnowPage() {
           </View>
         </Section>
 
-        <Section title="How It Works" spacing={sectionY} sidePad={sidePad} centered>
+        <Section title="How It Works" spacing={sectionY} sidePad={sidePad} colors={colors} centered>
           <View style={[styles.stepsWrap, isDesktop && styles.stepsWrapDesktop]}>
             {STEPS.map((step, index) => (
               <View key={step.title} style={styles.stepCard}>
@@ -201,7 +204,7 @@ export default function Get2KnowPage() {
           </View>
         </Section>
 
-        <Section title="Product Preview" subtitle="Core screens: Home, Calendar, Map Radius, Event Detail, Wallet, Artist Profile, Sponsor Profile" spacing={sectionY} sidePad={sidePad}>
+        <Section title="Product Preview" subtitle="Core screens: Home, Calendar, Map Radius, Event Detail, Wallet, Artist Profile, Sponsor Profile" spacing={sectionY} sidePad={sidePad} colors={colors}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.previewRow}>
             {PREVIEW_IMAGES.map((src, i) => (
               <Image key={i} source={{ uri: src }} style={styles.previewImage} />
@@ -212,7 +215,7 @@ export default function Get2KnowPage() {
           </View>
         </Section>
 
-        <Section spacing={sectionY} sidePad={sidePad}>
+        <Section spacing={sectionY} sidePad={sidePad} colors={colors}>
           <View style={[styles.split, isDesktop && styles.splitDesktop]}>
             <Card style={styles.splitPanel} padding={26}>
               <View style={[styles.ecoIconWrap, { backgroundColor: CultureTokens.indigo + '15', marginBottom: 16 }]}>
@@ -233,7 +236,7 @@ export default function Get2KnowPage() {
           </View>
         </Section>
 
-        <Section title="Secure & Transparent Payments" subtitle="Powered by Stripe Connect: Gross → Stripe Fee → Platform Commission → City Share → Organizer Net" spacing={sectionY} sidePad={sidePad}>
+        <Section title="Secure & Transparent Payments" subtitle="Powered by Stripe Connect: Gross → Stripe Fee → Platform Commission → City Share → Organizer Net" spacing={sectionY} sidePad={sidePad} colors={colors}>
           <View style={styles.monetizationList}>
             {MONETIZATION.map((item) => (
               <View key={item} style={styles.bulletRow}>
@@ -244,7 +247,7 @@ export default function Get2KnowPage() {
           </View>
         </Section>
 
-        <Section title="Vision" subtitle="Not just events. Infrastructure." spacing={sectionY} sidePad={sidePad}>
+        <Section title="Vision" subtitle="Not just events. Infrastructure." spacing={sectionY} sidePad={sidePad} colors={colors}>
           <Card padding={28}>
             <Text style={styles.vision}>CulturePass is building the global diaspora operating system — Multi-City, Multi-Community, Multi-Country, Franchise-Ready.</Text>
           </Card>
@@ -272,23 +275,8 @@ export default function Get2KnowPage() {
   );
 }
 
-function Section({
-  title,
-  subtitle,
-  spacing,
-  sidePad,
-  surface,
-  centered,
-  children,
-}: {
-  title?: string;
-  subtitle?: string;
-  spacing: number;
-  sidePad: number;
-  surface?: boolean;
-  centered?: boolean;
-  children: React.ReactNode;
-}) {
+function Section({ title, subtitle, spacing, sidePad, surface, centered, children, colors }: { title?: string; subtitle?: string; spacing: number; sidePad: number; surface?: boolean; centered?: boolean; children: React.ReactNode; colors: ReturnType<typeof useColors>; }) {
+  const styles = getStyles(colors);
   return (
     <View style={[surface ? styles.surfaceSection : undefined, { marginTop: spacing }]}> 
       <View style={[styles.container, { paddingHorizontal: sidePad }]}> 
@@ -300,10 +288,10 @@ function Section({
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#0B0B14',
+    backgroundColor: colors.background,
   },
   container: {
     width: '100%',
@@ -326,20 +314,20 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: colors.surfaceElevated,
     alignSelf: 'flex-start',
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
+    borderColor: colors.borderLight,
     marginBottom: 16,
   },
   backBtnText: {
-    color: '#FFFFFF',
+    color: colors.text,
     fontSize: 14,
     fontFamily: 'Poppins_600SemiBold',
   },
   heroTitle: {
-    color: '#FFFFFF',
+    color: colors.text,
     fontSize: 42,
     lineHeight: 50,
     fontFamily: 'Poppins_700Bold',
@@ -352,7 +340,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.6,
   },
   heroSubtitle: {
-    color: 'rgba(255,255,255,0.8)',
+    color: colors.textSecondary,
     fontSize: 18,
     lineHeight: 28,
     fontFamily: 'Poppins_400Regular',
@@ -374,23 +362,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: colors.backgroundSecondary,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: colors.borderLight,
   },
   trustText: {
-    color: '#FFFFFF',
+    color: colors.text,
     fontSize: 13,
     fontFamily: 'Poppins_500Medium',
   },
   qrPromoCard: {
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderColor: colors.borderLight,
+    backgroundColor: colors.surface,
     maxWidth: 600,
     marginTop: 20,
   },
@@ -401,12 +389,12 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   qrTitle: {
-    color: '#FFFFFF',
+    color: colors.text,
     fontSize: 18,
     fontFamily: 'Poppins_700Bold',
   },
   qrSubtitle: {
-    color: 'rgba(255,255,255,0.6)',
+    color: colors.textSecondary,
     fontSize: 14,
     fontFamily: 'Poppins_400Regular',
     marginTop: 4,
@@ -416,8 +404,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderColor: colors.borderLight,
+    backgroundColor: colors.backgroundSecondary,
     paddingVertical: 24,
     marginTop: 16,
   },
@@ -426,13 +414,13 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   h2: {
-    color: '#FFFFFF',
+    color: colors.text,
     fontSize: 32,
     lineHeight: 40,
     fontFamily: 'Poppins_700Bold',
   },
   subhead: {
-    color: 'rgba(255,255,255,0.6)',
+    color: colors.textSecondary,
     fontSize: 16,
     lineHeight: 24,
     fontFamily: 'Poppins_400Regular',
@@ -443,7 +431,7 @@ const styles = StyleSheet.create({
     marginTop: 32,
   },
   surfaceSection: {
-    backgroundColor: 'rgba(255,255,255,0.02)',
+    backgroundColor: colors.surface,
     paddingVertical: 48,
     borderTopWidth: 1,
     borderBottomWidth: 1,
@@ -465,15 +453,15 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 280,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: colors.backgroundSecondary,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: colors.borderLight,
   },
   bulletRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: colors.surface,
     padding: 14,
     borderRadius: 12,
     borderWidth: 1,
@@ -487,7 +475,7 @@ const styles = StyleSheet.create({
   },
   body: {
     flex: 1,
-    color: 'rgba(255,255,255,0.8)',
+    color: colors.textSecondary,
     fontSize: 15,
     fontFamily: 'Poppins_500Medium',
     lineHeight: 22,
@@ -511,8 +499,8 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderColor: colors.borderLight,
+    backgroundColor: colors.surface,
     gap: 12,
   },
   ecoIconWrap: {
@@ -524,13 +512,13 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     marginTop: 4,
-    color: '#FFFFFF',
+    color: colors.text,
     fontSize: 20,
     lineHeight: 28,
     fontFamily: 'Poppins_700Bold',
   },
   cardLine: {
-    color: 'rgba(255,255,255,0.6)',
+    color: colors.textSecondary,
     fontSize: 15,
     fontFamily: 'Poppins_400Regular',
     lineHeight: 24,
@@ -545,8 +533,8 @@ const styles = StyleSheet.create({
   stepCard: {
     flex: 1,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderColor: colors.borderLight,
+    backgroundColor: colors.surface,
     borderRadius: 20,
     padding: 24,
     gap: 14,
@@ -563,13 +551,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins_700Bold',
   },
   stepTitle: {
-    color: '#FFFFFF',
+    color: colors.text,
     fontSize: 18,
     lineHeight: 26,
     fontFamily: 'Poppins_700Bold',
   },
   stepText: {
-    color: 'rgba(255,255,255,0.6)',
+    color: colors.textSecondary,
     fontSize: 14,
     lineHeight: 22,
     fontFamily: 'Poppins_400Regular',
@@ -582,9 +570,9 @@ const styles = StyleSheet.create({
     width: 280,
     height: 580,
     borderRadius: 24,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: colors.backgroundSecondary,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: colors.borderLight,
   },
   inlineCta: {
     marginTop: 28,
@@ -594,15 +582,15 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderColor: colors.borderLight,
+    backgroundColor: colors.surface,
     gap: 12,
   },
   softPanel: {
-    backgroundColor: 'rgba(255,255,255,0.02)',
+    backgroundColor: colors.surface,
   },
   panelTitle: {
-    color: '#FFFFFF',
+    color: colors.text,
     fontSize: 22,
     lineHeight: 30,
     fontFamily: 'Poppins_700Bold',
@@ -613,14 +601,14 @@ const styles = StyleSheet.create({
   },
   monetizationList: {
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: colors.borderLight,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: colors.surface,
     padding: 24,
     gap: 14,
   },
   vision: {
-    color: '#FFFFFF',
+    color: colors.text,
     fontSize: 18,
     lineHeight: 30,
     fontFamily: 'Poppins_500Medium',
@@ -637,7 +625,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   finalTitle: {
-    color: '#0B0B14',
+    color: colors.background,
     fontSize: 32,
     lineHeight: 40,
     fontFamily: 'Poppins_700Bold',
@@ -650,7 +638,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   finalNote: {
-    color: 'rgba(11,11,20,0.7)',
+    color: colors.textSecondary,
     fontSize: 14,
     lineHeight: 20,
     fontFamily: 'Poppins_600SemiBold',
@@ -660,10 +648,10 @@ const styles = StyleSheet.create({
     marginTop: 64,
     paddingTop: 32,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.1)',
+    borderTopColor: colors.borderLight,
   },
   footerTitle: {
-    color: '#FFFFFF',
+    color: colors.text,
     fontSize: 16,
     lineHeight: 24,
     fontFamily: 'Poppins_700Bold',
@@ -675,11 +663,11 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   footerItem: {
-    color: 'rgba(255,255,255,0.5)',
+    color: colors.textTertiary,
     fontSize: 13,
     lineHeight: 19,
     fontFamily: 'Poppins_500Medium',
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: colors.backgroundSecondary,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,

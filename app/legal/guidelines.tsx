@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, ScrollView, Pressable, Platform } from 'react-n
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useColors } from '@/hooks/useColors';
 import { CultureTokens } from '@/constants/theme';
 
 const RULES = [
@@ -28,34 +29,36 @@ const RULES = [
 ];
 
 export default function CommunityGuidelinesScreen() {
+  const colors = useColors();
+  const styles = getStyles(colors);
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
 
   return (
-    <View style={[s.container, { paddingTop: topInset }]}>
-      <View style={s.header}>
-        <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={8}>
-          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+    <View style={[styles.container, { paddingTop: topInset }]}>
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
         </Pressable>
-        <Text style={s.title}>Community Guidelines</Text>
+        <Text style={styles.title}>Community Guidelines</Text>
         <View style={{ width: 44 }} />
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 40, paddingTop: 10 }}>
-        <Text style={s.lead}> 
+        <Text style={styles.lead}> 
           These rules help keep CulturePass safe, welcoming, and useful for everyone.
         </Text>
 
         {RULES.map((rule, idx) => (
-          <View key={rule.title} style={s.card}>
-            <Text style={s.cardTitle}>{idx + 1}. {rule.title}</Text>
-            <Text style={s.cardBody}>{rule.body}</Text>
+          <View key={rule.title} style={styles.card}>
+            <Text style={styles.cardTitle}>{idx + 1}. {rule.title}</Text>
+            <Text style={styles.cardBody}>{rule.body}</Text>
           </View>
         ))}
 
-        <View style={s.footerCard}>
+        <View style={styles.footerCard}>
           <Ionicons name="shield-checkmark" size={20} color={CultureTokens.indigo} />
-          <Text style={s.footerText}>
+          <Text style={styles.footerText}>
             By using CulturePass, you agree to follow these guidelines together with our Terms and Privacy Policy.
           </Text>
         </View>
@@ -64,15 +67,15 @@ export default function CommunityGuidelinesScreen() {
   );
 }
 
-const s = StyleSheet.create({
-  container:  { flex: 1, backgroundColor: '#0B0B14' },
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+  container:  { flex: 1, backgroundColor: colors.background },
   header:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
-  backBtn:    { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  title:      { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
-  lead:       { fontSize: 14, fontFamily: 'Poppins_400Regular', lineHeight: 22, marginBottom: 20, color: 'rgba(255,255,255,0.7)', textAlign: 'center' },
-  card:       { borderWidth: 1, borderRadius: 16, padding: 18, marginBottom: 16, backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.1)' },
-  cardTitle:  { fontSize: 16, fontFamily: 'Poppins_700Bold', marginBottom: 6, color: '#FFFFFF' },
-  cardBody:   { fontSize: 14, fontFamily: 'Poppins_400Regular', lineHeight: 22, color: 'rgba(255,255,255,0.6)' },
+  backBtn:    { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight },
+  title:      { fontSize: 18, fontFamily: 'Poppins_700Bold', color: colors.text },
+  lead:       { fontSize: 14, fontFamily: 'Poppins_400Regular', lineHeight: 22, marginBottom: 20, color: colors.textSecondary, textAlign: 'center' },
+  card:       { borderWidth: 1, borderRadius: 16, padding: 18, marginBottom: 16, backgroundColor: colors.surface, borderColor: colors.borderLight },
+  cardTitle:  { fontSize: 16, fontFamily: 'Poppins_700Bold', marginBottom: 6, color: colors.text },
+  cardBody:   { fontSize: 14, fontFamily: 'Poppins_400Regular', lineHeight: 22, color: colors.textSecondary },
   footerCard: { marginTop: 12, borderRadius: 16, padding: 16, flexDirection: 'row', gap: 12, backgroundColor: CultureTokens.indigo + '15', borderWidth: 1, borderColor: CultureTokens.indigo + '30' },
-  footerText: { flex: 1, fontSize: 14, fontFamily: 'Poppins_500Medium', lineHeight: 20, color: 'rgba(255,255,255,0.8)' },
+  footerText: { flex: 1, fontSize: 14, fontFamily: 'Poppins_500Medium', lineHeight: 20, color: colors.textSecondary },
 });

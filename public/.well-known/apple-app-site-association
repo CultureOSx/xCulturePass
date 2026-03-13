@@ -1,0 +1,16 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "26WGXSNG58.au.culturepass.app",
+        "paths": ["*"]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": [
+      "26WGXSNG58.au.culturepass.app"
+    ]
+  }
+}

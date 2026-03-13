@@ -25,9 +25,11 @@ interface PrivacySettings {
 }
 
 export default function PrivacySettingsScreen() {
+  const colors = useColors();
+  const styles = getStyles(colors);
   const insets = useSafeAreaInsets();
   const webTop = 0;
-  const colors = useColors();
+  
   const { user, logout } = useAuth();
   const queryClient = useQueryClient();
   const userId = user?.id;
@@ -88,38 +90,38 @@ export default function PrivacySettingsScreen() {
   const current: PrivacySettings = settings ?? { profileVisibility: true, dataSharing: false, activityStatus: true, showLocation: true };
 
   return (
-    <View style={[s.container, { paddingTop: insets.top + webTop, backgroundColor: colors.background }]}>
-      <View style={s.header}>
-        <Pressable style={[s.backBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]} onPress={() => router.back()}>
+    <View style={[styles.container, { paddingTop: insets.top + webTop, backgroundColor: colors.background }]}>
+      <View style={styles.header}>
+        <Pressable style={[styles.backBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={22} color={colors.text} />
         </Pressable>
-        <Text style={[s.headerTitle, { color: colors.text }]}>Privacy</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Privacy</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 + (Platform.OS === 'web' ? 34 : insets.bottom) }}>
         {/* Hero */}
-        <LinearGradient colors={[colors.secondary, colors.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.heroCard}>
-          <View style={s.heroIconWrap}>
+        <LinearGradient colors={[colors.secondary, colors.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.heroCard}>
+          <View style={styles.heroIconWrap}>
             <Ionicons name="shield-checkmark" size={30} color={colors.textInverse} />
           </View>
-          <Text style={[s.heroTitle, { color: colors.textInverse }]}>Privacy Settings</Text>
-          <Text style={[s.heroSub, { color: colors.textInverse }]}>Control how your data and profile are shared</Text>
+          <Text style={[styles.heroTitle, { color: colors.textInverse }]}>Privacy Settings</Text>
+          <Text style={[styles.heroSub, { color: colors.textInverse }]}>Control how your data and profile are shared</Text>
         </LinearGradient>
 
-        <View style={s.section}>
+        <View style={styles.section}>
           {isLoading ? (
             <ActivityIndicator color={colors.primary} style={{ marginVertical: 20 }} />
           ) : (
             PRIVACY_SETTINGS.map((item) => (
-              <View key={item.key} style={[s.settingCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}> 
-                <View style={s.settingRow}>
-                  <View style={[s.settingIcon, { backgroundColor: resolveColor(item.colorKey) + '15' }]}> 
+              <View key={item.key} style={[styles.settingCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}> 
+                <View style={styles.settingRow}>
+                  <View style={[styles.settingIcon, { backgroundColor: resolveColor(item.colorKey) + '15' }]}> 
                     <Ionicons name={item.icon} size={20} color={resolveColor(item.colorKey)} />
                   </View>
-                  <View style={s.settingInfo}>
-                    <Text style={[s.settingTitle, { color: colors.text }]}>{item.title}</Text>
-                    <Text style={[s.settingDesc, { color: colors.text }]}>{item.description}</Text>
+                  <View style={styles.settingInfo}>
+                    <Text style={[styles.settingTitle, { color: colors.text }]}>{item.title}</Text>
+                    <Text style={[styles.settingDesc, { color: colors.text }]}>{item.description}</Text>
                   </View>
                   <Switch
                     value={current[item.key as keyof PrivacySettings]}
@@ -129,9 +131,9 @@ export default function PrivacySettingsScreen() {
                   />
                 </View>
                 {item.key === 'profileVisibility' && (
-                  <View style={[s.statusBadge, { backgroundColor: colors.backgroundSecondary }]}>
-                    <View style={[s.statusDot, { backgroundColor: current.profileVisibility ? colors.success : colors.textSecondary }]} />
-                    <Text style={[s.statusText, { color: colors.text }]}>{current.profileVisibility ? 'Public' : 'Private'}</Text>
+                  <View style={[styles.statusBadge, { backgroundColor: colors.backgroundSecondary }]}>
+                    <View style={[styles.statusDot, { backgroundColor: current.profileVisibility ? colors.success : colors.textSecondary }]} />
+                    <Text style={[styles.statusText, { color: colors.text }]}>{current.profileVisibility ? 'Public' : 'Private'}</Text>
                   </View>
                 )}
               </View>
@@ -140,16 +142,16 @@ export default function PrivacySettingsScreen() {
         </View>
 
         {/* Danger zone */}
-        <View style={s.dangerSection}>
-          <Text style={[s.dangerLabel, { color: colors.error }]}>Danger Zone</Text>
+        <View style={styles.dangerSection}>
+          <Text style={[styles.dangerLabel, { color: colors.error }]}>Danger Zone</Text>
           {showDeleteConfirm ? (
-            <View style={[s.deleteConfirmCard, { backgroundColor: colors.surface, borderColor: colors.error + '40' }]}>
-              <Text style={[s.deleteConfirmTitle, { color: colors.error }]}>Confirm Account Deletion</Text>
-              <Text style={[s.deleteConfirmDesc, { color: colors.text }]}> 
+            <View style={[styles.deleteConfirmCard, { backgroundColor: colors.surface, borderColor: colors.error + '40' }]}>
+              <Text style={[styles.deleteConfirmTitle, { color: colors.error }]}>Confirm Account Deletion</Text>
+              <Text style={[styles.deleteConfirmDesc, { color: colors.text }]}> 
                 Enter your password to permanently delete your account. This cannot be undone.
               </Text>
               <TextInput
-                style={[s.passwordInput, { backgroundColor: colors.backgroundSecondary, color: colors.text, borderColor: colors.border }]}
+                style={[styles.passwordInput, { backgroundColor: colors.backgroundSecondary, color: colors.text, borderColor: colors.border }]}
                 placeholder="Enter your password"
                 placeholderTextColor={colors.textSecondary}
                 secureTextEntry
@@ -157,33 +159,33 @@ export default function PrivacySettingsScreen() {
                 onChangeText={(v) => { setDeletePassword(v); setDeleteError(''); }}
                 autoCapitalize="none"
               />
-              {deleteError ? <Text style={[s.deleteError, { color: colors.error }]}>{deleteError}</Text> : null}
-              <View style={s.deleteConfirmRow}>
+              {deleteError ? <Text style={[styles.deleteError, { color: colors.error }]}>{deleteError}</Text> : null}
+              <View style={styles.deleteConfirmRow}>
                 <Pressable
-                  style={[s.cancelBtn, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
+                  style={[styles.cancelBtn, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
                   onPress={() => setShowDeleteConfirm(false)}
                 >
-                  <Text style={[s.cancelBtnText, { color: colors.text }]}>Cancel</Text>
+                  <Text style={[styles.cancelBtnText, { color: colors.text }]}>Cancel</Text>
                 </Pressable>
                 <Pressable
-                  style={[s.deleteConfirmBtn, deleteMutation.isPending && { opacity: 0.6 }, { backgroundColor: colors.error }]}
+                  style={[styles.deleteConfirmBtn, deleteMutation.isPending && { opacity: 0.6 }, { backgroundColor: colors.error }]}
                   onPress={handleConfirmDelete}
                   disabled={deleteMutation.isPending}
                 >
                   {deleteMutation.isPending
                     ? <ActivityIndicator color={colors.textInverse} size="small" />
-                    : <Text style={[s.deleteConfirmBtnText, { color: colors.textInverse }]}>Delete Forever</Text>
+                    : <Text style={[styles.deleteConfirmBtnText, { color: colors.textInverse }]}>Delete Forever</Text>
                   }
                 </Pressable>
               </View>
             </View>
           ) : (
-            <Pressable style={[s.deleteBtn, { backgroundColor: colors.error }]} onPress={handleDeleteAccount}>
+            <Pressable style={[styles.deleteBtn, { backgroundColor: colors.error }]} onPress={handleDeleteAccount}>
               <Ionicons name="trash-outline" size={20} color={colors.textInverse} />
-              <Text style={[s.deleteBtnText, { color: colors.textInverse }]}>Delete Account</Text>
+              <Text style={[styles.deleteBtnText, { color: colors.textInverse }]}>Delete Account</Text>
             </Pressable>
           )}
-          <Text style={[s.dangerNote, { color: colors.textSecondary }]}> 
+          <Text style={[styles.dangerNote, { color: colors.textSecondary }]}> 
             This will permanently delete your account and all associated data including tickets, wallet balance, and community memberships.
           </Text>
         </View>
@@ -192,7 +194,7 @@ export default function PrivacySettingsScreen() {
   );
 }
 
-const s = StyleSheet.create({
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   container:    { flex: 1 },
   header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
   backBtn:      { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },

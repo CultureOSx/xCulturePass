@@ -8,38 +8,40 @@ import { LayoutRules, Spacing } from '@/constants/theme';
 import { LocationPicker } from '@/components/LocationPicker';
 
 export default function SettingsLocationScreen() {
-  const insets = useSafeAreaInsets();
   const colors = useColors();
+  const styles = getStyles(colors);
+  const insets = useSafeAreaInsets();
+  
   const { state } = useOnboarding();
   const webTop = 0;
 
   return (
-    <View style={[s.container, { paddingTop: insets.top + webTop, backgroundColor: colors.background }]}>
-      <View style={s.header}>
-        <Pressable style={[s.backBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]} onPress={() => (router.canGoBack() ? router.back() : router.replace('/settings'))}>
+    <View style={[styles.container, { paddingTop: insets.top + webTop, backgroundColor: colors.background }]}>
+      <View style={styles.header}>
+        <Pressable style={[styles.backBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]} onPress={() => (router.canGoBack() ? router.back() : router.replace('/settings'))}>
           <Ionicons name="chevron-back" size={22} color={colors.text} />
         </Pressable>
-        <Text style={[s.headerTitle, { color: colors.text }]}>Location & City</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Location & City</Text>
         <View style={{ width: LayoutRules.buttonHeight }} />
       </View>
 
-      <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}> 
-        <Text style={[s.label, { color: colors.text }]}>Current location</Text>
-        <Text style={[s.current, { color: colors.textSecondary }]}>
+      <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}> 
+        <Text style={[styles.label, { color: colors.text }]}>Current location</Text>
+        <Text style={[styles.current, { color: colors.textSecondary }]}>
           {state.city ? `${state.city}, ${state.country || 'Australia'}` : 'No location selected'}
         </Text>
 
-        <View style={s.pickerWrap}>
+        <View style={styles.pickerWrap}>
           <LocationPicker />
         </View>
 
-        <Text style={[s.help, { color: colors.textSecondary }]}>Use location picker to update your city for local events and recommendations.</Text>
+        <Text style={[styles.help, { color: colors.textSecondary }]}>Use location picker to update your city for local events and recommendations.</Text>
       </View>
     </View>
   );
 }
 
-const s = StyleSheet.create({
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   container: { flex: 1 },
   header: {
     flexDirection: 'row',

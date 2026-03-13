@@ -40,6 +40,7 @@ const TYPE_META: Record<string, { color: string; icon: keyof typeof Ionicons.gly
   government:   { color: EntityTypeColors.government, icon: 'flag' },
   artist:       { color: EntityTypeColors.artist, icon: 'musical-notes' },
   business:     { color: EntityTypeColors.business, icon: 'storefront' },
+  charity:      { color: EntityTypeColors.charity, icon: 'heart' },
 };
 
 const CATEGORIES = [
@@ -50,6 +51,7 @@ const CATEGORIES = [
   { id: 'council',      label: 'Councils',      icon: 'shield-checkmark' },
   { id: 'artist',       label: 'Artists',       icon: 'musical-notes' },
   { id: 'business',     label: 'Businesses',    icon: 'storefront' },
+  { id: 'charity',      label: 'Charities',     icon: 'heart' },
 ];
 
 function fmt(num: number): string {
@@ -104,7 +106,7 @@ function FeaturedCard({ profile, colors, styles }: { profile: Profile; colors: R
 
       <View style={styles.fcBottom}>
         <View style={styles.fcMembers}>
-          <Ionicons name="people" size={16} color="rgba(255,255,255,0.5)" />
+          <Ionicons name="people" size={16} color={colors.textSecondary} />
           <Text style={styles.fcMembersText}>{fmt(profile.membersCount ?? 0)}</Text>
         </View>
         <Pressable
@@ -162,7 +164,7 @@ function CommunityCard({ profile, colors, styles }: { profile: Profile; colors: 
           </View>
           {profile.city && (
             <View style={styles.lcLocationRow}>
-              <Ionicons name="location" size={12} color="rgba(255,255,255,0.4)" />
+              <Ionicons name="location" size={12} color={colors.textSecondary} />
               <Text style={styles.lcLocationText} numberOfLines={1}>{profile.city}</Text>
             </View>
           )}
@@ -171,7 +173,7 @@ function CommunityCard({ profile, colors, styles }: { profile: Profile; colors: 
 
       <View style={styles.lcRight}>
         <View style={styles.lcMembersRow}>
-          <Ionicons name="people" size={14} color="rgba(255,255,255,0.5)" />
+          <Ionicons name="people" size={14} color={colors.textSecondary} />
           <Text style={styles.lcMembersText}>{fmt(profile.membersCount ?? 0)}</Text>
         </View>
         <Pressable
@@ -198,9 +200,9 @@ function CommunityCard({ profile, colors, styles }: { profile: Profile; colors: 
 // Screen
 // ---------------------------------------------------------------------------
 export default function CommunitiesScreen() {
+  const colors = useColors();
+  const styles = getStyles(colors);
   const insets  = useSafeAreaInsets();
-  const colors  = useColors();
-  const styles  = getStyles(colors);
   
   const { width, isDesktop, isTablet } = useLayout();
   const isDesktopWeb = isWeb && isDesktop;
@@ -284,7 +286,7 @@ export default function CommunitiesScreen() {
     return (
       <View style={[styles.container, { paddingTop: topInset }]}>
         <LinearGradient
-          colors={['rgba(58, 134, 255, 0.4)', 'transparent']}
+          colors={[CultureTokens.community + '66', 'transparent']}
           style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 450 }}
         />
         {/* Placeholder Top Bar */}
@@ -312,7 +314,7 @@ export default function CommunitiesScreen() {
 
         {/* Ambient Top Background elements to match premium dark aesthetics */}
         <LinearGradient
-          colors={['rgba(58, 134, 255, 0.35)', 'transparent']}
+          colors={[CultureTokens.community + '59', 'transparent']}
           style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 450 }}
         />
         {isWeb && (
@@ -393,11 +395,11 @@ export default function CommunitiesScreen() {
                   styles.searchBar,
                   searchFocused && styles.searchBarFocused,
                 ]}>
-                  <Ionicons name="search" size={22} color={searchFocused ? CultureTokens.indigo : 'rgba(255,255,255,0.4)'} />
+                  <Ionicons name="search" size={22} color={searchFocused ? CultureTokens.indigo : colors.textSecondary} />
                   <TextInput
                     style={styles.searchInput}
                     placeholder="Search communities, venues, artists…"
-                    placeholderTextColor="rgba(255,255,255,0.4)"
+                    placeholderTextColor={colors.textSecondary}
                     value={search}
                     onChangeText={setSearch}
                     onFocus={() => setSearchFocused(true)}
@@ -406,7 +408,7 @@ export default function CommunitiesScreen() {
                   />
                   {search.length > 0 && (
                     <Pressable onPress={() => setSearch('')} hitSlop={14} style={styles.clearSearchBtn}>
-                      <Ionicons name="close-circle" size={22} color="rgba(255,255,255,0.4)" />
+                      <Ionicons name="close-circle" size={22} color={colors.textSecondary} />
                     </Pressable>
                   )}
                 </View>
@@ -485,7 +487,7 @@ export default function CommunitiesScreen() {
             <View style={[isDesktop && { maxWidth: contentMaxWidth, alignSelf: 'center', width: '100%' }, styles.emptyWrap, isDesktop && { paddingHorizontal: 0 }]}>
               <View style={styles.emptyStateCard}>
                 <View style={styles.emptyIcon}>
-                  <Ionicons name="search-outline" size={42} color="rgba(255,255,255,0.4)" />
+                  <Ionicons name="search-outline" size={42} color={colors.textSecondary} />
                 </View>
                 <Text style={styles.emptyTitle}>
                   {search.length > 0 || selectedType !== 'all' ? 'No communities found' : 'No communities yet'}
@@ -514,30 +516,30 @@ export default function CommunitiesScreen() {
 // Styles Implementation
 // ---------------------------------------------------------------------------
 const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B0B14' },
+  container: { flex: 1, backgroundColor: colors.background },
   orb: { position: 'absolute', width: 350, height: 350, borderRadius: 175 },
   shellHorizontal: { paddingHorizontal: 20 },
 
   topBar: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16, zIndex: 100 },
-  topBarBorder: { position: 'absolute', bottom: 0, left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(255,255,255,0.08)' },
+  topBarBorder: { position: 'absolute', bottom: 0, left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: colors.borderLight },
   
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  headerTitle: { fontSize: 26, fontFamily: 'Poppins_700Bold', letterSpacing: -0.5, marginBottom: 2, color: '#FFFFFF' },
-  headerSub: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.6)' },
-  addBtn: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  headerTitle: { fontSize: 26, fontFamily: 'Poppins_700Bold', letterSpacing: -0.5, marginBottom: 2, color: colors.text },
+  headerSub: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
+  addBtn: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.borderLight },
   
   loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
-  loadingText: { fontSize: 15, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.6)' },
+  loadingText: { fontSize: 15, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
 
-  councilBar: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, padding: 18, borderRadius: 20, borderWidth: 1, gap: 14, backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.1)' },
+  councilBar: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, padding: 18, borderRadius: 20, borderWidth: 1, gap: 14, backgroundColor: colors.surface, borderColor: colors.borderLight },
   councilIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: CultureTokens.teal + '20' },
   councilTextWrap: { flex: 1 },
-  councilTitle: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', marginBottom: 2, color: '#FFFFFF' },
-  councilSub: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.6)' },
+  councilTitle: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', marginBottom: 2, color: colors.text },
+  councilSub: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: colors.textSecondary },
 
-  searchBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, gap: 12, borderRadius: 16, borderWidth: 1, marginBottom: 16, backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.1)' },
-  searchBarFocused: { borderColor: CultureTokens.indigo, backgroundColor: 'rgba(255,255,255,0.06)' },
-  searchInput: { flex: 1, fontSize: 15, fontFamily: 'Poppins_500Medium', padding: 0, height: 24, color: '#FFFFFF' },
+  searchBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, gap: 12, borderRadius: 16, borderWidth: 1, marginBottom: 16, backgroundColor: colors.surface, borderColor: colors.borderLight },
+  searchBarFocused: { borderColor: CultureTokens.indigo, backgroundColor: colors.backgroundSecondary },
+  searchInput: { flex: 1, fontSize: 15, fontFamily: 'Poppins_500Medium', padding: 0, height: 24, color: colors.text },
   clearSearchBtn: { padding: 4 },
 
   featSection: { marginBottom: 24, marginTop: 12 },
@@ -545,44 +547,44 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   horizontalScroll: { gap: 16, paddingHorizontal: 20, paddingRight: 20 },
 
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16 },
-  sectionTitle: { fontSize: 20, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
-  resultsCount: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.5)' },
+  sectionTitle: { fontSize: 20, fontFamily: 'Poppins_700Bold', color: colors.text },
+  resultsCount: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: colors.textTertiary },
 
   emptyWrap: { paddingHorizontal: 20 },
-  emptyStateCard: { padding: 40, borderRadius: 24, borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(255,255,255,0.2)', backgroundColor: 'rgba(255,255,255,0.02)', alignItems: 'center', gap: 12, marginBottom: 40 },
-  emptyIcon: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', marginBottom: 8, backgroundColor: 'rgba(255,255,255,0.05)' },
-  emptyTitle: { fontSize: 18, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
-  emptySub: { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', color: 'rgba(255,255,255,0.6)' },
-  clearBtn: { marginTop: 16, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 20, backgroundColor: CultureTokens.indigo + '20', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  clearBtnText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#8898FF' }, // Lighter indigo for contrast
+  emptyStateCard: { padding: 40, borderRadius: 24, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.borderLight, backgroundColor: colors.backgroundSecondary, alignItems: 'center', gap: 12, marginBottom: 40 },
+  emptyIcon: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', marginBottom: 8, backgroundColor: colors.surface },
+  emptyTitle: { fontSize: 18, fontFamily: 'Poppins_600SemiBold', color: colors.text },
+  emptySub: { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', color: colors.textSecondary },
+  clearBtn: { marginTop: 16, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 20, backgroundColor: CultureTokens.indigo + '20', borderWidth: 1, borderColor: colors.borderLight },
+  clearBtnText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.indigo }, 
 
-  fcCard: { width: 260, height: 210, borderRadius: 20, padding: 20, borderWidth: 1, overflow: 'hidden', gap: 12, backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.1)' },
+  fcCard: { width: 260, height: 210, borderRadius: 20, padding: 20, borderWidth: 1, overflow: 'hidden', gap: 12, backgroundColor: colors.surface, borderColor: colors.borderLight },
   fcTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  fcIconBox: { width: 50, height: 50, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  fcVerifiedBadge: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: CultureTokens.indigo + '25', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  fcName: { fontSize: 17, fontFamily: 'Poppins_600SemiBold', lineHeight: 22, color: '#FFFFFF' },
-  fcDesc: { fontSize: 13, fontFamily: 'Poppins_400Regular', lineHeight: 18, color: 'rgba(255,255,255,0.6)', marginTop: 4 },
+  fcIconBox: { width: 50, height: 50, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.borderLight },
+  fcVerifiedBadge: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: CultureTokens.indigo + '25', borderWidth: 1, borderColor: colors.borderLight },
+  fcName: { fontSize: 17, fontFamily: 'Poppins_600SemiBold', lineHeight: 22, color: colors.text },
+  fcDesc: { fontSize: 13, fontFamily: 'Poppins_400Regular', lineHeight: 18, color: colors.textSecondary, marginTop: 4 },
   fcBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto', paddingTop: 10 },
   fcMembers: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  fcMembersText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: 'rgba(255,255,255,0.5)' },
+  fcMembersText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: colors.textTertiary },
   fcJoinBtnDefault: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 },
   fcJoinBtnJoined: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12, backgroundColor: CultureTokens.indigo + '20', borderWidth: 1, borderColor: CultureTokens.indigo + '40' },
-  fcJoinTextDefault: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
+  fcJoinTextDefault: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: colors.background },
 
-  lcCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 20, padding: 18, marginBottom: 14, gap: 16, borderWidth: 1, backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.1)' },
-  lcIconBox: { width: 56, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center', flexShrink: 0, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  lcCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 20, padding: 18, marginBottom: 14, gap: 16, borderWidth: 1, backgroundColor: colors.surface, borderColor: colors.borderLight },
+  lcIconBox: { width: 56, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center', flexShrink: 0, borderWidth: 1, borderColor: colors.borderLight },
   lcCenter: { flex: 1, gap: 6, minWidth: 0 },
   lcNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  lcName: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', flexShrink: 1, color: '#FFFFFF' },
+  lcName: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', flexShrink: 1, color: colors.text },
   lcMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  lcTypePill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
+  lcTypePill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: colors.borderLight },
   lcTypePillText: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', textTransform: 'capitalize' },
   lcLocationRow: { flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 1 },
-  lcLocationText: { fontSize: 12, fontFamily: 'Poppins_400Regular', flexShrink: 1, color: 'rgba(255,255,255,0.5)' },
+  lcLocationText: { fontSize: 12, fontFamily: 'Poppins_400Regular', flexShrink: 1, color: colors.textTertiary },
   lcRight: { alignItems: 'flex-end', gap: 10 },
   lcMembersRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  lcMembersText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: 'rgba(255,255,255,0.6)' },
+  lcMembersText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: colors.textSecondary },
   lcJoinBtnDefault: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 14, alignItems: 'center', justifyContent: 'center', minWidth: 64, backgroundColor: CultureTokens.indigo },
   lcJoinBtnJoined: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 14, alignItems: 'center', justifyContent: 'center', minWidth: 64, backgroundColor: CultureTokens.indigo + '20', borderWidth: 1, borderColor: CultureTokens.indigo + '40' },
-  lcJoinTextDefault: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
+  lcJoinTextDefault: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: colors.background },
 });

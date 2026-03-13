@@ -18,6 +18,7 @@ import QRCode from 'react-native-qrcode-svg';
 import * as Haptics from 'expo-haptics';
 import { useMemo, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useColors } from '@/hooks/useColors';
 import { CultureTokens } from '@/constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -40,6 +41,8 @@ const CORNER_SIZE  = 18;
 const CORNER_WIDTH = 3;
 
 export default function QRScreen() {
+  const colors = useColors();
+  const styles = getStyles(colors);
   const insets      = useSafeAreaInsets();
   const topInset    = Platform.OS === 'web' ? 0 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
@@ -93,7 +96,7 @@ export default function QRScreen() {
     <View style={[styles.container, { paddingTop: topInset }]}> 
       <View style={styles.header}> 
         <Pressable style={styles.backBtn} onPress={() => router.back()}> 
-          <Ionicons name="chevron-back" size={22} color="#FFFFFF" /> 
+          <Ionicons name="chevron-back" size={22} color={colors.text} /> 
         </Pressable>
         <Text style={styles.headerTitle}>CulturePass Digital ID</Text> 
         <Pressable style={styles.headerAction} onPress={() => router.push('/scanner')}> 
@@ -107,7 +110,7 @@ export default function QRScreen() {
           <View style={styles.card}> 
             {/* Dark header — intentionally always dark (card design) */}
             <LinearGradient 
-              colors={['#1A1A2E', '#16213E', '#0B0B14']} 
+              colors={['#1A1A2E', '#16213E', colors.background]} 
               start={{ x: 0, y: 0 }} 
               end={{ x: 1, y: 1 }} 
               style={styles.cardTop} 
@@ -120,7 +123,7 @@ export default function QRScreen() {
               <View style={styles.cardHeaderRow}> 
                 <View style={styles.brandRow}> 
                   <View style={styles.logoMark}> 
-                    <Ionicons name="globe" size={14} color="#FFFFFF" />
+                    <Ionicons name="globe" size={14} color={colors.text} />
                   </View>
                   <View>
                     <Text style={styles.brandName}>CULTUREPASS</Text> 
@@ -154,7 +157,7 @@ export default function QRScreen() {
                 </View> 
                 <View style={styles.metaDot} /> 
                 <View style={styles.metaItem}> 
-                  <Ionicons name="calendar-outline" size={12} color="rgba(255,255,255,0.6)" /> 
+                  <Ionicons name="calendar-outline" size={12} color={colors.textSecondary} /> 
                   <Text style={styles.metaText}>{memberSince}</Text> 
                 </View> 
               </View>
@@ -183,7 +186,7 @@ export default function QRScreen() {
                 </View> 
                 <View style={styles.chipRow}> 
                   <View style={styles.nfcChip}> 
-                    <Ionicons name="wifi" size={12} color="rgba(255,255,255,0.4)" style={{ transform: [{ rotate: '90deg' }] }} /> 
+                    <Ionicons name="wifi" size={12} color={colors.textTertiary} style={{ transform: [{ rotate: '90deg' }] }} /> 
                   </View> 
                   <View style={styles.hologram}> 
                     <Ionicons name="finger-print" size={18} color={CultureTokens.indigo} /> 
@@ -234,38 +237,38 @@ export default function QRScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container:    { flex: 1, backgroundColor: '#0B0B14' },
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+  container:    { flex: 1, backgroundColor: colors.background },
   header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
-  backBtn:      { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  headerTitle:  { fontFamily: 'Poppins_700Bold', fontSize: 18, color: '#FFFFFF' },
+  backBtn:      { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight },
+  headerTitle:  { fontFamily: 'Poppins_700Bold', fontSize: 18, color: colors.text },
   headerAction: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: CultureTokens.indigo + '20', borderWidth: 1, borderColor: CultureTokens.indigo + '40' },
   scrollContent:{ paddingHorizontal: 20, paddingTop: 16 },
 
   cardOuter: { borderRadius: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 20, elevation: 10 },
-  card:      { borderRadius: 24, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  card:      { borderRadius: 24, overflow: 'hidden', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight },
   cardTop:   { paddingHorizontal: 22, paddingTop: 22, paddingBottom: 20, overflow: 'hidden', position: 'relative' },
   cardPattern:  { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
-  patternCircle1:{ position: 'absolute', top: -40, right: -30, width: 120, height: 120, borderRadius: 60, backgroundColor: 'rgba(255,255,255,0.03)' },
-  patternCircle2:{ position: 'absolute', bottom: -20, left: -20, width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(255,255,255,0.02)' },
+  patternCircle1:{ position: 'absolute', top: -40, right: -30, width: 120, height: 120, borderRadius: 60, backgroundColor: colors.surface },
+  patternCircle2:{ position: 'absolute', bottom: -20, left: -20, width: 80, height: 80, borderRadius: 40, backgroundColor: colors.surface },
   cardHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
   brandRow:    { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  logoMark:    { width: 34, height: 34, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  brandName:   { fontFamily: 'Poppins_700Bold', fontSize: 14, letterSpacing: 2, color: '#FFFFFF' },
-  brandSub:    { fontFamily: 'Poppins_400Regular', fontSize: 10, letterSpacing: 3, marginTop: -1, color: 'rgba(255,255,255,0.5)' },
-  tierBadge:   { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  logoMark:    { width: 34, height: 34, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.borderLight },
+  brandName:   { fontFamily: 'Poppins_700Bold', fontSize: 14, letterSpacing: 2, color: colors.text },
+  brandSub:    { fontFamily: 'Poppins_400Regular', fontSize: 10, letterSpacing: 3, marginTop: -1, color: colors.textTertiary },
+  tierBadge:   { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: colors.borderLight },
   tierText:    { fontFamily: 'Poppins_600SemiBold', fontSize: 12 },
   userSection: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 16 },
   avatarRing:  { width: 56, height: 56, borderRadius: 28, borderWidth: 2, borderColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' },
   avatarInner: { width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' },
-  avatarInitials:{ fontFamily: 'Poppins_700Bold', fontSize: 18, color: '#FFFFFF' },
+  avatarInitials:{ fontFamily: 'Poppins_700Bold', fontSize: 18, color: colors.text },
   userDetails: { flex: 1 },
-  userName:    { fontFamily: 'Poppins_700Bold', fontSize: 22, letterSpacing: -0.3, color: '#FFFFFF' },
-  userHandle:  { fontFamily: 'Poppins_400Regular', fontSize: 14, marginTop: 2, color: 'rgba(255,255,255,0.6)' },
+  userName:    { fontFamily: 'Poppins_700Bold', fontSize: 22, letterSpacing: -0.3, color: colors.text },
+  userHandle:  { fontFamily: 'Poppins_400Regular', fontSize: 14, marginTop: 2, color: colors.textSecondary },
   metaRow:     { flexDirection: 'row', alignItems: 'center', gap: 10 },
   metaItem:    { flexDirection: 'row', alignItems: 'center', gap: 6 },
   metaDot:     { width: 4, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.3)' },
-  metaText:    { fontFamily: 'Poppins_500Medium', fontSize: 13, color: 'rgba(255,255,255,0.6)' },
+  metaText:    { fontFamily: 'Poppins_500Medium', fontSize: 13, color: colors.textSecondary },
 
   qrSection:   { alignItems: 'center', paddingVertical: 28, paddingHorizontal: 24, backgroundColor: 'transparent' },
   qrContainer: { position: 'relative', padding: 16, marginBottom: 16, backgroundColor: '#FFFFFF', borderRadius: 8 },
@@ -274,29 +277,29 @@ const styles = StyleSheet.create({
   cornerBL:    { position: 'absolute', bottom: 0, left: 0, width: CORNER_SIZE, height: CORNER_SIZE, borderBottomWidth: CORNER_WIDTH, borderLeftWidth: CORNER_WIDTH, borderBottomLeftRadius: 5 },
   cornerBR:    { position: 'absolute', bottom: 0, right: 0, width: CORNER_SIZE, height: CORNER_SIZE, borderBottomWidth: CORNER_WIDTH, borderRightWidth: CORNER_WIDTH, borderBottomRightRadius: 5 },
   qrInner:     { padding: 12, borderRadius: 6, backgroundColor: '#FFFFFF' },
-  scanLabel:   { fontFamily: 'Poppins_500Medium', fontSize: 13, letterSpacing: 0.5, color: 'rgba(255,255,255,0.5)' },
+  scanLabel:   { fontFamily: 'Poppins_500Medium', fontSize: 13, letterSpacing: 0.5, color: colors.textTertiary },
 
   cardBottom:  { paddingHorizontal: 24, paddingBottom: 20 },
-  bottomDivider:{ height: 1, marginBottom: 16, backgroundColor: 'rgba(255,255,255,0.1)' },
+  bottomDivider:{ height: 1, marginBottom: 16, backgroundColor: colors.surfaceElevated },
   bottomRow:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   verifiedRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   verifiedText:{ fontFamily: 'Poppins_500Medium', fontSize: 13 },
   chipRow:     { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  nfcChip:     { width: 28, height: 20, borderRadius: 4, alignItems: 'center', justifyContent: 'center', borderWidth: 1, backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.2)' },
+  nfcChip:     { width: 28, height: 20, borderRadius: 4, alignItems: 'center', justifyContent: 'center', borderWidth: 1, backgroundColor: colors.surfaceElevated, borderColor: colors.borderLight },
   hologram:    { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: CultureTokens.indigo + '15' },
 
   cpidSection: { alignItems: 'center', marginTop: 32, marginBottom: 8 },
-  cpidLabel:   { fontFamily: 'Poppins_500Medium', fontSize: 11, letterSpacing: 2.5, marginBottom: 10, color: 'rgba(255,255,255,0.5)' },
-  cpidRow:     { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  cpidValue:   { fontFamily: 'Poppins_700Bold', fontSize: 24, letterSpacing: 3, color: '#FFFFFF' },
+  cpidLabel:   { fontFamily: 'Poppins_500Medium', fontSize: 11, letterSpacing: 2.5, marginBottom: 10, color: colors.textTertiary },
+  cpidRow:     { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 20, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight },
+  cpidValue:   { fontFamily: 'Poppins_700Bold', fontSize: 24, letterSpacing: 3, color: colors.text },
   cpidCopyBtn: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
 
   actionsGrid: { flexDirection: 'row', gap: 16, marginTop: 24 },
-  actionCard:  { flex: 1, alignItems: 'center', borderRadius: 20, paddingVertical: 20, paddingHorizontal: 10, backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  actionCard:  { flex: 1, alignItems: 'center', borderRadius: 20, paddingVertical: 20, paddingHorizontal: 10, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight },
   actionIcon:  { width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-  actionTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, marginBottom: 4, color: '#FFFFFF' },
-  actionDesc:  { fontFamily: 'Poppins_400Regular', fontSize: 12, color: 'rgba(255,255,255,0.5)', textAlign: 'center' },
+  actionTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, marginBottom: 4, color: colors.text },
+  actionDesc:  { fontFamily: 'Poppins_400Regular', fontSize: 12, color: colors.textTertiary, textAlign: 'center' },
 
-  infoCard:   { flexDirection: 'row', gap: 14, alignItems: 'flex-start', borderRadius: 20, padding: 20, marginTop: 28, backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  infoText:   { flex: 1, fontFamily: 'Poppins_400Regular', fontSize: 14, lineHeight: 22, color: 'rgba(255,255,255,0.6)' },
+  infoCard:   { flexDirection: 'row', gap: 14, alignItems: 'flex-start', borderRadius: 20, padding: 20, marginTop: 28, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight },
+  infoText:   { flex: 1, fontFamily: 'Poppins_400Regular', fontSize: 14, lineHeight: 22, color: colors.textSecondary },
 });

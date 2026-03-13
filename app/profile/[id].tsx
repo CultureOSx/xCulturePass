@@ -4,6 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
+import { useColors } from '@/hooks/useColors';
 import { CultureTokens } from '@/constants/theme';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -46,6 +47,8 @@ function formatNumber(num: number) {
 }
 
 export default function ProfileDetailScreen() {
+  const colors = useColors();
+  const styles = getStyles(colors);
   const { id } = useLocalSearchParams();
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
@@ -143,7 +146,7 @@ export default function ProfileDetailScreen() {
             {heroImage ? (
               <Image source={{ uri: heroImage }} style={styles.heroImage} contentFit="cover" transition={300} />
             ) : (
-              <LinearGradient colors={[entityColor, '#0B0B14']} style={styles.heroImage} />
+              <LinearGradient colors={[entityColor, colors.background]} style={styles.heroImage} />
             )}
             
             <LinearGradient
@@ -306,7 +309,7 @@ export default function ProfileDetailScreen() {
                          <Text style={styles.eventTitle} numberOfLines={1}>{event.title}</Text>
                          <Text style={styles.eventDate} numberOfLines={1}>{event.date}</Text>
                        </View>
-                       <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.4)" />
+                       <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
                      </Pressable>
                    ))}
                  </View>
@@ -352,68 +355,68 @@ export default function ProfileDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B0B14' },
-  errorText: { fontSize: 16, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.6)' },
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
+  errorText: { fontSize: 16, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
   backLinkBtn: { marginTop: 12, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12, backgroundColor: CultureTokens.indigo + '15' },
   backLink: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.indigo },
   
   heroContainer: { height: 380, position: 'relative' },
   heroImage: { width: '100%', height: '100%' },
   heroTopBar: { position: 'absolute', left: 20, right: 20, flexDirection: 'row', justifyContent: 'space-between', zIndex: 10 },
-  iconBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.05)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  iconBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.backgroundSecondary, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.borderLight },
   heroContent: { position: 'absolute', bottom: 24, left: 20, right: 20 },
   
   entityBadge: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, borderWidth: 1, marginBottom: 12 },
   entityBadgeText: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 0.5 },
-  profileName: { fontSize: 32, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', letterSpacing: -0.5, marginBottom: 8 },
+  profileName: { fontSize: 32, fontFamily: 'Poppins_700Bold', color: colors.text, letterSpacing: -0.5, marginBottom: 8 },
   heroMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  heroMetaText: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.8)' },
+  heroMetaText: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
   
   content: { padding: 20 },
   
   statsRow: { flexDirection: 'row', gap: 10, marginBottom: 24, flexWrap: 'wrap' },
-  statCard: { flex: 1, minWidth: '45%', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', alignItems: 'center' },
-  statValue: { fontSize: 20, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
-  statLabel: { fontSize: 12, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.5)', marginTop: 2 },
+  statCard: { flex: 1, minWidth: '45%', backgroundColor: colors.surface, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', alignItems: 'center' },
+  statValue: { fontSize: 20, fontFamily: 'Poppins_700Bold', color: colors.text },
+  statLabel: { fontSize: 12, fontFamily: 'Poppins_500Medium', color: colors.textTertiary, marginTop: 2 },
   
   cpidChip: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12, alignSelf: 'flex-start', marginBottom: 24, borderWidth: 1 },
   cpidText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', letterSpacing: 1 },
   
   section: { marginBottom: 32 },
-  sectionTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', marginBottom: 14 },
+  sectionTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: colors.text, marginBottom: 14 },
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
   seeAllText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
   
-  bio: { fontSize: 15, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.7)', lineHeight: 24 },
+  bio: { fontSize: 15, fontFamily: 'Poppins_400Regular', color: colors.textSecondary, lineHeight: 24 },
   
-  contactCard: { backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', overflow: 'hidden' },
+  contactCard: { backgroundColor: colors.surface, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', overflow: 'hidden' },
   contactRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16 },
   contactDivider: { borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.05)' },
   contactIconBox: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  contactText: { fontSize: 15, fontFamily: 'Poppins_400Regular', color: '#FFFFFF', flex: 1 },
+  contactText: { fontSize: 15, fontFamily: 'Poppins_400Regular', color: colors.text, flex: 1 },
   
   socialsRow: { flexDirection: 'row', gap: 12, flexWrap: 'wrap' },
-  socialBtn: { width: 52, height: 52, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.03)', alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+  socialBtn: { width: 52, height: 52, borderRadius: 16, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
   
   tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  tag: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  tagText: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: '#FFFFFF' },
+  tag: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12, backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight },
+  tagText: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: colors.text },
   
   eventsStack: { gap: 12 },
-  eventItem: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: 'rgba(255,255,255,0.03)', padding: 14, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+  eventItem: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: colors.surface, padding: 14, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
   eventImg: { width: 56, height: 56, borderRadius: 12 },
   eventInfo: { flex: 1, gap: 4 },
-  eventTitle: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
-  eventDate: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.6)' },
+  eventTitle: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.text },
+  eventDate: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
   
-  membersCard: { backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+  membersCard: { backgroundColor: colors.surface, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
   membersInfo: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  membersTitle: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
-  membersSubtitle: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.5)' },
+  membersTitle: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: colors.text },
+  membersSubtitle: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: colors.textTertiary },
   
-  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', gap: 12, paddingHorizontal: 20, paddingTop: 16, backgroundColor: 'rgba(11,11,20,0.95)', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)' },
+  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', gap: 12, paddingHorizontal: 20, paddingTop: 16, backgroundColor: 'rgba(11,11,20,0.95)', borderTopWidth: 1, borderTopColor: colors.borderLight },
   actionBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 16, height: 56 },
   actionBtnText: { fontSize: 16, fontFamily: 'Poppins_700Bold' },
-  iconActionBtn: { width: 56, height: 56, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 16, borderWidth: 1 },
+  iconActionBtn: { width: 56, height: 56, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderRadius: 16, borderWidth: 1 },
 });

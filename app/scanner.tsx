@@ -23,6 +23,7 @@ import { useRole } from '@/hooks/useRole';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AuthGuard } from '@/components/AuthGuard';
+import { useColors } from '@/hooks/useColors';
 import { CultureTokens } from '@/constants/theme';
 
 import { getStyles } from '@/components/scanner/Scanner.styles';
@@ -48,7 +49,8 @@ export default function ScannerScreen() {
   const canUseStaffScanner = isOrganizer;
 
   // Render static glass styles since we migrated out of theme
-  const s = useMemo(() => getStyles({}), []);
+  const colors = useColors();
+  const s = useMemo(() => getStyles(colors), [colors]);
 
   const [mode, setMode] = useState<ScanMode>('culturepass');
 
@@ -76,7 +78,7 @@ export default function ScannerScreen() {
   const { addContact, isContactSaved } = useContacts();
 
   const TIER_DISPLAY = useMemo((): Record<string, { label: string; color: string; icon: string }> => ({
-    free:    { label: 'Free',    color: 'rgba(255,255,255,0.6)', icon: 'shield-outline' },
+    free:    { label: 'Free',    color: colors.textSecondary, icon: 'shield-outline' },
     plus:    { label: 'Plus',    color: CultureTokens.indigo,     icon: 'star' },
     premium: { label: 'Premium', color: CultureTokens.gold,       icon: 'diamond' },
     vip:     { label: 'VIP',     color: CultureTokens.saffron,    icon: 'diamond' },
@@ -291,14 +293,14 @@ export default function ScannerScreen() {
   return (
     <AuthGuard icon="scan-outline" title="Scanner" message="Sign in to scan CulturePass QR cards and manage contacts.">
     <View style={[s.container, { paddingTop: topInset }]}>
-      <LinearGradient colors={['rgba(44, 42, 114, 0.25)', '#0B0B14']} style={StyleSheet.absoluteFillObject} pointerEvents="none" />
+      <LinearGradient colors={[CultureTokens.indigo + '40', colors.background]} style={StyleSheet.absoluteFillObject} pointerEvents="none" />
       <View style={{ position: 'absolute', top: -50, right: -100, width: 350, height: 350, borderRadius: 175, backgroundColor: CultureTokens.indigo, opacity: 0.15, ...Platform.select({ web: { filter: 'blur(80px)' }, default: {} }) } as any} />
       <View style={{ position: 'absolute', top: 400, left: -100, width: 350, height: 350, borderRadius: 175, backgroundColor: CultureTokens.saffron, opacity: 0.1, ...Platform.select({ web: { filter: 'blur(100px)' }, default: {} }) } as any} />
 
       {/* Header */}
       <View style={s.header}>
         <Pressable onPress={() => goBackOrReplace('/(tabs)')} style={s.headerBtn}>
-          <Ionicons name="chevron-back" size={22} color="#FFFFFF" />
+          <Ionicons name="chevron-back" size={22} color={colors.text} />
         </Pressable>
         <Text style={s.headerTitle}>
           {mode === 'tickets' ? 'Staff Scanner' : 'Scanner'}
@@ -319,19 +321,19 @@ export default function ScannerScreen() {
       {/* Mode toggle */}
       <View style={s.toggleContainer}>
         <Pressable
-          style={[s.toggleTab, mode === 'culturepass' && { backgroundColor: 'rgba(255,255,255,0.1)' }]}
+          style={[s.toggleTab, mode === 'culturepass' && { backgroundColor: colors.surfaceElevated }]}
           onPress={() => { setMode('culturepass'); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
         >
-          <Ionicons name="card-outline" size={16} color={mode === 'culturepass' ? '#FFFFFF' : 'rgba(255,255,255,0.5)'} />
-          <Text style={[s.toggleText, mode === 'culturepass' && { color: '#FFFFFF' }]}>CulturePass</Text>
+          <Ionicons name="card-outline" size={16} color={mode === 'culturepass' ? colors.text : colors.textTertiary} />
+          <Text style={[s.toggleText, mode === 'culturepass' && { color: colors.text }]}>CulturePass</Text>
         </Pressable>
         {canUseStaffScanner && (
           <Pressable
-            style={[s.toggleTab, mode === 'tickets' && { backgroundColor: 'rgba(255,255,255,0.1)' }]}
+            style={[s.toggleTab, mode === 'tickets' && { backgroundColor: colors.surfaceElevated }]}
             onPress={() => { setMode('tickets'); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
           >
-            <Ionicons name="ticket-outline" size={16} color={mode === 'tickets' ? '#FFFFFF' : 'rgba(255,255,255,0.5)'} />
-            <Text style={[s.toggleText, mode === 'tickets' && { color: '#FFFFFF' }]}>Staff Check-In</Text>
+            <Ionicons name="ticket-outline" size={16} color={mode === 'tickets' ? colors.text : colors.textTertiary} />
+            <Text style={[s.toggleText, mode === 'tickets' && { color: colors.text }]}>Staff Check-In</Text>
           </Pressable>
         )}
       </View>
@@ -364,7 +366,7 @@ export default function ScannerScreen() {
             </View>
             <View style={s.statDivider} />
             <View style={s.statItem}>
-              <Text style={[s.statNum, { color: 'rgba(255,255,255,0.8)' }]}>{sessionDuration()}</Text>
+              <Text style={[s.statNum, { color: colors.textSecondary }]}>{sessionDuration()}</Text>
               <Text style={s.statLabel}>Session</Text>
             </View>
           </View>
@@ -387,7 +389,7 @@ export default function ScannerScreen() {
                 <Text style={s.cameraHint}>Point at a ticket QR code</Text>
               </View>
               <Pressable style={s.closeCameraBtn} onPress={() => setTicketCameraActive(false)}>
-                <Ionicons name="close-circle" size={38} color="#FFFFFF" />
+                <Ionicons name="close-circle" size={38} color={colors.text} />
               </Pressable>
             </View>
           )}
@@ -407,10 +409,10 @@ export default function ScannerScreen() {
                     end={{ x: 1, y: 0 }}
                     style={s.camScanGradient}
                   >
-                    <Ionicons name="camera" size={28} color="#0B0B14" />
+                    <Ionicons name="camera" size={28} color={colors.background} />
                     <View>
-                      <Text style={[s.camScanTitle, { color: '#0B0B14' }]}>Scan QR Code</Text>
-                      <Text style={[s.camScanSub, { color: 'rgba(11,11,20,0.8)' }]}>Camera · QR · Barcode</Text>
+                      <Text style={[s.camScanTitle, { color: colors.background }]}>Scan QR Code</Text>
+                      <Text style={[s.camScanSub, { color: colors.textTertiary }]}>Camera · QR · Barcode</Text>
                     </View>
                   </LinearGradient>
                 </Pressable>
@@ -425,7 +427,7 @@ export default function ScannerScreen() {
                   <TextInput
                     style={s.codeInput}
                     placeholder="Enter ticket code…"
-                    placeholderTextColor="rgba(255,255,255,0.4)"
+                    placeholderTextColor={colors.textTertiary}
                     value={ticketCode}
                     onChangeText={v => setTicketCode(v.toUpperCase())}
                     autoCapitalize="characters"
@@ -439,8 +441,8 @@ export default function ScannerScreen() {
                     disabled={isScanning}
                   >
                     {isScanning
-                      ? <ActivityIndicator size="small" color="#0B0B14" />
-                      : <Ionicons name="checkmark-circle" size={24} color="#0B0B14" />
+                      ? <ActivityIndicator size="small" color={colors.background} />
+                      : <Ionicons name="checkmark-circle" size={24} color={colors.background} />
                     }
                   </Pressable>
                 </View>
@@ -526,7 +528,7 @@ export default function ScannerScreen() {
                 <Text style={s.cameraHint}>Point at a CulturePass QR code</Text>
               </View>
               <Pressable style={s.closeCameraBtn} onPress={() => setCpCameraActive(false)}>
-                <Ionicons name="close-circle" size={38} color="#FFFFFF" />
+                <Ionicons name="close-circle" size={38} color={colors.text} />
               </Pressable>
             </View>
           )}
@@ -541,7 +543,7 @@ export default function ScannerScreen() {
               <View style={s.scanInputSection}>
                 <Pressable style={s.cameraStartBtn} onPress={startCpCamera}>
                   <View style={[s.cameraIconCircle, { backgroundColor: CultureTokens.indigo }]}>
-                    <Ionicons name="camera" size={34} color="#0B0B14" />
+                    <Ionicons name="camera" size={34} color={colors.background} />
                   </View>
                   <Text style={s.cameraStartTitle}>Scan QR Code</Text>
                   <Text style={s.cameraStartSub}>
@@ -559,7 +561,7 @@ export default function ScannerScreen() {
                   <TextInput
                     style={s.codeInput}
                     placeholder="CP-123456 or paste QR data…"
-                    placeholderTextColor="rgba(255,255,255,0.4)"
+                    placeholderTextColor={colors.textTertiary}
                     value={cpInput}
                     onChangeText={setCpInput}
                     autoCapitalize="characters"
@@ -572,7 +574,7 @@ export default function ScannerScreen() {
                     onPress={handleCpManualScan}
                     disabled={isLookingUp}
                   >
-                    <Ionicons name="search" size={24} color="#0B0B14" />
+                    <Ionicons name="search" size={24} color={colors.background} />
                   </Pressable>
                 </View>
               </View>
@@ -590,7 +592,7 @@ export default function ScannerScreen() {
                     onPress={() => { setCpContact(null); setCpInput(''); cpLastScanned.current = ''; }}
                     style={s.closeBtn}
                   >
-                    <Ionicons name="close" size={20} color="rgba(255,255,255,0.6)" />
+                    <Ionicons name="close" size={20} color={colors.textSecondary} />
                   </Pressable>
                 </View>
 
@@ -603,9 +605,9 @@ export default function ScannerScreen() {
                     <Text style={[s.cpIdText, { color: CultureTokens.indigo }]}>{cpContact.cpid}</Text>
                   </View>
                   {cpContact.tier && (
-                    <View style={[s.cpTierChip, { backgroundColor: (TIER_DISPLAY[cpContact.tier]?.color ?? 'rgba(255,255,255,0.6)') + '15' }]}>
-                      <Ionicons name={(TIER_DISPLAY[cpContact.tier]?.icon ?? 'shield-outline') as never} size={13} color={TIER_DISPLAY[cpContact.tier]?.color ?? 'rgba(255,255,255,0.6)'} />
-                      <Text style={[s.cpTierText, { color: TIER_DISPLAY[cpContact.tier]?.color ?? 'rgba(255,255,255,0.6)' }]}>
+                    <View style={[s.cpTierChip, { backgroundColor: (TIER_DISPLAY[cpContact.tier]?.color ?? colors.textSecondary) + '15' }]}>
+                      <Ionicons name={(TIER_DISPLAY[cpContact.tier]?.icon ?? 'shield-outline') as never} size={13} color={TIER_DISPLAY[cpContact.tier]?.color ?? colors.textSecondary} />
+                      <Text style={[s.cpTierText, { color: TIER_DISPLAY[cpContact.tier]?.color ?? colors.textSecondary }]}>
                         {TIER_DISPLAY[cpContact.tier]?.label ?? 'Free'}
                       </Text>
                     </View>
@@ -614,14 +616,14 @@ export default function ScannerScreen() {
 
                 {cpContact.city && (
                   <View style={s.cpLocationRow}>
-                    <Ionicons name="location-outline" size={16} color="rgba(255,255,255,0.6)" />
+                    <Ionicons name="location-outline" size={16} color={colors.textSecondary} />
                     <Text style={s.cpLocationText}>{cpContact.city}{cpContact.country ? `, ${cpContact.country}` : ''}</Text>
                   </View>
                 )}
                 {cpContact.bio && <Text style={s.cpBio} numberOfLines={2}>{cpContact.bio}</Text>}
                 {cpContact.org && (
                   <View style={s.cpLocationRow}>
-                    <Ionicons name="business-outline" size={16} color="rgba(255,255,255,0.6)" />
+                    <Ionicons name="business-outline" size={16} color={colors.textSecondary} />
                     <Text style={s.cpLocationText}>{cpContact.org}</Text>
                   </View>
                 )}

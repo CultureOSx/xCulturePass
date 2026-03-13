@@ -6,7 +6,7 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useState, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { apiRequest, getApiUrl, queryClient } from '@/lib/query-client';
+import { apiRequest, getApiUrl, queryClient, getAccessToken } from '@/lib/query-client';
 import * as ImagePicker from 'expo-image-picker';
 import { manipulateAsync, SaveFormat } from '@/lib/image-manipulator';
 import { fetch } from 'expo/fetch';
@@ -25,7 +25,7 @@ const TABS: { key: SubmitType; label: string; icon: string }[] = [
 ];
 
 const EVENT_CATEGORIES   = ['Cultural', 'Music', 'Dance', 'Festival', 'Workshop', 'Religious', 'Food', 'Sports'];
-const ORG_CATEGORIES     = ['Cultural', 'Religious', 'Community', 'Youth', 'Professional'];
+const ORG_CATEGORIES     = ['Cultural', 'Religious', 'Community', 'Youth', 'Professional', 'Charity'];
 const BIZ_CATEGORIES     = ['Restaurant', 'Retail', 'Services', 'Beauty', 'Tech', 'Grocery'];
 const ARTIST_GENRES      = ['Music', 'Dance', 'Visual Arts', 'Theatre', 'Film', 'Literature'];
 const PERK_TYPES = [
@@ -126,7 +126,9 @@ export default function SubmitScreen() {
     formData.append('image', blob as unknown as Blob, 'upload.jpg');
 
     const base = getApiUrl();
-    const uploadRes = await fetch(`${base}api/uploads/image`, { method: 'POST', body: formData });
+    const token = getAccessToken();
+    const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+    const uploadRes = await fetch(`${base}api/uploads/image`, { method: 'POST', body: formData, headers });
     if (!uploadRes.ok) throw new Error('Failed image upload');
     const uploaded = await uploadRes.json() as Record<string, unknown>;
 

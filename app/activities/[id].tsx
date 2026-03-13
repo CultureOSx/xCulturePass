@@ -5,11 +5,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import { useColors } from '@/hooks/useColors';
 import { CultureTokens } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 export default function ActivityDetailScreen() {
+  const colors = useColors();
+  const styles = getStyles(colors);
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
@@ -44,7 +47,7 @@ export default function ActivityDetailScreen() {
   if (!act) return (
     <ErrorBoundary>
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={{ color: '#FFFFFF', fontFamily: 'Poppins_500Medium' }}>Activity not found</Text>
+        <Text style={{ color: colors.text, fontFamily: 'Poppins_500Medium' }}>Activity not found</Text>
       </View>
     </ErrorBoundary>
   );
@@ -54,11 +57,11 @@ export default function ActivityDetailScreen() {
       <View style={[styles.container, { paddingTop: topInset }]}>
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} style={styles.headerBtn} hitSlop={10} accessibilityRole="button">
-            <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+            <Ionicons name="chevron-back" size={24} color={colors.text} />
           </Pressable>
           <Text style={styles.headerTitle} numberOfLines={1}>{act.name}</Text>
           <Pressable style={styles.headerBtn} hitSlop={10} onPress={handleShare} accessibilityRole="button">
-            <Ionicons name="share-outline" size={22} color="#FFFFFF" />
+            <Ionicons name="share-outline" size={22} color={colors.text} />
           </Pressable>
         </View>
 
@@ -67,7 +70,7 @@ export default function ActivityDetailScreen() {
             <Image source={{ uri: act.imageUrl }} style={{ position: 'absolute', width: '100%', height: '100%' }} contentFit="cover" transition={200} />
             {act.isPopular && (
               <View style={styles.popularBadge}>
-                <Ionicons name="flame" size={14} color="#0B0B14" />
+                <Ionicons name="flame" size={14} color={colors.background} />
                 <Text style={styles.popularText}>Popular</Text>
               </View>
             )}
@@ -139,7 +142,7 @@ export default function ActivityDetailScreen() {
               Alert.alert('Booking Confirmed!', `Your booking for ${act.name} has been confirmed.\n\nPrice: ${act.priceLabel}`);
             }}
           >
-            <Ionicons name="ticket" size={20} color="#0B0B14" />
+            <Ionicons name="ticket" size={20} color={colors.background} />
             <Text style={styles.bookText}>Book Now</Text>
           </Pressable>
         </View>
@@ -148,8 +151,8 @@ export default function ActivityDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B0B14' },
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   header: { 
     flexDirection: 'row', 
     alignItems: 'center', 
@@ -161,16 +164,16 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: colors.backgroundSecondary,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: colors.borderLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: { 
     fontSize: 18, 
     fontFamily: 'Poppins_700Bold', 
-    color: '#FFFFFF', 
+    color: colors.text, 
     flex: 1, 
     textAlign: 'center', 
     marginHorizontal: 12 
@@ -190,39 +193,39 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: CultureTokens.teal + '50',
   },
-  popularText: { fontSize: 13, fontFamily: 'Poppins_700Bold', color: '#0B0B14', letterSpacing: 0.5, textTransform: 'uppercase' },
+  popularText: { fontSize: 13, fontFamily: 'Poppins_700Bold', color: colors.background, letterSpacing: 0.5, textTransform: 'uppercase' },
   info: { padding: 20, gap: 16 },
-  name: { fontSize: 26, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', letterSpacing: -0.5 },
+  name: { fontSize: 26, fontFamily: 'Poppins_700Bold', color: colors.text, letterSpacing: -0.5 },
   
   metaRow: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
   metaPill: { 
     flexDirection: 'row', 
     alignItems: 'center', 
     gap: 6, 
-    backgroundColor: 'rgba(255,255,255,0.05)', 
+    backgroundColor: colors.backgroundSecondary, 
     paddingHorizontal: 12, 
     paddingVertical: 8, 
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)'
+    borderColor: colors.borderLight
   },
-  metaText: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.8)' },
+  metaText: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
   
   ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   ratingNum: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: CultureTokens.gold, marginLeft: 6 },
-  reviewCount: { fontSize: 14, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.6)', marginLeft: 4 },
+  reviewCount: { fontSize: 14, fontFamily: 'Poppins_400Regular', color: colors.textSecondary, marginLeft: 4 },
   
-  desc: { fontSize: 15, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.7)', lineHeight: 24 },
+  desc: { fontSize: 15, fontFamily: 'Poppins_400Regular', color: colors.textSecondary, lineHeight: 24 },
   
   locCard: { 
     flexDirection: 'row', 
     alignItems: 'center', 
     gap: 14, 
-    backgroundColor: 'rgba(255,255,255,0.03)', 
+    backgroundColor: colors.surface, 
     borderRadius: 16, 
     padding: 16, 
     borderWidth: 1, 
-    borderColor: 'rgba(255,255,255,0.1)' 
+    borderColor: colors.borderLight 
   },
   locIconBox: {
     width: 36,
@@ -232,21 +235,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  locText: { fontSize: 15, fontFamily: 'Poppins_500Medium', color: '#FFFFFF', flex: 1, lineHeight: 22 },
+  locText: { fontSize: 15, fontFamily: 'Poppins_500Medium', color: colors.text, flex: 1, lineHeight: 22 },
   
-  subTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', marginTop: 8 },
+  subTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: colors.text, marginTop: 8 },
   highlightGrid: { gap: 12 },
   highlightItem: { 
     flexDirection: 'row', 
     alignItems: 'center', 
     gap: 12, 
-    backgroundColor: 'rgba(255,255,255,0.03)', 
+    backgroundColor: colors.surface, 
     borderRadius: 16, 
     padding: 16, 
     borderWidth: 1, 
-    borderColor: 'rgba(255,255,255,0.1)' 
+    borderColor: colors.borderLight 
   },
-  highlightText: { fontSize: 15, fontFamily: 'Poppins_500Medium', color: '#FFFFFF', flex: 1 },
+  highlightText: { fontSize: 15, fontFamily: 'Poppins_500Medium', color: colors.text, flex: 1 },
   
   bottomBar: { 
     position: 'absolute', 
@@ -260,9 +263,9 @@ const styles = StyleSheet.create({
     paddingTop: 16, 
     backgroundColor: 'rgba(11,11,20,0.95)', 
     borderTopWidth: 1, 
-    borderTopColor: 'rgba(255,255,255,0.1)' 
+    borderTopColor: colors.borderLight 
   },
-  bottomPrice: { fontSize: 26, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', letterSpacing: -0.5 },
+  bottomPrice: { fontSize: 26, fontFamily: 'Poppins_700Bold', color: colors.text, letterSpacing: -0.5 },
   bookBtn: { 
     flexDirection: 'row', 
     alignItems: 'center', 
@@ -272,5 +275,5 @@ const styles = StyleSheet.create({
     paddingVertical: 16, 
     borderRadius: 16 
   },
-  bookText: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: '#0B0B14' },
+  bookText: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: colors.background },
 });

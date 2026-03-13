@@ -14,6 +14,7 @@ import { getQueryFn } from '@/lib/query-client';
 import { api } from '@/lib/api';
 import { Community, EventData } from '@shared/schema';
 import { confirmAndReport } from '@/lib/reporting';
+import { useColors } from '@/hooks/useColors';
 import { CultureTokens } from '@/constants/theme';
 import { BlurView } from 'expo-blur';
 
@@ -47,6 +48,8 @@ const COMMUNITY_TYPE_ICONS: Record<string, string> = {
 };
 
 export default function CommunityDetailScreen() {
+  const colors = useColors();
+  const s = getStyles(colors);
   const { id }      = useLocalSearchParams<{ id: string }>();
   const insets      = useSafeAreaInsets();
   const topInset    = isWeb ? 0 : insets.top;
@@ -87,6 +90,8 @@ interface DbViewProps {
 }
 
 function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
+  const colors = useColors();
+  const s = getStyles(colors);
   const { isCommunityJoined, toggleJoinCommunity } = useSaved();
   const joined      = isCommunityJoined(community.id);
   const queryClient = useQueryClient();
@@ -148,11 +153,11 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
                 >
                   <View style={s.heroNav}>
                     <Pressable style={({pressed}) => [s.navBtn, { transform: [{ scale: pressed ? 0.9 : 1 }] }]} onPress={() => goBackOrReplace('/(tabs)')}>
-                      <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+                      <Ionicons name="chevron-back" size={24} color={colors.text} />
                       {!isWeb && <BlurView intensity={20} tint="light" style={StyleSheet.absoluteFill} />}
                     </Pressable>
                     <Pressable style={({pressed}) => [s.navBtn, { transform: [{ scale: pressed ? 0.9 : 1 }] }]} onPress={() => confirmAndReport({ targetType: 'community', targetId: String(community.id) })}>
-                      <Ionicons name="flag-outline" size={20} color="#FFFFFF" />
+                      <Ionicons name="flag-outline" size={20} color={colors.text} />
                       {!isWeb && <BlurView intensity={20} tint="light" style={StyleSheet.absoluteFill} />}
                     </Pressable>
                   </View>
@@ -162,7 +167,7 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
                       {community.iconEmoji ? (
                         <Text style={{ fontSize: 32 }}>{community.iconEmoji}</Text>
                       ) : (
-                        <Ionicons name={icon as never} size={28} color="#FFFFFF" />
+                        <Ionicons name={icon as never} size={28} color={colors.text} />
                       )}
                     </View>
                     <Text style={s.heroTitle}>{community.name}</Text>
@@ -234,7 +239,7 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
                           <Text style={s.eventTitle} numberOfLines={1}>{event.title as string}</Text>
                           <Text style={s.eventDate}>{formatDate(event.date as string)} - {event.time as string}</Text>
                         </View>
-                        <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.4)" />
+                        <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
                       </Pressable>
                     ))}
                   </View>
@@ -263,7 +268,7 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
 
       {/* Floating Bottom Bar Container */}
       <View style={[s.floatingBottomBarWrapper, { paddingBottom: bottomInset + 16 }]}>
-        <LinearGradient colors={['transparent', '#0B0B14']} style={StyleSheet.absoluteFillObject} />
+        <LinearGradient colors={['transparent', colors.background]} style={StyleSheet.absoluteFillObject} />
         <View style={{ overflow: 'hidden', borderRadius: 24, marginHorizontal: 20 }}>
           <BlurView 
             intensity={isWeb ? 80 : 30} 
@@ -297,27 +302,9 @@ function DbCommunityView({ community, topInset, bottomInset }: DbViewProps) {
   );
 }
 
-function getRelatedTagsForDb(community: Community): string[] {
-  const name = community.name.toLowerCase();
-  const tags = [name];
-  if (name.includes('indian'))   tags.push('indian', 'tamil', 'malayalee', 'punjabi', 'bengali', 'gujarati', 'telugu');
-  if (name.includes('chinese'))  tags.push('chinese', 'cantonese', 'mandarin');
-  if (name.includes('filipino')) tags.push('filipino');
-  if (name.includes('vietnamese')) tags.push('vietnamese');
-  if (name.includes('lebanese')) tags.push('lebanese', 'arabic');
-  if (name.includes('greek'))    tags.push('greek');
-  if (name.includes('italian'))  tags.push('italian');
-  if (name.includes('korean'))   tags.push('korean');
-  if (name.includes('aboriginal') || name.includes('torres strait') || name.includes('māori') || name.includes('first nations')) {
-    tags.push('aboriginal', 'indigenous', 'first nations', 'aboriginal & torres strait islander');
-  }
-  if (name.includes('punjabi') || name.includes('sikh')) tags.push('punjabi');
-  return tags;
-}
-
-const s = StyleSheet.create({
-  container:      { flex: 1, backgroundColor: '#0B0B14' },
-  errorText:      { fontSize: 16, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.6)' },
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+  container:      { flex: 1, backgroundColor: colors.background },
+  errorText:      { fontSize: 16, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
   backLink:       { fontSize: 15, fontFamily: 'Poppins_600SemiBold', marginTop: 12, color: '#A5B4FC' },
 
   desktopShellWrapper: { flex: 1, alignItems: 'center' },
@@ -327,37 +314,37 @@ const s = StyleSheet.create({
   heroWrapper: { width: '100%' },
   heroSection: { position: 'relative', justifyContent: 'flex-end' },
   heroNav: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16, zIndex: 10 },
-  navBtn: { width: 44, height: 44, borderRadius: 22, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.3)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
+  navBtn: { width: 44, height: 44, borderRadius: 22, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.3)', borderWidth: 1, borderColor: colors.borderLight },
   heroContent: { paddingHorizontal: 20, paddingBottom: 24, gap: 8, zIndex: 2 },
   heroIconWrap: { width: 64, height: 64, borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
-  heroTitle: { fontSize: 32, fontFamily: 'Poppins_700Bold', lineHeight: 38, color: '#FFFFFF', letterSpacing: -0.5 },
+  heroTitle: { fontSize: 32, fontFamily: 'Poppins_700Bold', lineHeight: 38, color: colors.text, letterSpacing: -0.5 },
   
-  dbTypeBadge: { backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)' },
-  dbTypeBadgeText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', textTransform: 'capitalize', color: '#FFFFFF' },
+  dbTypeBadge: { backgroundColor: colors.surfaceElevated, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)' },
+  dbTypeBadgeText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', textTransform: 'capitalize', color: colors.text },
 
   statsRow: { flexDirection: 'row', gap: 10, marginBottom: 8 },
-  statCard: { flex: 1, borderRadius: 20, padding: 16, alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  statCard: { flex: 1, borderRadius: 20, padding: 16, alignItems: 'center', gap: 4, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight },
   statIconBg: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
-  statNum: { fontSize: 20, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
-  statLabel: { fontSize: 11, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: 0.5 },
+  statNum: { fontSize: 20, fontFamily: 'Poppins_700Bold', color: colors.text },
+  statLabel: { fontSize: 11, fontFamily: 'Poppins_500Medium', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 },
 
   section: { marginTop: 28 },
-  sectionTitle: { fontSize: 20, fontFamily: 'Poppins_700Bold', marginBottom: 12, color: '#FFFFFF' },
-  sectionDivider: { height: 1, backgroundColor: 'rgba(255,255,255,0.1)', marginVertical: 24, marginHorizontal: 10 },
-  description: { fontSize: 15, fontFamily: 'Poppins_400Regular', lineHeight: 24, color: 'rgba(255,255,255,0.8)' },
+  sectionTitle: { fontSize: 20, fontFamily: 'Poppins_700Bold', marginBottom: 12, color: colors.text },
+  sectionDivider: { height: 1, backgroundColor: colors.surfaceElevated, marginVertical: 24, marginHorizontal: 10 },
+  description: { fontSize: 15, fontFamily: 'Poppins_400Regular', lineHeight: 24, color: colors.textSecondary },
 
-  eventCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 20, padding: 14, marginBottom: 12, gap: 12, backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  eventCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 20, padding: 14, marginBottom: 12, gap: 12, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight },
   eventImage: { width: 48, height: 48, borderRadius: 14 },
   eventInfo: { flex: 1, gap: 2 },
-  eventTitle: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
-  eventDate: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.6)' },
+  eventTitle: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.text },
+  eventDate: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: colors.textSecondary },
 
   wellbeingCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 14, borderRadius: 20, padding: 20, borderWidth: 1 },
-  wellbeingTitle: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', marginBottom: 4, color: '#FFFFFF' },
-  wellbeingDesc: { fontSize: 13, fontFamily: 'Poppins_400Regular', lineHeight: 20, color: 'rgba(255,255,255,0.8)' },
+  wellbeingTitle: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', marginBottom: 4, color: colors.text },
+  wellbeingDesc: { fontSize: 13, fontFamily: 'Poppins_400Regular', lineHeight: 20, color: colors.textSecondary },
 
   floatingBottomBarWrapper: { position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 100 },
-  floatingBottomBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20, paddingVertical: 16, backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  floatingBottomBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20, paddingVertical: 16, backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight },
   joinButton: { width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, borderRadius: 16, paddingVertical: 16 },
   joinText: { fontSize: 16, fontFamily: 'Poppins_700Bold' },
 });

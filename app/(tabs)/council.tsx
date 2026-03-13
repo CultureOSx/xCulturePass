@@ -338,7 +338,7 @@ function CouncilContent({ data, colors, styles }: { data: any; colors: ReturnTyp
           onPress={() => followMutation.mutate()}
           disabled={!isAuthenticated || followMutation.isPending}
         >
-          <Ionicons name={data.following ? 'checkmark' : 'add'} size={20} color={data.following ? colors.text : '#FFFFFF'} />
+          <Ionicons name={data.following ? 'checkmark' : 'add'} size={20} color={data.following ? colors.text : colors.background} />
           <Text style={data.following ? styles.heroFollowTextFollowing : styles.heroFollowTextDefault}>
             {data.following ? 'Following Council' : 'Follow to get alerts'}
           </Text>
@@ -449,7 +449,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   headerTitle: { fontSize: 32, fontFamily: 'Poppins_700Bold', letterSpacing: -0.6, marginBottom: 16, color: colors.text },
   segmentedControl: { flexDirection: 'row', borderRadius: 14, padding: 4, borderWidth: 1, backgroundColor: colors.surface, borderColor: colors.borderLight },
   segment: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: 10 },
-  segmentActive: { backgroundColor: 'rgba(46, 196, 182, 0.15)' },
+  segmentActive: { backgroundColor: CultureTokens.teal + '26' },
   segmentText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: colors.textSecondary },
   segmentTextActive: { color: CultureTokens.teal },
 
@@ -467,14 +467,14 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   councilCard: { borderRadius: 24, padding: 22, marginBottom: 16, borderWidth: 1, backgroundColor: colors.surface, borderColor: colors.borderLight, ...shadows.medium },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 14 },
   cardHeaderLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 14 },
-  councilIconBox: { width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(46, 196, 182, 0.15)' },
+  councilIconBox: { width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: CultureTokens.teal + '26' },
   councilName: { fontSize: 18, fontFamily: 'Poppins_600SemiBold', marginBottom: 2, color: colors.text },
   councilLocation: { fontSize: 14, fontFamily: 'Poppins_400Regular', color: colors.textSecondary },
 
   followBtnDefault: { paddingHorizontal: 18, paddingVertical: 10, borderRadius: 14, backgroundColor: colors.backgroundSecondary },
   followBtnActive: { paddingHorizontal: 18, paddingVertical: 10, borderRadius: 14, backgroundColor: CultureTokens.teal },
   followBtnTextDefault: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: colors.textTertiary },
-  followBtnTextActive: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
+  followBtnTextActive: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: colors.background },
   councilDesc: { fontSize: 15, fontFamily: 'Poppins_400Regular', lineHeight: 24, marginBottom: 16, color: colors.textSecondary },
 
   metaChipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 },
@@ -486,7 +486,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
 
   detailsSection: { marginTop: 8, paddingTop: 16, borderTopWidth: 1, borderTopColor: colors.borderLight },
   contactRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 20 },
-  contactItem: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 50, backgroundColor: 'rgba(44, 42, 114, 0.05)' },
+  contactItem: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 50, backgroundColor: CultureTokens.indigo + '0D' },
   contactText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.indigo },
 
   claimBlock: { padding: 20, borderRadius: 16, borderWidth: 1, backgroundColor: colors.background, borderColor: colors.borderLight },
@@ -495,31 +495,31 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   claimForm: { gap: 12 },
   claimInput: { height: 48, borderRadius: 12, borderWidth: 1, paddingHorizontal: 16, fontSize: 15, fontFamily: 'Poppins_400Regular', backgroundColor: colors.surface, borderColor: colors.borderLight, color: colors.text },
   claimSubmitBtn: { height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: CultureTokens.indigo },
-  claimSubmitText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Poppins_600SemiBold' },
+  claimSubmitText: { color: colors.background, fontSize: 15, fontFamily: 'Poppins_600SemiBold' },
   claimStatus: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', marginTop: 12, color: CultureTokens.success },
 
   pagination: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 24 },
   pageBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 16, borderWidth: 1 },
   pageBtnPrev: { backgroundColor: colors.surface, borderColor: colors.borderLight },
-  pageBtnNext: { backgroundColor: 'rgba(46, 196, 182, 0.15)', borderColor: 'rgba(46, 196, 182, 0.3)' },
+  pageBtnNext: { backgroundColor: CultureTokens.teal + '26', borderColor: CultureTokens.teal + '4D' },
   pageBtnTextPrev: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.text },
   pageBtnTextNext: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.teal },
 
   contentList: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 100, gap: 20 },
   heroCard: { padding: 24, borderRadius: 24, borderWidth: 1, overflow: 'hidden', backgroundColor: colors.surface, borderColor: colors.borderLight, ...shadows.medium },
   heroTopRow: { flexDirection: 'row', gap: 16, alignItems: 'center', marginBottom: 24 },
-  heroIconWrap: { width: 64, height: 64, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(46, 196, 182, 0.15)' },
+  heroIconWrap: { width: 64, height: 64, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: CultureTokens.teal + '26' },
   heroTextWrap: { flex: 1 },
   heroName: { fontSize: 22, fontFamily: 'Poppins_700Bold', marginBottom: 8, color: colors.text },
   heroMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  heroPillVerified: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: 'rgba(46, 196, 182, 0.15)' },
+  heroPillVerified: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: CultureTokens.teal + '26' },
   heroPillUnverified: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: colors.backgroundSecondary },
   heroPillTextVerified: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.success },
   heroPillTextUnverified: { fontSize: 12, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
   heroState: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
   heroFollowBtnDefault: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, height: 50, borderRadius: 16, backgroundColor: CultureTokens.teal },
   heroFollowBtnFollowing: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, height: 50, borderRadius: 16, backgroundColor: colors.backgroundSecondary },
-  heroFollowTextDefault: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
+  heroFollowTextDefault: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: colors.background },
   heroFollowTextFollowing: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: colors.text },
 
   sectionBlock: { padding: 22, borderRadius: 24, borderWidth: 1, backgroundColor: colors.surface, borderColor: colors.borderLight, ...shadows.small },
@@ -542,7 +542,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   switchTitle: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: colors.text },
   switchSub: { fontSize: 13, fontFamily: 'Poppins_400Regular', marginTop: 4, color: colors.textTertiary },
 
-  liveAlertCard: { padding: 18, borderRadius: 18, borderWidth: 1, gap: 8, backgroundColor: 'rgba(255, 140, 66, 0.1)', borderColor: 'rgba(255, 140, 66, 0.25)' },
+  liveAlertCard: { padding: 18, borderRadius: 18, borderWidth: 1, gap: 8, backgroundColor: CultureTokens.saffron + '1A', borderColor: CultureTokens.saffron + '40' },
   alertHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   alertSeverityText: { fontSize: 12, fontFamily: 'Poppins_700Bold', letterSpacing: 0.5, color: CultureTokens.saffron },
   liveAlertTitle: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: colors.text },

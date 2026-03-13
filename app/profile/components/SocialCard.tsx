@@ -1,7 +1,8 @@
 import { memo } from 'react';
+import { useColors } from '@/hooks/useColors';
 import { View, Text, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { styles } from '../styles';
+import { getStyles } from '../styles';
 import { CP } from '../constants';
 
 export const SocialCard = memo(({ icon, label, color, accentColor, onPress }: {
@@ -11,6 +12,8 @@ export const SocialCard = memo(({ icon, label, color, accentColor, onPress }: {
   accentColor: string;
   onPress: () => void;
 }) => {
+  const colors = useColors();
+  const styles = getStyles(colors);
   return (
     <Pressable
       style={({ pressed }) => [styles.socialCard, { transform: [{ scale: pressed ? 0.97 : 1 }] }]}

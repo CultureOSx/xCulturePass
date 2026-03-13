@@ -17,6 +17,7 @@ import FilterModal, { type DateFilter } from '@/components/FilterModal';
 import type { EventData, PaginatedEventsResponse } from '@/shared/schema';
 import { CultureTokens } from '@/constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useColors } from '@/hooks/useColors';
 
 const PAGE_SIZE = 20;
 const isWeb = Platform.OS === 'web';
@@ -25,6 +26,8 @@ export default function AllEventsScreen() {
   const insets = useSafeAreaInsets();
   const { state } = useOnboarding();
   const { width: screenWidth } = useWindowDimensions();
+  const colors = useColors();
+  const s = getStyles(colors);
 
   const isDesktop = screenWidth >= 1024;
   const isTablet = screenWidth >= 768;
@@ -89,7 +92,7 @@ export default function AllEventsScreen() {
     if (isFetchingNextPage) return <View style={s.footer}><ActivityIndicator size="small" color={CultureTokens.indigo} /></View>;
     if (!hasNextPage && allEvents.length > 0) return <View style={s.footer}><Text style={s.footerText}>No more events found in this category.</Text></View>;
     return null;
-  }, [isFetchingNextPage, hasNextPage, allEvents.length]);
+  }, [isFetchingNextPage, hasNextPage, allEvents.length, s]);
 
   const hPad = isDesktop ? 32 : isTablet ? 24 : 20;
   const columnGap = isDesktop ? 20 : 16;
@@ -98,7 +101,7 @@ export default function AllEventsScreen() {
     <ErrorBoundary>
       <View style={[s.container, { paddingTop: topInset }]}>
         <LinearGradient 
-          colors={['rgba(255, 140, 66, 0.15)', 'transparent']} 
+          colors={[CultureTokens.saffron + '26', 'transparent']} 
           style={StyleSheet.absoluteFillObject} 
           pointerEvents="none" 
         />
@@ -109,7 +112,7 @@ export default function AllEventsScreen() {
               style={({ pressed }) => [s.backBtn, { transform: [{ scale: pressed ? 0.95 : 1 }] }]} 
               hitSlop={8}
             >
-              <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+              <Ionicons name="chevron-back" size={24} color={colors.text} />
             </Pressable>
             <Text style={[s.headerTitle, isDesktop && s.headerTitleDesktop]}>{state.city || 'Events'}</Text>
             <View style={{ width: 44 }} />
@@ -128,11 +131,11 @@ export default function AllEventsScreen() {
                     onPress={() => handleSelectCategory(cat)}
                     style={({ pressed }) => [
                       s.chip, 
-                      selectedCategory === cat ? { backgroundColor: CultureTokens.indigo, borderColor: CultureTokens.indigo } : { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' },
+                      selectedCategory === cat ? { backgroundColor: CultureTokens.indigo, borderColor: CultureTokens.indigo } : { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight },
                       pressed && selectedCategory !== cat && { opacity: 0.8 }
                     ]}
                   >
-                    <Text style={[s.chipText, { color: selectedCategory === cat ? '#FFFFFF' : 'rgba(255,255,255,0.6)' }]}>{cat}</Text>
+                    <Text style={[s.chipText, { color: selectedCategory === cat ? colors.background : colors.textSecondary }]}>{cat}</Text>
                   </Pressable>
                 )}
               />
@@ -141,7 +144,7 @@ export default function AllEventsScreen() {
                style={({pressed}) => [s.filterButton, { transform: [{ scale: pressed ? 0.95 : 1 }] }]} 
                onPress={() => setFilterModalVisible(true)}
             >
-              <Ionicons name="options-outline" size={20} color="#FFFFFF" />
+              <Ionicons name="options-outline" size={20} color={colors.text} />
             </Pressable>
           </View>
 
@@ -174,7 +177,7 @@ export default function AllEventsScreen() {
               ListEmptyComponent={
                 <View style={s.emptyState}>
                   <View style={s.emptyIconBox}>
-                    <Ionicons name="search-outline" size={40} color="rgba(255,255,255,0.4)" />
+                    <Ionicons name="search-outline" size={40} color={colors.textSecondary} />
                   </View>
                   <Text style={s.emptyTitle}>No events found</Text>
                   <Text style={s.emptyDesc}>There are currently no upcoming events in this category. Try adjusting your filters.</Text>
@@ -195,28 +198,28 @@ export default function AllEventsScreen() {
   );
 }
 
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B0B14' },
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   shell: { flex: 1 },
   desktopShell: { maxWidth: 1040, width: '100%', alignSelf: 'center' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, zIndex: 10 },
-  backBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 1, backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' },
-  headerTitle: { fontFamily: 'Poppins_700Bold', fontSize: 20, color: '#FFFFFF' },
+  backBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 1, backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight },
+  headerTitle: { fontFamily: 'Poppins_700Bold', fontSize: 20, color: colors.text },
   headerTitleDesktop: { fontSize: 26 },
   
-  filterBar: { flexDirection: 'row', alignItems: 'center', paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)', marginBottom: 12 },
+  filterBar: { flexDirection: 'row', alignItems: 'center', paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: colors.borderLight, marginBottom: 12 },
   categoryList: { gap: 8, paddingRight: 16 },
   chip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, borderWidth: 1 },
   chipText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13 },
-  filterButton: { width: 44, height: 44, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center', marginLeft: 8, backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' },
+  filterButton: { width: 44, height: 44, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center', marginLeft: 8, backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight },
   
   list: { paddingTop: 8 },
   cardWrapper: { flex: 1, minWidth: '45%' },
   footer: { paddingVertical: 24, alignItems: 'center' },
-  footerText: { fontFamily: 'Poppins_500Medium', fontSize: 14, color: 'rgba(255,255,255,0.6)' },
+  footerText: { fontFamily: 'Poppins_500Medium', fontSize: 14, color: colors.textSecondary },
   
   emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 80, gap: 12, paddingHorizontal: 40 },
-  emptyIconBox: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center', marginBottom: 8, backgroundColor: 'rgba(255,255,255,0.03)' },
-  emptyTitle: { fontFamily: 'Poppins_700Bold', fontSize: 20, color: '#FFFFFF' },
-  emptyDesc: { fontFamily: 'Poppins_400Regular', fontSize: 14, textAlign: 'center', lineHeight: 22, color: 'rgba(255,255,255,0.6)' },
+  emptyIconBox: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center', marginBottom: 8, backgroundColor: colors.surface },
+  emptyTitle: { fontFamily: 'Poppins_700Bold', fontSize: 20, color: colors.text },
+  emptyDesc: { fontFamily: 'Poppins_400Regular', fontSize: 14, textAlign: 'center', lineHeight: 22, color: colors.textSecondary },
 });

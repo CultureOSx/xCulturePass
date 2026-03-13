@@ -23,6 +23,7 @@ export function ProfileBottomBar({
   entityColor
 }: ProfileBottomBarProps) {
   const colors = useColors();
+  const styles = getStyles(colors);
   return (
     <View style={[styles.bottomBar, { paddingBottom: bottomInset + 12 }]}>
       <Pressable
@@ -54,7 +55,7 @@ export function ProfileBottomBar({
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   bottomBar: {
     position: 'absolute',
     bottom: 0,

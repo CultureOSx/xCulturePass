@@ -300,6 +300,7 @@ function TabScreens() {
 // Root layout
 // ---------------------------------------------------------------------------
 export default function TabLayout() {
+  const colors = useColors();
   const { width } = useWindowDimensions();
   const isWeb = Platform.OS === 'web';
   const isDesktop = isWeb && width >= 1024;

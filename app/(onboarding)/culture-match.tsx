@@ -7,9 +7,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '@/lib/api';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { CultureTokens, gradients } from '@/constants/theme';
+import { CultureTokens, gradients, CardTokens, glass, shadows } from '@/constants/theme';
 import { BlurView } from 'expo-blur';
 import { Button } from '@/components/ui/Button';
+import { useColors } from '@/hooks/useColors';
 
 const FALLBACK_ETHNICITIES = [
   'Malay', 'Malaysian Chinese', 'Malayali', 'Indian', 'Chinese', 'Filipino',
@@ -43,6 +44,8 @@ function dedupeList(items: string[]): string[] {
 }
 
 export default function CultureMatchScreen() {
+  const colors = useColors();
+  const styles = getStyles(colors);
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === 'web' && width >= 1024;
@@ -146,94 +149,94 @@ export default function CultureMatchScreen() {
   }, [ethnicityInput, languageInput, selectedLanguages, setEthnicityText, setLanguages]);
 
   return (
-    <View style={s.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <LinearGradient
-        colors={gradients.culturepassBrandReversed}
+        colors={gradients.culturepassBrand}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={s.gradientBg}
+        style={styles.gradientBg}
       />
 
       {/* Decorative Orbs */}
       {Platform.OS === 'web' ? (
         <>
-          <View style={[s.orb, { top: -100, right: -50, backgroundColor: CultureTokens.indigo, opacity: 0.5, filter: 'blur(50px)' } as any]} />
-          <View style={[s.orb, { bottom: -50, left: -50, backgroundColor: CultureTokens.saffron, opacity: 0.3, filter: 'blur(50px)' } as any]} />
+          <View style={[styles.orb, { top: -100, right: -50, backgroundColor: CultureTokens.indigo, opacity: 0.5, filter: 'blur(50px)' } as any]} />
+          <View style={[styles.orb, { bottom: -50, left: -50, backgroundColor: CultureTokens.saffron, opacity: 0.3, filter: 'blur(50px)' } as any]} />
         </>
       ) : null}
 
       {isDesktop && (
-        <View style={s.desktopBackRow}>
-          <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/(onboarding)/communities')} hitSlop={8} style={[s.desktopBackBtn, { backgroundColor: 'rgba(0,0,0,0.3)' }]}>
-            <Ionicons name="chevron-back" size={18} color="#FFFFFF" />
-            <Text style={s.desktopBackText}>Back</Text>
+        <View style={styles.desktopBackRow}>
+          <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/(onboarding)/communities')} hitSlop={8} style={[styles.desktopBackBtn, { backgroundColor: glass.overlay.backgroundColor, borderColor: colors.border }]}>
+            <Ionicons name="chevron-back" size={18} color={colors.textInverse} />
+            <Text style={[styles.desktopBackText, { color: colors.textInverse }]}>Back</Text>
           </Pressable>
         </View>
       )}
 
       {!isDesktop && (
-        <View style={[s.mobileHeader, { paddingTop: topInset + 12 }]}>
+        <View style={[styles.mobileHeader, { paddingTop: topInset + 12 }]}>
           <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/(onboarding)/communities'))} hitSlop={12}>
-            <Ionicons name="chevron-back" size={28} color="#FFFFFF" />
+            <Ionicons name="chevron-back" size={28} color={colors.textInverse} />
           </Pressable>
-          <Text style={s.stepText}>3 of 4</Text>
+          <Text style={[styles.stepText, { color: colors.textSecondary }]}>3 of 4</Text>
         </View>
       )}
 
       <KeyboardAvoidingView 
-        style={s.keyboardAvoid} 
+        style={styles.keyboardAvoid} 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
       >
         <ScrollView 
           showsVerticalScrollIndicator={false} 
           keyboardShouldPersistTaps="handled" 
           contentContainerStyle={[
-            s.scrollContent,
-            isDesktop && s.scrollContentDesktop,
+            styles.scrollContent,
+            isDesktop && styles.scrollContentDesktop,
             !isDesktop && { paddingTop: 20 }
           ]}
         >
-          <View style={[s.formContainer, isDesktop && s.formContainerDesktop]}>
+          <View style={[styles.formContainer, isDesktop && styles.formContainerDesktop, { borderRadius: CardTokens.radiusLarge }]}>
             {Platform.OS === 'ios' || Platform.OS === 'web' ? (
-              <BlurView intensity={isDesktop ? 60 : 40} tint="dark" style={[StyleSheet.absoluteFill, s.formBlur]} />
+              <BlurView intensity={isDesktop ? 60 : 40} tint="dark" style={[StyleSheet.absoluteFill, styles.formBlur, { borderRadius: CardTokens.radiusLarge, borderColor: colors.borderLight }]} />
             ) : (
-              <View style={[StyleSheet.absoluteFill, s.formBlur, { backgroundColor: 'rgba(11, 11, 20, 0.85)' }]} />
+              <View style={[StyleSheet.absoluteFill, styles.formBlur, { backgroundColor: colors.surface, borderRadius: CardTokens.radiusLarge, borderColor: colors.borderLight }]} />
             )}
 
-            <View style={s.formContent}>
-              <View style={s.headerBlock}>
-                <View style={[s.iconWrapper, { backgroundColor: 'rgba(255,255,255,0.1)' }]}>
-                  <Ionicons name="body-outline" size={28} color="#FFFFFF" />
+            <View style={[styles.formContent, { padding: CardTokens.paddingLarge * 2 }]}>
+              <View style={styles.headerBlock}>
+                <View style={[styles.iconWrapper, { backgroundColor: colors.overlay, borderColor: colors.borderLight }]}>
+                  <Ionicons name="body-outline" size={28} color={colors.textInverse} />
                 </View>
-                <Text style={s.title}>Culture Match</Text>
-                <Text style={s.subtitle}>
+                <Text style={[styles.title, { color: colors.textInverse }]}>Culture Match</Text>
+                <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
                   Add your ethnicity and languages so we can personalize communities and events better.
                 </Text>
               </View>
 
-              <View style={s.block}>
-                <Text style={s.label}>Ethnicity</Text>
+              <View style={[styles.block, { borderColor: colors.borderLight, backgroundColor: colors.primaryGlow }]}>
+                <Text style={[styles.label, { color: colors.textInverse }]}>Ethnicity</Text>
                 <TextInput
                   value={ethnicityInput}
                   onChangeText={setEthnicityInput}
                   placeholder="Type your ethnicity"
-                  placeholderTextColor="rgba(255,255,255,0.4)"
-                  style={s.input}
+                  placeholderTextColor={colors.textSecondary}
+                  style={[styles.input, { borderColor: colors.borderLight, color: colors.textInverse, backgroundColor: colors.overlay }]}
                   autoCapitalize="words"
                 />
-                <Text style={s.helper}>Suggestions appear after 3 letters.</Text>
+                <Text style={[styles.helper, { color: colors.textSecondary }]}>Suggestions appear after 3 letters.</Text>
                 {isLoadingEthnicity ? (
-                  <ActivityIndicator size="small" color={CultureTokens.saffron} style={s.loader} />
+                  <ActivityIndicator size="small" color={CultureTokens.saffron} style={styles.loader} />
                 ) : (
                   ethnicitySuggestions.length > 0 && (
-                    <View style={s.suggestionWrap}>
+                    <View style={styles.suggestionWrap}>
                       {ethnicitySuggestions.map((item) => (
                         <Pressable
                           key={`eth-${item}`}
-                          style={({pressed}) => [s.suggestionChip, pressed && { opacity: 0.7 }]}
+                          style={({pressed}) => [styles.suggestionChip, { borderColor: colors.border, backgroundColor: colors.overlay }, pressed && { opacity: 0.7 }]}
                           onPress={() => setEthnicityInput(item)}
                         >
-                          <Text style={s.suggestionText}>{item}</Text>
+                          <Text style={[styles.suggestionText, { color: colors.textInverse }]}>{item}</Text>
                         </Pressable>
                       ))}
                     </View>
@@ -241,25 +244,25 @@ export default function CultureMatchScreen() {
                 )}
               </View>
 
-              <View style={s.block}>
-                <Text style={s.label}>Languages</Text>
+              <View style={[styles.block, { borderColor: colors.borderLight, backgroundColor: colors.primaryGlow }]}>
+                <Text style={[styles.label, { color: colors.textInverse }]}>Languages</Text>
 
                 {selectedLanguages.length > 0 && (
-                  <View style={s.selectedWrap}>
+                  <View style={styles.selectedWrap}>
                     {selectedLanguages.map((language) => (
                       <Pressable
                         key={`sel-${language}`}
-                        style={({pressed}) => [s.selectedChip, pressed && { opacity: 0.8 }]}
+                        style={({pressed}) => [styles.selectedChip, pressed && { opacity: 0.8 }]}
                         onPress={() => removeLanguage(language)}
                       >
-                        <Text style={s.selectedText}>{language}</Text>
-                        <Ionicons name="close" size={16} color="#FFFFFF" />
+                        <Text style={[styles.selectedText, { color: colors.textInverse }]}>{language}</Text>
+                        <Ionicons name="close" size={16} color={colors.textInverse} />
                       </Pressable>
                     ))}
                   </View>
                 )}
 
-                <View style={s.inputRow}>
+                <View style={styles.inputRow}>
                   <TextInput
                     value={languageInput}
                     onChangeText={(value) => {
@@ -267,32 +270,32 @@ export default function CultureMatchScreen() {
                       if (value.trim().length < 3) setLanguageSuggestions([]);
                     }}
                     placeholder="Type a language"
-                    placeholderTextColor="rgba(255,255,255,0.4)"
-                    style={[s.input, s.inputFlex]}
+                    placeholderTextColor={colors.textSecondary}
+                    style={[styles.input, styles.inputFlex, { borderColor: colors.borderLight, color: colors.textInverse, backgroundColor: colors.overlay }]}
                     autoCapitalize="words"
                   />
                   <Pressable
-                    style={({pressed}) => [s.addBtn, (!languageInput.trim() || pressed) && { opacity: 0.7 }]}
+                    style={({pressed}) => [styles.addBtn, (!languageInput.trim() || pressed) && { opacity: 0.7 }]}
                     onPress={() => addLanguage(languageInput)}
                     disabled={!languageInput.trim()}
                   >
                     <Ionicons name="add" size={24} color="#1B0F2E" />
                   </Pressable>
                 </View>
-                <Text style={s.helper}>Multi-select supported.</Text>
+                <Text style={[styles.helper, { color: colors.textSecondary }]}>Multi-select supported.</Text>
 
                 {isLoadingLanguage ? (
-                  <ActivityIndicator size="small" color={CultureTokens.saffron} style={s.loader} />
+                  <ActivityIndicator size="small" color={CultureTokens.saffron} style={styles.loader} />
                 ) : (
                   languageSuggestions.length > 0 && (
-                    <View style={s.suggestionWrap}>
+                    <View style={styles.suggestionWrap}>
                       {languageSuggestions.map((item) => (
                         <Pressable
                           key={`lang-${item}`}
-                          style={({pressed}) => [s.suggestionChip, pressed && { opacity: 0.7 }]}
+                          style={({pressed}) => [styles.suggestionChip, { borderColor: colors.border, backgroundColor: colors.overlay }, pressed && { opacity: 0.7 }]}
                           onPress={() => addLanguage(item)}
                         >
-                          <Text style={s.suggestionText}>{item}</Text>
+                          <Text style={[styles.suggestionText, { color: colors.textInverse }]}>{item}</Text>
                         </Pressable>
                       ))}
                     </View>
@@ -300,7 +303,7 @@ export default function CultureMatchScreen() {
                 )}
               </View>
 
-              <View style={s.spacer} />
+              <View style={styles.spacer} />
 
               <Button
                 variant="primary"
@@ -308,7 +311,7 @@ export default function CultureMatchScreen() {
                 fullWidth
                 rightIcon="arrow-forward"
                 onPress={handleContinue}
-                style={[s.submitBtn, { backgroundColor: CultureTokens.saffron }]}
+                style={[styles.submitBtn, shadows.medium, { backgroundColor: CultureTokens.saffron }]}
               >
                 Continue
               </Button>
@@ -320,44 +323,44 @@ export default function CultureMatchScreen() {
   );
 }
 
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B0B14' },
-  gradientBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.8 },
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+  container: { flex: 1 },
+  gradientBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.85 },
   orb: { position: 'absolute', width: 300, height: 300, borderRadius: 150 },
   keyboardAvoid: { flex: 1 },
   mobileHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 12 },
-  stepText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: 'rgba(255,255,255,0.5)', letterSpacing: 1, textTransform: 'uppercase' },
+  stepText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', letterSpacing: 1, textTransform: 'uppercase' },
   desktopBackRow: { position: 'absolute', top: 32, left: 40, zIndex: 10 },
-  desktopBackBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 24, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  desktopBackText: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: '#FFFFFF' },
+  desktopBackBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 24, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1 },
+  desktopBackText: { fontSize: 14, fontFamily: 'Poppins_500Medium' },
   scrollContent: { flexGrow: 1, paddingHorizontal: 20, paddingBottom: 60, justifyContent: 'center' },
   scrollContentDesktop: { paddingVertical: 60 },
-  formContainer: { width: '100%', maxWidth: 580, alignSelf: 'center', borderRadius: 32, overflow: 'hidden' },
+  formContainer: { width: '100%', maxWidth: 580, alignSelf: 'center', overflow: 'hidden' },
   formContainerDesktop: { maxWidth: 640 },
-  formBlur: { borderRadius: 32, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  formContent: { padding: 32, paddingTop: 40 },
+  formBlur: { borderWidth: 1 },
+  formContent: { paddingTop: 40 },
   headerBlock: { alignItems: 'center', marginBottom: 32 },
-  iconWrapper: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  title: { fontSize: 32, fontFamily: 'Poppins_700Bold', textAlign: 'center', marginBottom: 8, letterSpacing: -0.5, color: '#FFFFFF' },
-  subtitle: { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', color: 'rgba(255,255,255,0.7)', lineHeight: 22 },
+  iconWrapper: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: 16, borderWidth: 1 },
+  title: { fontSize: 32, fontFamily: 'Poppins_700Bold', textAlign: 'center', marginBottom: 8, letterSpacing: -0.5 },
+  subtitle: { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22 },
   
-  block: { marginBottom: 24, padding: 20, borderRadius: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.02)' },
-  label: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', marginBottom: 12, color: '#FFFFFF' },
-  input: { borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', borderRadius: 16, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, fontFamily: 'Poppins_400Regular', color: '#FFFFFF', backgroundColor: 'rgba(0,0,0,0.2)' },
+  block: { marginBottom: 24, padding: 20, borderRadius: 24, borderWidth: 1 },
+  label: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', marginBottom: 12 },
+  input: { borderWidth: 1, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, fontFamily: 'Poppins_400Regular' },
   inputFlex: { flex: 1 },
   inputRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   addBtn: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: CultureTokens.saffron },
-  helper: { fontSize: 13, fontFamily: 'Poppins_400Regular', marginTop: 10, color: 'rgba(255,255,255,0.5)' },
+  helper: { fontSize: 13, fontFamily: 'Poppins_400Regular', marginTop: 10 },
   loader: { marginTop: 10 },
   
   selectedWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
   selectedChip: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: CultureTokens.saffron, backgroundColor: 'rgba(255, 140, 66, 0.15)', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 8 },
-  selectedText: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: '#FFFFFF' },
+  selectedText: { fontSize: 14, fontFamily: 'Poppins_500Medium' },
   
   suggestionWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
-  suggestionChip: { borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 8 },
-  suggestionText: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.9)' },
+  suggestionChip: { borderWidth: 1, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 8 },
+  suggestionText: { fontSize: 14, fontFamily: 'Poppins_500Medium' },
   
   spacer: { height: 24 },
-  submitBtn: { height: 56, borderRadius: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 16, elevation: 6 },
+  submitBtn: { height: 56, borderRadius: 16 },
 });

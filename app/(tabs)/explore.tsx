@@ -5,19 +5,22 @@ import BrowsePage, { BrowseItem, CategoryFilter } from '@/components/BrowsePage'
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { api } from '@/lib/api';
 import type { EventData } from '@/shared/schema';
-import { Colors } from '@/constants/theme';
+import { useColors } from '@/hooks/useColors';
+import { CultureTokens, CategoryColors } from '@/constants/theme';
 
-const eventCategories: CategoryFilter[] = [
-  { label: 'All', icon: 'calendar', color: Colors.text },
-  { label: 'Music', icon: 'musical-notes', color: Colors.error },
-  { label: 'Dance', icon: 'body', color: Colors.secondary },
-  { label: 'Food', icon: 'restaurant', color: Colors.warning },
-  { label: 'Art', icon: 'color-palette', color: Colors.primary },
-  { label: 'Wellness', icon: 'heart', color: Colors.error },
-  { label: 'Film', icon: 'film', color: Colors.info },
-  { label: 'Workshop', icon: 'construct', color: Colors.accent },
-  { label: 'Heritage', icon: 'library', color: Colors.gold },
-];
+function useEventCategories(colors: ReturnType<typeof useColors>): CategoryFilter[] {
+  return [
+    { label: 'All', icon: 'calendar', color: colors.text },
+    { label: 'Music', icon: 'musical-notes', color: CategoryColors.music },
+    { label: 'Dance', icon: 'body', color: CategoryColors.dance },
+    { label: 'Food', icon: 'restaurant', color: CategoryColors.food },
+    { label: 'Art', icon: 'color-palette', color: CategoryColors.art },
+    { label: 'Wellness', icon: 'heart', color: CategoryColors.wellness },
+    { label: 'Film', icon: 'film', color: CategoryColors.movies },
+    { label: 'Workshop', icon: 'construct', color: CategoryColors.workshop },
+    { label: 'Heritage', icon: 'library', color: CategoryColors.heritage },
+  ];
+}
 
 function formatDate(dateStr: string): string {
   const [year, month, day] = dateStr.split('-').map(Number);
@@ -27,8 +30,11 @@ function formatDate(dateStr: string): string {
 }
 
 export default function ExploreScreen() {
+  const colors = useColors();
   const { state } = useOnboarding();
   const params = useLocalSearchParams<{ city?: string }>();
+  
+  const eventCategories = useEventCategories(colors);
 
   const cityParam = Array.isArray(params.city) ? params.city[0] : params.city;
   const activeCity = cityParam || state.city;
@@ -67,7 +73,7 @@ export default function ExploreScreen() {
     <ErrorBoundary>
       <BrowsePage
         title={cityParam ? `Events in ${cityParam}` : "Events"}
-        accentColor={Colors.primary}
+        accentColor={CultureTokens.saffron}
         accentIcon="calendar"
         categories={eventCategories}
         categoryKey="category"

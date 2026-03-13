@@ -1,4 +1,5 @@
 import React from 'react';
+import { useColors } from '@/hooks/useColors';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { Colors } from '@/constants/theme';
 
@@ -8,6 +9,8 @@ interface ProfileTagsProps {
 }
 
 export function ProfileTags({ tags, entityColor }: ProfileTagsProps) {
+  const colors = useColors();
+  const styles = getStyles(colors);
   if (tags.length === 0) return null;
 
   return (
@@ -26,7 +29,7 @@ export function ProfileTags({ tags, entityColor }: ProfileTagsProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   section: {
     paddingHorizontal: 20,
     marginTop: 24,

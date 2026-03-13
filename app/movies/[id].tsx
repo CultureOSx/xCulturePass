@@ -5,11 +5,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import { useColors } from '@/hooks/useColors';
 import { CultureTokens } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 export default function MovieDetailScreen() {
+  const colors = useColors();
+  const styles = getStyles(colors);
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
@@ -44,7 +47,7 @@ export default function MovieDetailScreen() {
   if (!movie) return (
     <ErrorBoundary>
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={{ color: '#FFFFFF', fontFamily: 'Poppins_500Medium' }}>Movie not found</Text>
+        <Text style={{ color: colors.text, fontFamily: 'Poppins_500Medium' }}>Movie not found</Text>
       </View>
     </ErrorBoundary>
   );
@@ -54,11 +57,11 @@ export default function MovieDetailScreen() {
       <View style={[styles.container, { paddingTop: topInset }]}> 
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} style={styles.headerBtn} hitSlop={10} accessibilityRole="button" accessibilityLabel="Go back">
-            <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+            <Ionicons name="chevron-back" size={24} color={colors.text} />
           </Pressable>
           <Text style={styles.headerTitle} numberOfLines={1}>{movie.title}</Text>
           <Pressable style={styles.headerBtn} hitSlop={10} onPress={handleShare} accessibilityRole="button" accessibilityLabel={`Share ${movie.title}`}>
-            <Ionicons name="share-outline" size={22} color="#FFFFFF" />
+            <Ionicons name="share-outline" size={22} color={colors.text} />
           </Pressable>
         </View>
 
@@ -128,9 +131,9 @@ export default function MovieDetailScreen() {
                   <Ionicons name="open-outline" size={18} color="#FFF" />
                   <Text style={styles.externalBtnText}>Event Cinemas</Text>
                 </Pressable>
-                <Pressable style={[styles.externalBtn, { backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }]} onPress={() => Linking.openURL('https://www.dendy.com.au/movies')} accessibilityRole="button"> 
-                  <Ionicons name="open-outline" size={18} color="#FFFFFF" />
-                  <Text style={[styles.externalBtnText, { color: '#FFFFFF' }]}>Dendy Cinemas</Text>
+                <Pressable style={[styles.externalBtn, { backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight }]} onPress={() => Linking.openURL('https://www.dendy.com.au/movies')} accessibilityRole="button"> 
+                  <Ionicons name="open-outline" size={18} color={colors.text} />
+                  <Text style={[styles.externalBtnText, { color: colors.text }]}>Dendy Cinemas</Text>
                 </Pressable>
               </View>
             </View>
@@ -152,7 +155,7 @@ export default function MovieDetailScreen() {
             accessibilityRole="button"
             accessibilityLabel={`Book tickets for ${movie.title}`}
           >
-            <Ionicons name="ticket" size={18} color="#0B0B14" />
+            <Ionicons name="ticket" size={18} color={colors.background} />
             <Text style={styles.bookButtonText}>Find Tickets</Text>
           </Pressable>
         </View>
@@ -161,8 +164,8 @@ export default function MovieDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B0B14' },
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   header: { 
     flexDirection: 'row', 
     alignItems: 'center', 
@@ -174,16 +177,16 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: colors.backgroundSecondary,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: colors.borderLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: { 
     fontSize: 18, 
     fontFamily: 'Poppins_700Bold', 
-    color: '#FFFFFF', 
+    color: colors.text, 
     flex: 1, 
     textAlign: 'center', 
     marginHorizontal: 12,
@@ -201,41 +204,41 @@ const styles = StyleSheet.create({
     paddingVertical: 8, 
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: colors.borderLight,
   },
-  posterScore: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', letterSpacing: 0.5 },
+  posterScore: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: colors.text, letterSpacing: 0.5 },
   infoSection: { padding: 20, gap: 14 },
-  movieTitle: { fontSize: 26, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', letterSpacing: -0.5 },
+  movieTitle: { fontSize: 26, fontFamily: 'Poppins_700Bold', color: colors.text, letterSpacing: -0.5 },
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   metaPill: { 
-    backgroundColor: 'rgba(255,255,255,0.05)', 
+    backgroundColor: colors.backgroundSecondary, 
     paddingHorizontal: 14, 
     paddingVertical: 6, 
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)'
+    borderColor: colors.borderLight
   },
-  metaPillText: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.8)' },
+  metaPillText: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
   genreRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   genrePill: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 12 },
   genrePillText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
-  description: { fontSize: 15, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.6)', lineHeight: 24 },
+  description: { fontSize: 15, fontFamily: 'Poppins_400Regular', color: colors.textSecondary, lineHeight: 24 },
   crewSection: { flexDirection: 'row', gap: 12 },
-  crewLabel: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF', width: 80 },
-  crewValue: { fontSize: 14, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.6)', flex: 1, lineHeight: 22 },
+  crewLabel: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: colors.text, width: 80 },
+  crewValue: { fontSize: 14, fontFamily: 'Poppins_400Regular', color: colors.textSecondary, flex: 1, lineHeight: 22 },
   
   showtimeSection: { paddingHorizontal: 20, gap: 16, paddingTop: 10 },
-  showtimeTitle: { fontSize: 20, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+  showtimeTitle: { fontSize: 20, fontFamily: 'Poppins_700Bold', color: colors.text },
   cinemaBlock: { gap: 12 },
   cinemaHeader: { 
     flexDirection: 'row', 
     alignItems: 'center', 
     gap: 12, 
-    backgroundColor: 'rgba(255,255,255,0.03)', 
+    backgroundColor: colors.surface, 
     borderRadius: 16, 
     padding: 16, 
     borderWidth: 1, 
-    borderColor: 'rgba(255,255,255,0.1)' 
+    borderColor: colors.borderLight 
   },
   cinemaIconBox: {
     width: 32,
@@ -245,21 +248,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cinemaName: { flex: 1, fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
+  cinemaName: { flex: 1, fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.text },
   cinemaPrice: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: CultureTokens.gold },
   timesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingLeft: 4 },
   timeChip: { 
     paddingHorizontal: 20, 
     paddingVertical: 12, 
     borderRadius: 14, 
-    backgroundColor: 'rgba(255,255,255,0.03)', 
+    backgroundColor: colors.surface, 
     borderWidth: 1, 
-    borderColor: 'rgba(255,255,255,0.1)' 
+    borderColor: colors.borderLight 
   },
-  timeText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
+  timeText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: colors.text },
   
   externalLinksSection: { marginTop: 24, gap: 12 },
-  externalLinksTitle: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF', marginBottom: 4 },
+  externalLinksTitle: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: colors.text, marginBottom: 4 },
   externalBtn: { 
     flexDirection: 'row', 
     alignItems: 'center', 
@@ -282,10 +285,10 @@ const styles = StyleSheet.create({
     paddingTop: 16, 
     backgroundColor: 'rgba(11,11,20,0.95)', 
     borderTopWidth: 1, 
-    borderTopColor: 'rgba(255,255,255,0.1)' 
+    borderTopColor: colors.borderLight 
   },
-  bottomPrice: { fontSize: 24, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', letterSpacing: -0.5 },
-  bottomLabel: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.5)' },
+  bottomPrice: { fontSize: 24, fontFamily: 'Poppins_700Bold', color: colors.text, letterSpacing: -0.5 },
+  bottomLabel: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: colors.textTertiary },
   bookButton: { 
     flexDirection: 'row', 
     alignItems: 'center', 
@@ -295,5 +298,5 @@ const styles = StyleSheet.create({
     paddingVertical: 16, 
     borderRadius: 16 
   },
-  bookButtonText: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: '#0B0B14' },
+  bookButtonText: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: colors.background },
 });

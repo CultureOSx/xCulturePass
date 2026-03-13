@@ -1,4 +1,5 @@
 import React from 'react';
+import { useColors } from '@/hooks/useColors';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/theme';
@@ -21,6 +22,8 @@ function timeAgo(dateStr: string | Date | null) {
 }
 
 export function ProfileReviews({ reviews }: ProfileReviewsProps) {
+  const colors = useColors();
+  const styles = getStyles(colors);
   if (!reviews || reviews.length === 0) return null;
 
   return (
@@ -54,7 +57,7 @@ export function ProfileReviews({ reviews }: ProfileReviewsProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   section: {
     paddingHorizontal: 20,
     marginTop: 24,

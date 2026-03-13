@@ -19,6 +19,7 @@ import { api } from '@/lib/api';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useAuth } from '@/lib/auth';
 import { calculateDistance, getPostcodesByPlace } from '@shared/location/australian-postcodes';
+import { useColors } from '@/hooks/useColors';
 import { CultureTokens } from '@/constants/theme';
 import { BlurView } from 'expo-blur';
 
@@ -39,6 +40,8 @@ function cityToCoordinates(city?: string): { latitude: number; longitude: number
 }
 
 export default function EventDetailScreen() {
+  const colors = useColors();
+  const s = getStyles(colors);
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
 
@@ -59,7 +62,7 @@ export default function EventDetailScreen() {
   if (!event) {
     return (
       <View style={s.emptyContainer}>
-        <Ionicons name="calendar-outline" size={64} color="rgba(255,255,255,0.4)" />
+        <Ionicons name="calendar-outline" size={64} color={colors.textTertiary} />
         <Text style={s.errorText}>Event not found</Text>
         <Text style={s.errorDesc}>This event may have been removed or is currently unavailable.</Text>
         <Pressable onPress={() => goBackOrReplace('/(tabs)')} style={s.backActionBtn}>
@@ -77,6 +80,8 @@ export default function EventDetailScreen() {
 }
 
 function EventDetail({ event, insets }: any) {
+  const colors = useColors();
+  const s = getStyles(colors);
   const { isEventSaved, toggleSaveEvent } = useSaved();
   const { userId } = useAuth();
   const saved = isEventSaved(event.id);
@@ -235,7 +240,7 @@ function EventDetail({ event, insets }: any) {
 
   return (
     <View style={s.container}>
-      <LinearGradient colors={['rgba(44, 42, 114, 0.25)', '#0B0B14']} style={StyleSheet.absoluteFillObject} pointerEvents="none" />
+      <LinearGradient colors={[CultureTokens.indigo + '40', colors.background]} style={StyleSheet.absoluteFillObject} pointerEvents="none" />
       <View style={[s.orb, { top: -50, right: -100, backgroundColor: CultureTokens.indigo, opacity: 0.2, ...Platform.select({ web: { filter: 'blur(80px)' }, default: {} }) } as any]} />
       <View style={[s.orb, { top: 400, left: -100, backgroundColor: CultureTokens.saffron, opacity: 0.1, ...Platform.select({ web: { filter: 'blur(100px)' }, default: {} }) } as any]} />
       <View style={[isDesktop && s.desktopShellWrapper]}>
@@ -250,16 +255,16 @@ function EventDetail({ event, insets }: any) {
                   {/* Nav */}
                   <View style={s.heroNav}>
                     <Pressable style={({pressed}) => [s.navBtn, { transform: [{ scale: pressed ? 0.9 : 1 }] }]} onPress={() => goBackOrReplace("/(tabs)")}>
-                      <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+                      <Ionicons name="chevron-back" size={24} color={colors.text} />
                       {!isWeb && <BlurView intensity={20} tint="light" style={StyleSheet.absoluteFill} />}
                     </Pressable>
                     <View style={s.heroActions}>
                       <Pressable style={({pressed}) => [s.navBtn, { transform: [{ scale: pressed ? 0.9 : 1 }] }]} onPress={handleShare}>
-                        <Ionicons name="share-outline" size={20} color="#FFFFFF" />
+                        <Ionicons name="share-outline" size={20} color={colors.text} />
                         {!isWeb && <BlurView intensity={20} tint="light" style={StyleSheet.absoluteFill} />}
                       </Pressable>
                       <Pressable style={({pressed}) => [s.navBtn, { transform: [{ scale: pressed ? 0.9 : 1 }] }]} onPress={() => confirmAndReport({ targetType: "event", targetId: String(event.id) })}>
-                        <Ionicons name="flag-outline" size={20} color="#FFFFFF" />
+                        <Ionicons name="flag-outline" size={20} color={colors.text} />
                         {!isWeb && <BlurView intensity={20} tint="light" style={StyleSheet.absoluteFill} />}
                       </Pressable>
                       <Pressable style={({pressed}) => [s.navBtn, { transform: [{ scale: pressed ? 0.9 : 1 }] }]} onPress={handleSave}>
@@ -276,8 +281,8 @@ function EventDetail({ event, insets }: any) {
                       </View>
                       {event.councilTag && (
                         <View style={[s.heroBadge, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
-                          <Ionicons name="shield-checkmark" size={12} color="#FFFFFF" />
-                          <Text style={[s.heroBadgeText, { color: '#FFFFFF' }]}>{event.councilTag}</Text>
+                          <Ionicons name="shield-checkmark" size={12} color={colors.text} />
+                          <Text style={[s.heroBadgeText, { color: colors.text }]}>{event.councilTag}</Text>
                         </View>
                       )}
                     </View>
@@ -295,7 +300,7 @@ function EventDetail({ event, insets }: any) {
                 <View style={s.countdownWrapper}>
                   {countdown.ended ? (
                     <View style={s.countdownEndedBox}>
-                      <Ionicons name="time-outline" size={18} color="rgba(255,255,255,0.6)" />
+                      <Ionicons name="time-outline" size={18} color={colors.textSecondary} />
                       <Text style={s.countdownEndedText}>Event has ended</Text>
                     </View>
                   ) : (
@@ -347,7 +352,7 @@ function EventDetail({ event, insets }: any) {
                     <Text style={s.infoVal}>{event.venue}</Text>
                     <Text style={s.infoSub} numberOfLines={1}>{event.address || event.city}</Text>
                   </View>
-                  <Ionicons name="open-outline" size={16} color="rgba(255,255,255,0.4)" />
+                  <Ionicons name="open-outline" size={16} color={colors.textTertiary} />
                 </Pressable>
               </View>
 
@@ -401,7 +406,7 @@ function EventDetail({ event, insets }: any) {
                           <Text style={s.tierPrice}>
                             {tier.priceCents === 0 ? "Free" : `$${(tier.priceCents / 100).toFixed(2)}`}
                           </Text>
-                          <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.4)" />
+                          <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
                         </View>
                       </Pressable>
                     ))}
@@ -415,14 +420,14 @@ function EventDetail({ event, insets }: any) {
                  <Text style={s.sectionTitle}>Event Details</Text>
                  <View style={s.metricRow}>
                    <View style={s.metricIconBg}><Ionicons name="finger-print-outline" size={16} color={CultureTokens.indigo} /></View>
-                   <Text style={[s.metricText, { color: '#FFFFFF' }]}>CPID: {event.cpid}</Text>
+                   <Text style={[s.metricText, { color: colors.text }]}>CPID: {event.cpid}</Text>
                  </View>
                  <View style={s.metricRow}>
-                   <View style={s.metricIconBg}><Ionicons name="pricetag-outline" size={16} color="rgba(255,255,255,0.6)" /></View>
+                   <View style={s.metricIconBg}><Ionicons name="pricetag-outline" size={16} color={colors.textSecondary} /></View>
                    <Text style={s.metricText}>Category: {event.category}</Text>
                  </View>
                  <View style={s.metricRow}>
-                   <View style={s.metricIconBg}><Ionicons name="people-outline" size={16} color="rgba(255,255,255,0.6)" /></View>
+                   <View style={s.metricIconBg}><Ionicons name="people-outline" size={16} color={colors.textSecondary} /></View>
                    <Text style={s.metricText}>Community: {event.communityId}</Text>
                  </View>
               </View>
@@ -434,7 +439,7 @@ function EventDetail({ event, insets }: any) {
 
       {/* Floating Bottom Bar Container */}
       <View style={[s.floatingBottomBarWrapper, { paddingBottom: bottomInset + 16 }]}>
-        <LinearGradient colors={['transparent', '#0B0B14']} style={StyleSheet.absoluteFillObject} />
+        <LinearGradient colors={['transparent', colors.background]} style={StyleSheet.absoluteFillObject} />
         <View style={{ overflow: 'hidden', borderRadius: 24, marginHorizontal: 20 }}>
           <BlurView 
             intensity={isWeb ? 80 : 30} 
@@ -448,7 +453,7 @@ function EventDetail({ event, insets }: any) {
             <View style={s.bottomBtnGroup}>
               {event.externalTicketUrl ? (
                 <Pressable style={({ pressed }) => [s.externalBtn, { opacity: pressed ? 0.7 : 1 }]} onPress={() => { if(event.externalTicketUrl) Linking.openURL(event.externalTicketUrl); }}>
-                  <Ionicons name="open-outline" size={16} color="#FFFFFF" />
+                  <Ionicons name="open-outline" size={16} color={colors.text} />
                   <Text style={s.externalBtnText}>Organiser</Text>
                 </Pressable>
               ) : null}
@@ -456,7 +461,7 @@ function EventDetail({ event, insets }: any) {
                 style={({ pressed }) => [s.buyBtn, { transform: [{ scale: pressed ? 0.98 : 1 }] }]} 
                 onPress={() => openTicketModal()}
               >
-                <Ionicons name="ticket" size={20} color="#FFFFFF" />
+                <Ionicons name="ticket" size={20} color={colors.text} />
                 <Text style={s.buyBtnText}>Get Tickets</Text>
               </Pressable>
             </View>
@@ -468,14 +473,14 @@ function EventDetail({ event, insets }: any) {
       <Modal visible={ticketModalVisible} animationType="fade" transparent onRequestClose={() => setTicketModalVisible(false)}>
         <Pressable style={s.modalOverlay} onPress={() => setTicketModalVisible(false)}>
           <Pressable style={[s.modalSheet, { paddingBottom: insets.bottom + 20 }, isDesktop && { maxWidth: 600, width: '100%', alignSelf: 'center' }]} onPress={e => e.stopPropagation()}>
-            {isWeb ? <View style={[StyleSheet.absoluteFill, { backgroundColor: '#0B0B14'}]} /> : <BlurView intensity={90} tint="dark" style={StyleSheet.absoluteFill} />}
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(255,255,255,0.03)', borderTopWidth: 1, borderColor: 'rgba(255,255,255,0.1)'}]} />
+            {isWeb ? <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background}]} /> : <BlurView intensity={90} tint="dark" style={StyleSheet.absoluteFill} />}
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.surface, borderTopWidth: 1, borderColor: colors.borderLight}]} />
             <View style={s.modalHandle} />
             
             <View style={s.modalHeader}>
               <Text style={s.modalTitle}>Select Tickets</Text>
               <Pressable onPress={() => setTicketModalVisible(false)} hitSlop={10} style={({pressed}) => [pressed && {opacity:0.6}]}>
-                <Ionicons name="close-circle" size={28} color="rgba(255,255,255,0.4)" />
+                <Ionicons name="close-circle" size={28} color={colors.textTertiary} />
               </Pressable>
             </View>
 
@@ -564,7 +569,7 @@ function EventDetail({ event, insets }: any) {
                 {/* Glowing underlay for confirm btn */}
                 <LinearGradient colors={['rgba(255,255,255,0.05)', 'transparent']} style={StyleSheet.absoluteFillObject} />
                 {purchaseMutation.isPending || paymentLoading ? (
-                  <ActivityIndicator color="#FFFFFF" size="small" />
+                  <ActivityIndicator color={colors.text} size="small" />
                 ) : (
                   <Text style={s.confirmBtnText}>{totalPrice === 0 ? "Get Free Ticket" : `Pay A$${(totalPrice / 100).toFixed(2)}`}</Text>
                 )}
@@ -578,15 +583,15 @@ function EventDetail({ event, insets }: any) {
   );
 }
 
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B0B14' },
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   orb: { position: 'absolute', width: 350, height: 350, borderRadius: 175 },
-  loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0B0B14' },
-  emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40, gap: 12, backgroundColor: '#0B0B14' },
-  errorText: { fontSize: 20, fontFamily: 'Poppins_700Bold', marginTop: 12, color: '#FFFFFF' },
-  errorDesc: { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', marginBottom: 20, color: 'rgba(255,255,255,0.6)' },
-  backActionBtn: { paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, borderWidth: 1, backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' },
-  backActionText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
+  loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background },
+  emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40, gap: 12, backgroundColor: colors.background },
+  errorText: { fontSize: 20, fontFamily: 'Poppins_700Bold', marginTop: 12, color: colors.text },
+  errorDesc: { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', marginBottom: 20, color: colors.textSecondary },
+  backActionBtn: { paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, borderWidth: 1, backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight },
+  backActionText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.text },
 
   desktopShellWrapper: { flex: 1, alignItems: 'center' },
   desktopShell: { width: '100%', maxWidth: 800 },
@@ -595,102 +600,102 @@ const s = StyleSheet.create({
   heroWrapper: { width: '100%' },
   heroSection: { position: 'relative', justifyContent: 'flex-end' },
   heroNav: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16, zIndex: 10 },
-  navBtn: { width: 44, height: 44, borderRadius: 22, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.3)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
+  navBtn: { width: 44, height: 44, borderRadius: 22, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.3)', borderWidth: 1, borderColor: colors.borderLight },
   heroActions: { flexDirection: 'row', gap: 12 },
   
   heroContent: { paddingHorizontal: 20, paddingBottom: 32, gap: 8, zIndex: 2 },
   heroBadges: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 4 },
   heroBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  heroBadgeText: { color: '#0B0B14', fontSize: 12, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 1.2 },
-  heroTitle: { fontSize: 34, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', lineHeight: 40, letterSpacing: -0.5 },
+  heroBadgeText: { color: colors.background, fontSize: 12, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 1.2 },
+  heroTitle: { fontSize: 34, fontFamily: 'Poppins_700Bold', color: colors.text, lineHeight: 40, letterSpacing: -0.5 },
   heroOrganizer: { fontSize: 16, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.85)' },
 
   countdownWrapper: { marginBottom: 20 },
-  countdownEndedBox: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 16, borderRadius: 16, borderWidth: 1, justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.1)' },
-  countdownEndedText: { fontSize: 15, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.6)' },
-  countdownRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 16, borderRadius: 16, borderWidth: 1, backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.1)' },
+  countdownEndedBox: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 16, borderRadius: 16, borderWidth: 1, justifyContent: 'center', backgroundColor: colors.surface, borderColor: colors.borderLight },
+  countdownEndedText: { fontSize: 15, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
+  countdownRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 16, borderRadius: 16, borderWidth: 1, backgroundColor: colors.surface, borderColor: colors.borderLight },
   countBlock: { alignItems: 'center', minWidth: 44 },
-  countNum: { fontSize: 22, fontFamily: 'Poppins_700Bold', lineHeight: 28, color: '#FFFFFF' },
+  countNum: { fontSize: 22, fontFamily: 'Poppins_700Bold', lineHeight: 28, color: colors.text },
   countLabel: { fontSize: 12, fontFamily: 'Poppins_500Medium', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)' },
   countSep: { fontSize: 20, fontFamily: 'Poppins_700Bold', paddingBottom: 8, color: 'rgba(255,255,255,0.1)' },
 
   infoGrid: { gap: 12, marginBottom: 20 },
-  infoCard: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16, borderWidth: 1, gap: 14, backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.1)' },
+  infoCard: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16, borderWidth: 1, gap: 14, backgroundColor: colors.surface, borderColor: colors.borderLight },
   infoIconWrap: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
   infoTextWrap: { gap: 2 },
   infoLabel: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 0.5, color: 'rgba(255,255,255,0.4)' },
-  infoVal: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
-  infoSub: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.6)' },
+  infoVal: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.text },
+  infoSub: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: colors.textSecondary },
   
   earlyAccessBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, borderRadius: 12, borderWidth: 1, marginBottom: 20, justifyContent: 'center', backgroundColor: 'rgba(44, 42, 114, 0.15)', borderColor: 'rgba(44, 42, 114, 0.4)' },
   earlyAccessText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: '#A5B4FC' },
 
-  divider: { height: 1, width: '100%', marginVertical: 24, borderRadius: 1, backgroundColor: 'rgba(255,255,255,0.1)' },
+  divider: { height: 1, width: '100%', marginVertical: 24, borderRadius: 1, backgroundColor: colors.surfaceElevated },
 
   section: { gap: 12 },
-  sectionTitle: { fontSize: 20, fontFamily: 'Poppins_700Bold', marginBottom: 4, color: '#FFFFFF' },
-  aboutDesc: { fontSize: 15, fontFamily: 'Poppins_400Regular', lineHeight: 24, color: 'rgba(255,255,255,0.8)' },
+  sectionTitle: { fontSize: 20, fontFamily: 'Poppins_700Bold', marginBottom: 4, color: colors.text },
+  aboutDesc: { fontSize: 15, fontFamily: 'Poppins_400Regular', lineHeight: 24, color: colors.textSecondary },
 
   capacityHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   capacityPercent: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: 'rgba(255,255,255,0.4)' },
-  capacityBarBg: { height: 8, borderRadius: 4, overflow: 'hidden', marginTop: 4, backgroundColor: 'rgba(255,255,255,0.1)' },
+  capacityBarBg: { height: 8, borderRadius: 4, overflow: 'hidden', marginTop: 4, backgroundColor: colors.surfaceElevated },
   capacityBarFill: { height: '100%', borderRadius: 4 },
   capacityFooter: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },
-  capacityFootText: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.6)' },
+  capacityFootText: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
 
-  tierCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderRadius: 16, borderWidth: 1, marginBottom: 10, backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.1)' },
+  tierCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderRadius: 16, borderWidth: 1, marginBottom: 10, backgroundColor: colors.surface, borderColor: colors.borderLight },
   tierLeft: { gap: 2 },
-  tierName: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
+  tierName: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: colors.text },
   tierAvail: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.4)' },
   tierRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   tierPrice: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: CultureTokens.saffron },
 
   metricRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 },
-  metricIconBg: { width: 28, height: 28, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.05)', alignItems: 'center', justifyContent: 'center' },
-  metricText: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.6)' },
+  metricIconBg: { width: 28, height: 28, borderRadius: 8, backgroundColor: colors.backgroundSecondary, alignItems: 'center', justifyContent: 'center' },
+  metricText: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
 
   floatingBottomBarWrapper: { position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 100 },
   floatingBottomBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 18, backgroundColor: 'rgba(20,20,30,0.7)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
   bottomPriceSection: { gap: 2 },
-  bottomPriceLabel: { fontSize: 12, fontFamily: 'Poppins_500Medium', textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)', letterSpacing: 0.5 },
-  bottomPriceValue: { fontSize: 24, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+  bottomPriceLabel: { fontSize: 12, fontFamily: 'Poppins_500Medium', textTransform: 'uppercase', color: colors.textSecondary, letterSpacing: 0.5 },
+  bottomPriceValue: { fontSize: 24, fontFamily: 'Poppins_700Bold', color: colors.text },
   bottomBtnGroup: { flexDirection: 'row', gap: 10 },
-  externalBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingVertical: 14, borderRadius: 16, borderWidth: 1, backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.15)' },
-  externalBtnText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
+  externalBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingVertical: 14, borderRadius: 16, borderWidth: 1, backgroundColor: colors.backgroundSecondary, borderColor: 'rgba(255,255,255,0.15)' },
+  externalBtnText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.text },
   buyBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 16, backgroundColor: CultureTokens.indigo, shadowColor: CultureTokens.indigo, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 8 },
-  buyBtnText: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', letterSpacing: 0.5 },
+  buyBtnText: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: colors.text, letterSpacing: 0.5 },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   modalSheet: { borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden', maxHeight: '90%' },
   modalHandle: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginTop: 12, marginBottom: 8, backgroundColor: 'rgba(255,255,255,0.2)' },
-  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 16, borderBottomWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  modalTitle: { fontSize: 20, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
-  modalGroupLabel: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12, color: 'rgba(255,255,255,0.6)' },
+  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 16, borderBottomWidth: 1, borderColor: colors.borderLight },
+  modalTitle: { fontSize: 20, fontFamily: 'Poppins_700Bold', color: colors.text },
+  modalGroupLabel: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12, color: colors.textSecondary },
 
   buyModeRow: { flexDirection: 'row', gap: 8 },
-  buyModeBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 12, borderRadius: 12, borderWidth: 1, backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' },
-  buyModeText: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.6)' },
+  buyModeBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 12, borderRadius: 12, borderWidth: 1, backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight },
+  buyModeText: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
 
-  modalTierCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderRadius: 14, borderWidth: 1, marginBottom: 10, backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' },
+  modalTierCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderRadius: 14, borderWidth: 1, marginBottom: 10, backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight },
   modalTierLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   radioOuter: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   radioInner: { width: 10, height: 10, borderRadius: 5 },
-  modalTierName: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', marginBottom: 2, color: '#FFFFFF' },
-  modalTierAvail: { fontSize: 12, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.6)' },
-  modalTierPrice: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+  modalTierName: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', marginBottom: 2, color: colors.text },
+  modalTierAvail: { fontSize: 12, fontFamily: 'Poppins_400Regular', color: colors.textSecondary },
+  modalTierPrice: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: colors.text },
 
-  quantityRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12, borderWidth: 1, backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' },
+  quantityRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12, borderWidth: 1, backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight },
   quantityBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  quantityNum: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+  quantityNum: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: colors.text },
 
-  priceSummaryBox: { padding: 16, borderRadius: 16, borderWidth: 1, gap: 10, marginTop: 24, marginBottom: 24, backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.1)' },
+  priceSummaryBox: { padding: 16, borderRadius: 16, borderWidth: 1, gap: 10, marginTop: 24, marginBottom: 24, backgroundColor: colors.surface, borderColor: colors.borderLight },
   pRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  pRowLabel: { fontSize: 14, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.6)' },
-  pRowVal: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
-  pDiv: { height: 1, width: '100%', marginVertical: 4, backgroundColor: 'rgba(255,255,255,0.1)' },
-  pTotalLabel: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
-  pTotalVal: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+  pRowLabel: { fontSize: 14, fontFamily: 'Poppins_400Regular', color: colors.textSecondary },
+  pRowVal: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: colors.text },
+  pDiv: { height: 1, width: '100%', marginVertical: 4, backgroundColor: colors.surfaceElevated },
+  pTotalLabel: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: colors.text },
+  pTotalVal: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: colors.text },
 
   confirmBtn: { paddingVertical: 16, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: CultureTokens.indigo, overflow: 'hidden' },
-  confirmBtnText: { color: '#FFFFFF', fontSize: 16, fontFamily: 'Poppins_700Bold' }
+  confirmBtnText: { color: colors.text, fontSize: 16, fontFamily: 'Poppins_700Bold' }
 });

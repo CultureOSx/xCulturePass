@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CultureTokens } from '@/constants/theme';
+import { useColors } from '@/hooks/useColors';
 import { useState, useMemo } from 'react';
 import * as Haptics from 'expo-haptics';
 import { FilterChipRow, FilterItem } from '@/components/FilterChip';
@@ -65,6 +66,8 @@ export default function BrowsePage({
   emptyIcon = 'search-outline',
   refreshControl,
 }: BrowsePageProps) {
+  const colors = useColors();
+  const styles = getStyles(colors);
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
@@ -82,8 +85,8 @@ export default function BrowsePage({
   if (isLoading) {
     return (
       <View style={[styles.container, { paddingTop: topInset }]}>
-        <LinearGradient colors={['rgba(44,42,114,0.15)', 'transparent']} style={StyleSheet.absoluteFillObject} pointerEvents="none" />
-        <Header title={title} accentColor={accentColor} accentIcon={accentIcon} />
+        <LinearGradient colors={[`${CultureTokens.indigo}26`, 'transparent']} style={StyleSheet.absoluteFillObject} pointerEvents="none" />
+        <Header title={title} accentColor={accentColor} accentIcon={accentIcon} colors={colors} styles={styles} />
         <View style={styles.loadingWrap}>
           <ActivityIndicator size="large" color={accentColor} />
           <Text style={styles.loadingText}>Loading {title.toLowerCase()}...</Text>
@@ -94,13 +97,13 @@ export default function BrowsePage({
 
   return (
     <View style={[styles.container, { paddingTop: topInset }]}>
-      <LinearGradient colors={['rgba(44,42,114,0.15)', 'transparent']} style={StyleSheet.absoluteFillObject} pointerEvents="none" />
+      <LinearGradient colors={[`${CultureTokens.indigo}26`, 'transparent']} style={StyleSheet.absoluteFillObject} pointerEvents="none" />
       
       {/* Decorative Orbs */}
       <View style={[styles.orb, { top: -100, right: -100, backgroundColor: accentColor, opacity: 0.15, ...Platform.select({ web: { filter: 'blur(80px)' }, default: {} }) } as any]} />
       <View style={[styles.orb, { top: 400, left: -100, backgroundColor: CultureTokens.saffron, opacity: 0.1, ...Platform.select({ web: { filter: 'blur(100px)' }, default: {} }) } as any]} />
 
-      <Header title={title} accentColor={accentColor} accentIcon={accentIcon} />
+      <Header title={title} accentColor={accentColor} accentIcon={accentIcon} colors={colors} styles={styles} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -245,15 +248,15 @@ export default function BrowsePage({
   );
 }
 
-function Header({ title, accentColor, accentIcon }: { title: string; accentColor: string; accentIcon: string }) {
+function Header({ title, accentColor, accentIcon, colors, styles }: { title: string; accentColor: string; accentIcon: string; colors: ReturnType<typeof useColors>; styles: any }) {
   return (
     <View style={styles.header}>
       <Pressable
         onPress={() => { if (router.canGoBack()) router.back(); else router.replace('/'); }}
-        style={({ pressed }) => [styles.backBtn, pressed && { backgroundColor: 'rgba(255,255,255,0.1)' }]}
+        style={({ pressed }) => [styles.backBtn, pressed && { backgroundColor: colors.backgroundSecondary }]}
         hitSlop={12}
       >
-        <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+        <Ionicons name="chevron-back" size={24} color={colors.text} />
       </Pressable>
       <View style={styles.headerCenter}>
         <View style={[styles.headerIcon, { backgroundColor: accentColor + '15' }]}>
@@ -262,20 +265,20 @@ function Header({ title, accentColor, accentIcon }: { title: string; accentColor
         <Text style={styles.headerTitle}>{title}</Text>
       </View>
       <Pressable
-        style={({ pressed }) => [styles.backBtn, pressed && { backgroundColor: 'rgba(255,255,255,0.1)' }]}
+        style={({ pressed }) => [styles.backBtn, pressed && { backgroundColor: colors.backgroundSecondary }]}
         hitSlop={12}
         onPress={() => router.push('/search')}
       >
-        <Ionicons name="search-outline" size={20} color="#FFFFFF" />
+        <Ionicons name="search-outline" size={20} color={colors.text} />
       </Pressable>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0B0B14',
+    backgroundColor: colors.background,
   },
   orb: {
     position: 'absolute',
@@ -294,9 +297,9 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: colors.borderLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -315,7 +318,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontFamily: 'Poppins_700Bold',
-    color: '#FFFFFF',
+    color: colors.text,
     letterSpacing: -0.3,
   },
   loadingWrap: {
@@ -327,7 +330,7 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 15,
     fontFamily: 'Poppins_500Medium',
-    color: 'rgba(255,255,255,0.6)',
+    color: colors.textSecondary,
   },
   section: {
     marginBottom: 24,
@@ -348,7 +351,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontFamily: 'Poppins_700Bold',
-    color: '#FFFFFF',
+    color: colors.text,
     flex: 1,
   },
   promotedBadge: {
@@ -367,11 +370,11 @@ const styles = StyleSheet.create({
   },
   promoCard: {
     width: 240,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: colors.surface,
     borderRadius: 20,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: colors.borderLight,
   },
   promoImage: {
     width: '100%',
@@ -384,13 +387,13 @@ const styles = StyleSheet.create({
   promoName: {
     fontSize: 16,
     fontFamily: 'Poppins_600SemiBold',
-    color: '#FFFFFF',
+    color: colors.text,
     lineHeight: 22,
   },
   promoSub: {
     fontSize: 13,
     fontFamily: 'Poppins_400Regular',
-    color: 'rgba(255,255,255,0.6)',
+    color: colors.textSecondary,
   },
   promoBottom: {
     flexDirection: 'row',
@@ -410,7 +413,7 @@ const styles = StyleSheet.create({
   ratingText: {
     fontSize: 13,
     fontFamily: 'Poppins_600SemiBold',
-    color: 'rgba(255,255,255,0.6)',
+    color: colors.textSecondary,
   },
   listSection: {
     paddingHorizontal: 20,
@@ -418,7 +421,7 @@ const styles = StyleSheet.create({
   resultCount: {
     fontSize: 14,
     fontFamily: 'Poppins_500Medium',
-    color: 'rgba(255,255,255,0.5)',
+    color: colors.textTertiary,
     marginBottom: 16,
   },
   emptyWrap: {
@@ -429,22 +432,22 @@ const styles = StyleSheet.create({
   },
   emptyIconBg: {
     width: 90, height: 90, borderRadius: 30,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: colors.surface,
     alignItems: 'center', justifyContent: 'center',
   },
   emptyText: {
     fontSize: 16,
     fontFamily: 'Poppins_500Medium',
-    color: 'rgba(255,255,255,0.5)',
+    color: colors.textSecondary,
   },
   card: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: colors.surface,
     borderRadius: 20,
     padding: 16,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: colors.borderLight,
     gap: 16,
     overflow: 'hidden',
   },
@@ -466,7 +469,7 @@ const styles = StyleSheet.create({
   cardName: {
     fontSize: 16,
     fontFamily: 'Poppins_700Bold',
-    color: '#FFFFFF',
+    color: colors.text,
     flex: 1,
     lineHeight: 22,
   },
@@ -480,12 +483,12 @@ const styles = StyleSheet.create({
   cardSub: {
     fontSize: 13,
     fontFamily: 'Poppins_500Medium',
-    color: 'rgba(255,255,255,0.8)',
+    color: colors.textSecondary,
   },
   cardDesc: {
     fontSize: 13,
     fontFamily: 'Poppins_400Regular',
-    color: 'rgba(255,255,255,0.5)',
+    color: colors.textTertiary,
     lineHeight: 20,
     marginTop: 2,
   },
@@ -514,6 +517,6 @@ const styles = StyleSheet.create({
   cardMeta: {
     fontSize: 12,
     fontFamily: 'Poppins_400Regular',
-    color: 'rgba(255,255,255,0.4)',
+    color: colors.textTertiary,
   },
 });

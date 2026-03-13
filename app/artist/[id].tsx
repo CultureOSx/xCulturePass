@@ -23,8 +23,11 @@ import * as Haptics from "expo-haptics";
 import type { Profile } from "@shared/schema";
 import { api } from "@/lib/api";
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { useColors } from "@/hooks/useColors";
 
 export default function ArtistDetailScreen() {
+  const colors = useColors();
+  const styles = getStyles(colors);
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
@@ -77,7 +80,7 @@ export default function ArtistDetailScreen() {
           <Ionicons
             name="alert-circle-outline"
             size={48}
-            color="rgba(255,255,255,0.4)"
+            color={colors.textTertiary}
           />
           <Text style={styles.notFoundText}>Artist not found</Text>
           <Pressable onPress={goBack} style={styles.backLinkBtn}>
@@ -109,7 +112,7 @@ export default function ArtistDetailScreen() {
               />
             ) : (
               <LinearGradient
-                colors={[CultureTokens.coral, '#0B0B14']}
+                colors={[CultureTokens.coral, colors.background]}
                 style={styles.heroImage}
               />
             )}
@@ -237,6 +240,8 @@ function StatCard({
   color,
   onPress,
 }: any) {
+  const colors = useColors();
+  const styles = getStyles(colors);
   const Wrapper: any = onPress ? Pressable : View;
   return (
     <Wrapper style={styles.statCard} onPress={onPress}>
@@ -253,17 +258,17 @@ function StatCard({
 
 /* ---------------- Styles ---------------- */
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0B0B14',
+    backgroundColor: colors.background,
   },
 
   loading: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: '#0B0B14',
+    backgroundColor: colors.background,
   },
 
   heroContainer: {
@@ -443,7 +448,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     gap: 12,
-    backgroundColor: '#0B0B14',
+    backgroundColor: colors.background,
   },
 
   notFoundText: {

@@ -85,9 +85,11 @@ function formFromActivity(activity: ActivityData): ActivityFormState {
 }
 
 export default function ActivitiesScreen() {
+  const colors = useColors();
+  const styles = getStyles(colors);
   const { state } = useOnboarding();
   const queryClient = useQueryClient();
-  const colors = useColors();
+  
   const { userId } = useAuth();
   const { isAdmin, isOrganizer, role } = useRole();
   const canCreate = isAdmin || isOrganizer || role === 'business';
@@ -291,7 +293,7 @@ export default function ActivitiesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   container: {
     flex: 1,
   },

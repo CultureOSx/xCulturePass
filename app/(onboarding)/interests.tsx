@@ -27,7 +27,7 @@ import { useAuth } from '@/lib/auth';
 import type { User } from '@/shared/schema';
 import { Button } from '@/components/ui/Button';
 import { LinearGradient } from 'expo-linear-gradient';
-import { CultureTokens, gradients } from '@/constants/theme';
+import { CultureTokens, gradients, CardTokens, glass, shadows } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 
@@ -39,8 +39,9 @@ const DEFAULT_EXPANDED: Record<string, boolean> = interestCategories.reduce((acc
 }, {} as Record<string, boolean>);
 
 export default function InterestsScreen() {
-  const insets = useSafeAreaInsets();
   const colors = useColors();
+  const styles = getStyles(colors);
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === 'web' && width >= 1024;
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
@@ -130,9 +131,9 @@ export default function InterestsScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <LinearGradient
-        colors={gradients.culturepassBrandReversed}
+        colors={gradients.culturepassBrand}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.gradientBg}
@@ -148,9 +149,9 @@ export default function InterestsScreen() {
 
       {isDesktop && (
         <View style={styles.desktopBackRow}>
-          <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/(onboarding)/communities')} hitSlop={8} style={[styles.desktopBackBtn, { backgroundColor: 'rgba(0,0,0,0.3)' }]}>
-            <Ionicons name="chevron-back" size={18} color="#FFFFFF" />
-            <Text style={styles.desktopBackText}>Back</Text>
+          <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/(onboarding)/communities')} hitSlop={8} style={[styles.desktopBackBtn, { backgroundColor: glass.overlay.backgroundColor, borderColor: colors.border }]}>
+            <Ionicons name="chevron-back" size={18} color={colors.textInverse} />
+            <Text style={[styles.desktopBackText, { color: colors.textInverse }]}>Back</Text>
           </Pressable>
         </View>
       )}
@@ -158,9 +159,9 @@ export default function InterestsScreen() {
       {!isDesktop && (
         <View style={[styles.mobileHeader, { paddingTop: topInset + 12 }]}>
           <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/(onboarding)/communities'))} hitSlop={12}>
-            <Ionicons name="chevron-back" size={28} color="#FFFFFF" />
+            <Ionicons name="chevron-back" size={28} color={colors.textInverse} />
           </Pressable>
-          <Text style={styles.stepText}>4 of 4</Text>
+          <Text style={[styles.stepText, { color: colors.textSecondary }]}>4 of 4</Text>
         </View>
       )}
 
@@ -177,26 +178,26 @@ export default function InterestsScreen() {
             !isDesktop && { paddingTop: 20 }
           ]}
         >
-          <View style={[styles.formContainer, isDesktop && styles.formContainerDesktop]}>
+          <View style={[styles.formContainer, isDesktop && styles.formContainerDesktop, { borderRadius: CardTokens.radiusLarge }]}>
             {Platform.OS === 'ios' || Platform.OS === 'web' ? (
-              <BlurView intensity={isDesktop ? 60 : 40} tint="dark" style={[StyleSheet.absoluteFill, styles.formBlur]} />
+              <BlurView intensity={isDesktop ? 60 : 40} tint="dark" style={[StyleSheet.absoluteFill, styles.formBlur, { borderRadius: CardTokens.radiusLarge, borderColor: colors.borderLight }]} />
             ) : (
-              <View style={[StyleSheet.absoluteFill, styles.formBlur, { backgroundColor: 'rgba(11, 11, 20, 0.85)' }]} />
+              <View style={[StyleSheet.absoluteFill, styles.formBlur, { backgroundColor: colors.surface, borderRadius: CardTokens.radiusLarge, borderColor: colors.borderLight }]} />
             )}
 
-            <View style={styles.formContent}>
+            <View style={[styles.formContent, { padding: CardTokens.paddingLarge * 2 }]}>
               <View style={styles.headerBlock}>
-                <View style={[styles.iconWrapper, { backgroundColor: 'rgba(255,255,255,0.1)' }]}>
-                  <Ionicons name="sparkles-outline" size={28} color="#FFFFFF" />
+                <View style={[styles.iconWrapper, { backgroundColor: colors.overlay, borderColor: colors.borderLight }]}>
+                  <Ionicons name="sparkles-outline" size={28} color={colors.textInverse} />
                 </View>
-                <Text style={styles.title}>What interests you?</Text>
-                <Text style={styles.subtitle}>
+                <Text style={[styles.title, { color: colors.textInverse }]}>What interests you?</Text>
+                <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
                   Choose at least {MIN_REQUIRED_INTERESTS} interests to personalize your content.
                 </Text>
               </View>
 
               <View style={styles.block}>
-                <Text style={styles.sectionLabel}>Popular in Sydney</Text>
+                <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Popular in Sydney</Text>
                 <View style={styles.popularRow}>
                   {popularInterestsSydney.map((interest) => {
                     const category = categoryByInterest.get(interest);
@@ -213,19 +214,19 @@ export default function InterestsScreen() {
                           { 
                             backgroundColor: isSelected 
                               ? accentColor 
-                              : pressed ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)',
-                            borderColor: isSelected ? 'transparent' : 'rgba(255,255,255,0.2)',
+                              : pressed ? colors.primaryGlow : 'transparent',
+                            borderColor: isSelected ? 'transparent' : colors.borderLight,
                           },
                         ]}
                       >
                         <Ionicons 
                           name={iconName as never} 
                           size={14} 
-                          color={isSelected ? '#FFFFFF' : accentColor} 
+                          color={isSelected ? colors.textInverse : accentColor} 
                         />
                         <Text 
                           numberOfLines={1} 
-                          style={[styles.popularChipText, { color: isSelected ? '#FFFFFF' : 'rgba(255,255,255,0.9)' }]}
+                          style={[styles.popularChipText, { color: isSelected ? colors.textInverse : colors.textInverse }]}
                         >
                           {interest}
                         </Text>
@@ -243,16 +244,16 @@ export default function InterestsScreen() {
                 return (
                   <View 
                     key={category.id} 
-                    style={styles.categorySection}
+                    style={[styles.categorySection, { borderColor: colors.borderLight, backgroundColor: colors.primaryGlow }]}
                   >
-                    <Pressable style={styles.categoryHeader} onPress={() => toggleSection(category.id)}>
+                    <Pressable style={styles.categoryHeader} onPress={() => toggleSection(category.id)} hitSlop={12}>
                       <View style={styles.categoryTitleWrap}>
                         <View style={[styles.categoryDot, { backgroundColor: accentColor }]} />
                         <View>
-                          <Text style={styles.categoryTitle}>
+                          <Text style={[styles.categoryTitle, { color: colors.textInverse }]}>
                             {category.title}
                           </Text>
-                          <Text style={styles.categoryMeta}>
+                          <Text style={[styles.categoryMeta, { color: colors.textSecondary }]}>
                             {selectedInCategory} selected
                           </Text>
                         </View>
@@ -260,7 +261,7 @@ export default function InterestsScreen() {
                       <Ionicons 
                         name={isOpen ? 'chevron-up' : 'chevron-down'} 
                         size={20} 
-                        color="rgba(255,255,255,0.5)" 
+                        color={colors.textSecondary} 
                       />
                     </Pressable>
 
@@ -278,27 +279,27 @@ export default function InterestsScreen() {
                                 { 
                                   backgroundColor: isSelected 
                                     ? accentColor 
-                                    : pressed ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.03)',
-                                  borderColor: isSelected ? 'transparent' : 'rgba(255,255,255,0.1)',
+                                    : pressed ? colors.primaryGlow : 'transparent',
+                                  borderColor: isSelected ? 'transparent' : colors.borderLight,
                                 },
                               ]}
                               onPress={() => toggle(interest)}
                             >
                               <View style={[
                                 styles.iconCircle, 
-                                { backgroundColor: isSelected ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.08)' }
+                                { backgroundColor: isSelected ? 'rgba(0,0,0,0.2)' : colors.overlay }
                               ]}>
                                 <Ionicons 
                                   name={iconName as never} 
                                   size={20} 
-                                  color={isSelected ? '#FFFFFF' : accentColor} 
+                                  color={isSelected ? colors.textInverse : accentColor} 
                                 />
                               </View>
-                              <Text style={[styles.cardText, { color: isSelected ? '#FFFFFF' : 'rgba(255,255,255,0.9)' }]}>
+                              <Text style={[styles.cardText, { color: isSelected ? colors.textInverse : colors.textInverse }]}>
                                 {interest}
                               </Text>
                               {isSelected && (
-                                <View style={styles.checkBadge}> 
+                                <View style={[styles.checkBadge, { backgroundColor: colors.textInverse }]}> 
                                   <Ionicons name="checkmark" size={14} color={accentColor} />
                                 </View>
                               )}
@@ -314,7 +315,7 @@ export default function InterestsScreen() {
               <View style={styles.spacer} />
 
               <View style={styles.footerInfo}>
-                <Text style={styles.selectedCount}>
+                <Text style={[styles.selectedCount, { color: colors.textSecondary }]}>
                   {selected.length} selected · minimum {MIN_REQUIRED_INTERESTS}
                 </Text>
               </View>
@@ -326,7 +327,7 @@ export default function InterestsScreen() {
                 rightIcon="sparkles"
                 disabled={selected.length < MIN_REQUIRED_INTERESTS || isSubmitting}
                 onPress={handleFinish}
-                style={[styles.submitBtn, { backgroundColor: CultureTokens.saffron }]}
+                style={[styles.submitBtn, shadows.medium, { backgroundColor: CultureTokens.saffron }]}
               >
                 {isSubmitting ? 'Starting...' : 'Start Exploring'}
               </Button>
@@ -338,44 +339,44 @@ export default function InterestsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B0B14' },
-  gradientBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.8 },
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+  container: { flex: 1 },
+  gradientBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.85 },
   orb: { position: 'absolute', width: 300, height: 300, borderRadius: 150 },
   keyboardAvoid: { flex: 1 },
   mobileHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 12 },
-  stepText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: 'rgba(255,255,255,0.5)', letterSpacing: 1, textTransform: 'uppercase' },
+  stepText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', letterSpacing: 1, textTransform: 'uppercase' },
   desktopBackRow: { position: 'absolute', top: 32, left: 40, zIndex: 10 },
-  desktopBackBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 24, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  desktopBackText: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: '#FFFFFF' },
+  desktopBackBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 24, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1 },
+  desktopBackText: { fontSize: 14, fontFamily: 'Poppins_500Medium' },
   scrollContent: { flexGrow: 1, paddingHorizontal: 20, paddingBottom: 60, justifyContent: 'center' },
   scrollContentDesktop: { paddingVertical: 60 },
-  formContainer: { width: '100%', maxWidth: 640, alignSelf: 'center', borderRadius: 32, overflow: 'hidden' },
+  formContainer: { width: '100%', maxWidth: 640, alignSelf: 'center', overflow: 'hidden' },
   formContainerDesktop: { maxWidth: 720 },
-  formBlur: { borderRadius: 32, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  formContent: { padding: 32, paddingTop: 40 },
+  formBlur: { borderWidth: 1 },
+  formContent: { paddingTop: 40 },
   headerBlock: { alignItems: 'center', marginBottom: 32 },
-  iconWrapper: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  title: { fontSize: 32, fontFamily: 'Poppins_700Bold', textAlign: 'center', marginBottom: 8, letterSpacing: -0.5, color: '#FFFFFF' },
-  subtitle: { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', color: 'rgba(255,255,255,0.7)', lineHeight: 22 },
+  iconWrapper: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: 16, borderWidth: 1 },
+  title: { fontSize: 32, fontFamily: 'Poppins_700Bold', textAlign: 'center', marginBottom: 8, letterSpacing: -0.5 },
+  subtitle: { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22 },
   block: { marginBottom: 24 },
-  sectionLabel: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12, color: 'rgba(255,255,255,0.6)' },
+  sectionLabel: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 },
   popularRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   popularChip: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 10 },
   popularChipText: { fontSize: 14, fontFamily: 'Poppins_500Medium' },
-  categorySection: { borderWidth: 1, borderRadius: 24, marginBottom: 16, padding: 20, borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.02)' },
+  categorySection: { borderWidth: 1, borderRadius: 24, marginBottom: 16, padding: 20 },
   categoryHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
   categoryTitleWrap: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   categoryDot: { width: 12, height: 12, borderRadius: 6 },
-  categoryTitle: { fontSize: 18, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
-  categoryMeta: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.5)' },
+  categoryTitle: { fontSize: 18, fontFamily: 'Poppins_600SemiBold' },
+  categoryMeta: { fontSize: 13, fontFamily: 'Poppins_400Regular' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   card: { width: '48%' as never, flexGrow: 1, paddingVertical: 16, paddingHorizontal: 16, borderRadius: 20, borderWidth: 1, alignItems: 'center', gap: 10, position: 'relative' },
   iconCircle: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   cardText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', textAlign: 'center' },
-  checkBadge: { position: 'absolute', top: 10, right: 10, width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF' },
+  checkBadge: { position: 'absolute', top: 10, right: 10, width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   spacer: { height: 48 },
   footerInfo: { marginBottom: 16 },
-  selectedCount: { fontSize: 14, fontFamily: 'Poppins_500Medium', textAlign: 'center', color: 'rgba(255,255,255,0.6)' },
-  submitBtn: { height: 56, borderRadius: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 16, elevation: 6 },
+  selectedCount: { fontSize: 14, fontFamily: 'Poppins_500Medium', textAlign: 'center' },
+  submitBtn: { height: 56, borderRadius: 16 },
 });

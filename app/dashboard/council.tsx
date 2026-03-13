@@ -10,8 +10,9 @@ import { Button } from '@/components/ui/Button';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { LinearGradient } from 'expo-linear-gradient';
 import { gradients, CultureTokens } from '@/constants/theme';
+import { useColors } from '@/hooks/useColors';
 
-function Stat({ label, value, color }: { label: string; value: string; color: string }) {
+function Stat({ label, value, color, styles }: { label: string; value: string; color: string; styles: any }) {
   return (
     <View style={[styles.statCard, { borderColor: color + '30', backgroundColor: color + '05' }]}>
       <Text style={[styles.statValue, { color }]}>{value}</Text>
@@ -25,6 +26,9 @@ export default function CouncilDashboardScreen() {
   const queryClient = useQueryClient();
   const { isAdmin, isOrganizer, isLoading: roleLoading } = useRole();
   const councilHook = useCouncil();
+  const colors = useColors();
+  const styles = getStyles(colors);
+
   const council = councilHook.data?.council;
   const activeAlerts = councilHook.data?.alerts ?? [];
   const openGrants = councilHook.data?.grants ?? [];
@@ -130,7 +134,7 @@ export default function CouncilDashboardScreen() {
       <View style={[styles.container, { paddingTop: Platform.OS === 'web' ? 12 : insets.top + 8 }]}> 
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+            <Ionicons name="chevron-back" size={24} color={colors.text} />
           </Pressable>
           <Text style={styles.headerTitle}>Council Dashboard</Text>
           <View style={{ width: 44 }} />
@@ -153,10 +157,10 @@ export default function CouncilDashboardScreen() {
           </LinearGradient>
 
           <View style={styles.statsRow}>
-            <Stat label="Active Alerts" value={String(activeAlerts.length)} color={CultureTokens.coral} />
-            <Stat label="Open Grants" value={String(openGrants.length)} color={CultureTokens.success} />
-            <Stat label="Facilities" value={String(facilities.length)} color={CultureTokens.indigo} />
-            <Stat label="Links" value={String(links.length)} color={CultureTokens.saffron} />
+            <Stat label="Active Alerts" value={String(activeAlerts.length)} color={CultureTokens.coral} styles={styles} />
+            <Stat label="Open Grants" value={String(openGrants.length)} color={CultureTokens.success} styles={styles} />
+            <Stat label="Facilities" value={String(facilities.length)} color={CultureTokens.indigo} styles={styles} />
+            <Stat label="Links" value={String(links.length)} color={CultureTokens.saffron} styles={styles} />
           </View>
 
           <View style={styles.section}>
@@ -178,7 +182,7 @@ export default function CouncilDashboardScreen() {
             <Text style={styles.sectionTitle}>Alerts (Manage)</Text>
             {activeAlerts.length === 0 ? (
               <View style={styles.emptyWrap}>
-                <Ionicons name="notifications-off-outline" size={32} color="rgba(255,255,255,0.4)" />
+                <Ionicons name="notifications-off-outline" size={32} color={colors.textSecondary} />
                 <Text style={styles.muted}>No active alerts.</Text>
               </View>
             ) : activeAlerts.map((alert: any) => (
@@ -207,7 +211,7 @@ export default function CouncilDashboardScreen() {
             <Text style={styles.sectionTitle}>Grants (Manage)</Text>
             {openGrants.length === 0 ? (
               <View style={styles.emptyWrap}>
-                <Ionicons name="folder-open-outline" size={32} color="rgba(255,255,255,0.4)" />
+                <Ionicons name="folder-open-outline" size={32} color={colors.textSecondary} />
                 <Text style={styles.muted}>No open grants.</Text>
               </View>
             ) : openGrants.map((grant: any) => (
@@ -237,33 +241,33 @@ export default function CouncilDashboardScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container:    { flex: 1, backgroundColor: '#0B0B14' },
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+  container:    { flex: 1, backgroundColor: colors.background },
   header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12, marginBottom: 8 },
-  backBtn:      { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  headerTitle:  { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+  backBtn:      { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight },
+  headerTitle:  { fontSize: 18, fontFamily: 'Poppins_700Bold', color: colors.text },
   content:      { paddingHorizontal: 20, paddingBottom: 110, gap: 16 },
-  center:       { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 10, backgroundColor: '#0B0B14' },
+  center:       { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 10, backgroundColor: colors.background },
   heroCard:     { borderRadius: 20, padding: 20, flexDirection: 'row', alignItems: 'center', gap: 14, shadowColor: '#2C2A72', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 16, elevation: 8 },
   heroContentWrap:{ flex: 1 },
-  title:        { fontSize: 20, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+  title:        { fontSize: 20, fontFamily: 'Poppins_700Bold', color: colors.text },
   heroTitle:    { fontSize: 22, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', letterSpacing: -0.5 },
-  sub:          { fontSize: 14, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.6)', textAlign: 'center' },
+  sub:          { fontSize: 14, fontFamily: 'Poppins_400Regular', color: colors.textSecondary, textAlign: 'center' },
   heroSub:      { fontSize: 14, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.85)' },
   statsRow:     { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
   statCard:     { flexGrow: 1, minWidth: 140, borderWidth: 1, borderRadius: 16, padding: 16 },
   statValue:    { fontSize: 24, fontFamily: 'Poppins_700Bold', marginBottom: 2 },
-  statLabel:    { fontSize: 12, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.6)' },
-  section:      { borderWidth: 1, borderRadius: 20, padding: 20, gap: 12, backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.1)' },
-  sectionTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
-  sectionSub:   { fontSize: 14, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.6)' },
+  statLabel:    { fontSize: 12, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
+  section:      { borderWidth: 1, borderRadius: 20, padding: 20, gap: 12, backgroundColor: colors.surface, borderColor: colors.borderLight },
+  sectionTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: colors.text },
+  sectionSub:   { fontSize: 14, fontFamily: 'Poppins_400Regular', color: colors.textSecondary },
   rowActions:   { flexDirection: 'row', gap: 10, flexWrap: 'wrap', marginTop: 4 },
-  muted:        { fontSize: 13, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.5)', marginTop: 4 },
-  item:         { borderWidth: 1, borderRadius: 16, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12, borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.02)' },
+  muted:        { fontSize: 13, fontFamily: 'Poppins_400Regular', color: colors.textSecondary, marginTop: 4 },
+  item:         { borderWidth: 1, borderRadius: 16, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12, borderColor: colors.borderLight, backgroundColor: colors.surface },
   itemIcon:     { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   itemBody:     { flex: 1 },
-  itemTitle:    { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF', marginBottom: 2 },
-  itemSubText:  { fontSize: 13, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.5)' },
+  itemTitle:    { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.text, marginBottom: 2 },
+  itemSubText:  { fontSize: 13, fontFamily: 'Poppins_400Regular', color: colors.textSecondary },
   iconBtn:      { width: 38, height: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   emptyWrap:    { alignItems: 'center', paddingVertical: 24, gap: 8 },
 });

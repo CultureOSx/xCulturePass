@@ -23,6 +23,7 @@ import { useRole } from '@/hooks/useRole';
 import { CultureTokens } from '@/constants/theme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type { EventData } from '@/shared/schema';
+import { useColors } from '@/hooks/useColors';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -54,12 +55,12 @@ function formatDate(dateStr?: string): string {
   return new Date(dateStr).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-function statusColor(status?: string): string {
+function statusColor(status?: string, colors?: ReturnType<typeof useColors>): string {
   switch (status) {
     case 'published': return CultureTokens.success;
     case 'draft': return CultureTokens.saffron;
     case 'deleted': return CultureTokens.coral;
-    default: return 'rgba(255,255,255,0.4)';
+    default: return colors ? colors.textSecondary : 'rgba(255,255,255,0.4)';
   }
 }
 
@@ -76,7 +77,7 @@ function statusLabel(status?: string): string {
 // Stat Card
 // ---------------------------------------------------------------------------
 
-function StatCard({ label, value, icon, accent }: { label: string; value: string; icon: string; accent: string }) {
+function StatCard({ label, value, icon, accent, styles }: { label: string; value: string; icon: string; accent: string; styles: any }) {
   return (
     <View style={[styles.statCard, { borderColor: accent + '30', backgroundColor: accent + '05' }]}>
       <View style={[styles.statIcon, { backgroundColor: accent + '15' }]}>
@@ -98,15 +99,19 @@ function EventRow({
   onDelete,
   isPublishing,
   isDeleting,
+  colors,
+  styles,
 }: {
   event: EventData;
   onPublish: (id: string) => void;
   onDelete: (id: string) => void;
   isPublishing: boolean;
   isDeleting: boolean;
+  colors: ReturnType<typeof useColors>;
+  styles: any;
 }) {
   const status = (event as EventData & { status?: string }).status;
-  const accentColor = statusColor(status);
+  const accentColor = statusColor(status, colors);
 
   return (
     <View style={[styles.eventRow, status === 'draft' && { borderColor: CultureTokens.saffron + '40', backgroundColor: CultureTokens.saffron + '05' }]}>
@@ -130,7 +135,7 @@ function EventRow({
 
         <View style={styles.eventFooter}>
           <View style={styles.eventStats}>
-            <Ionicons name="people" size={14} color="rgba(255,255,255,0.4)" />
+            <Ionicons name="people" size={14} color={colors.textSecondary} />
             <Text style={styles.eventStatText}>
               {event.attending ?? 0}/{event.capacity ?? '∞'}
             </Text>
@@ -191,6 +196,8 @@ function OrganizerDashboardContent() {
   const { hPad } = useLayout();
   const { userId, user } = useAuth();
   const { isOrganizer, isLoading: roleLoading } = useRole();
+  const colors = useColors();
+  const styles = getStyles(colors);
 
   useEffect(() => {
     if (!roleLoading && !isOrganizer) {
@@ -280,14 +287,14 @@ function OrganizerDashboardContent() {
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['rgba(44, 42, 114, 0.25)', '#0B0B14']} style={StyleSheet.absoluteFillObject} pointerEvents="none" />
+      <LinearGradient colors={[colors.background, colors.background]} style={StyleSheet.absoluteFillObject} pointerEvents="none" />
       <View style={[styles.orb, { top: -50, right: -100, backgroundColor: CultureTokens.indigo, opacity: 0.15, ...Platform.select({ web: { filter: 'blur(80px)' }, default: {} }) } as any]} />
       <View style={[styles.orb, { top: 400, left: -100, backgroundColor: CultureTokens.saffron, opacity: 0.1, ...Platform.select({ web: { filter: 'blur(100px)' }, default: {} }) } as any]} />
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: topPad + 12, paddingHorizontal: hPad }]}>
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
         </Pressable>
 
         <View style={styles.headerCenter}>
@@ -359,24 +366,28 @@ function OrganizerDashboardContent() {
               value={String(stats.totalEvents)}
               icon="calendar"
               accent={CultureTokens.indigo}
+              styles={styles}
             />
             <StatCard
               label="Published"
               value={String(stats.publishedEvents)}
               icon="radio-button-on"
               accent={CultureTokens.success}
+              styles={styles}
             />
             <StatCard
               label="Attending"
               value={String(stats.totalTicketsSold)}
               icon="people"
               accent={CultureTokens.teal}
+              styles={styles}
             />
             <StatCard
               label="Revenue"
               value={formatCurrency(stats.totalRevenueCents)}
               icon="wallet"
               accent={CultureTokens.gold}
+              styles={styles}
             />
           </View>
         )}
@@ -402,7 +413,7 @@ function OrganizerDashboardContent() {
           ) : sortedEvents.length === 0 ? (
             <View style={styles.emptyState}>
               <View style={styles.emptyIconBg}>
-                <Ionicons name="calendar-outline" size={48} color="rgba(255,255,255,0.4)" />
+                <Ionicons name="calendar-outline" size={48} color={colors.textSecondary} />
               </View>
               <Text style={styles.emptyTitle}>No events yet</Text>
               <Text style={styles.emptySubtitle}>
@@ -424,6 +435,8 @@ function OrganizerDashboardContent() {
                 onDelete={handleDelete}
                 isPublishing={publishMutation.isPending && publishMutation.variables === event.id}
                 isDeleting={deleteMutation.isPending && deleteMutation.variables === event.id}
+                colors={colors}
+                styles={styles}
               />
             ))
           )}
@@ -447,8 +460,8 @@ export default function OrganizerDashboard() {
 // Styles
 // ---------------------------------------------------------------------------
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B0B14' },
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   orb: { position: 'absolute', width: 350, height: 350, borderRadius: 175 },
   header: {
     flexDirection: 'row',
@@ -459,12 +472,12 @@ const styles = StyleSheet.create({
   backBtn: {
     width: 44, height: 44, borderRadius: 22,
     alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: colors.backgroundSecondary,
+    borderWidth: 1, borderColor: colors.borderLight,
   },
   headerCenter: { flex: 1 },
-  headerTitle: { fontSize: 20, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', letterSpacing: -0.3 },
-  headerSub: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.6)', marginTop: 2 },
+  headerTitle: { fontSize: 20, fontFamily: 'Poppins_700Bold', color: colors.text, letterSpacing: -0.3 },
+  headerSub: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: colors.textSecondary, marginTop: 2 },
   createBtn: {
     width: 44,
     height: 44,
@@ -496,21 +509,21 @@ const styles = StyleSheet.create({
   },
   statIcon: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
   statValue: { fontSize: 24, fontFamily: 'Poppins_700Bold', letterSpacing: -0.5, marginBottom: 2 },
-  statLabel: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.6)' },
+  statLabel: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 12,
   },
-  sectionTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+  sectionTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: colors.text },
   draftBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
   draftBadgeText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.saffron },
   eventRow: {
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderColor: colors.borderLight,
+    backgroundColor: colors.surface,
     overflow: 'hidden',
     marginBottom: 12,
   },
@@ -531,19 +544,19 @@ const styles = StyleSheet.create({
   },
   statusDot: { width: 6, height: 6, borderRadius: 3 },
   statusText: { fontSize: 11, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 0.5 },
-  eventTitle: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF', lineHeight: 22, flex: 1 },
-  eventMeta: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.6)' },
+  eventTitle: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: colors.text, lineHeight: 22, flex: 1 },
+  eventMeta: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: colors.textSecondary },
   eventFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 },
   eventStats: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  eventStatText: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.5)' },
+  eventStatText: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
   eventPrice: { fontSize: 15, fontFamily: 'Poppins_700Bold', color: CultureTokens.indigo },
   eventActions: {
     flexDirection: 'row',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.05)',
+    borderTopColor: colors.borderLight,
     padding: 12,
     gap: 12,
-    backgroundColor: 'rgba(255,255,255,0.02)',
+    backgroundColor: colors.backgroundSecondary,
   },
   actionBtn: {
     flex: 1,
@@ -556,24 +569,24 @@ const styles = StyleSheet.create({
   },
   actionBtnText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold' },
   loadingContainer: { alignItems: 'center', paddingVertical: 60, gap: 16 },
-  loadingText: { fontSize: 15, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.6)' },
+  loadingText: { fontSize: 15, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
   emptyState: {
     alignItems: 'center',
     padding: 40,
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    backgroundColor: 'rgba(255,255,255,0.02)',
+    borderColor: colors.borderLight,
+    backgroundColor: colors.surface,
     marginTop: 10,
   },
   emptyIconBg: {
     width: 80, height: 80, borderRadius: 24,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: colors.backgroundSecondary,
     alignItems: 'center', justifyContent: 'center',
     marginBottom: 16,
   },
-  emptyTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', marginBottom: 6 },
-  emptySubtitle: { fontSize: 14, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.5)', textAlign: 'center', marginBottom: 20 },
+  emptyTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: colors.text, marginBottom: 6 },
+  emptySubtitle: { fontSize: 14, fontFamily: 'Poppins_400Regular', color: colors.textSecondary, textAlign: 'center', marginBottom: 20 },
   emptyBtn: { paddingHorizontal: 24, paddingVertical: 14, borderRadius: 16, backgroundColor: CultureTokens.indigo },
   emptyBtnText: { color: '#0B0B14', fontFamily: 'Poppins_700Bold', fontSize: 15 },
 });

@@ -18,6 +18,7 @@ import { useQuery } from '@tanstack/react-query';
 import { queryClient } from '@/lib/query-client';
 import { useAuth } from '@/lib/auth';
 import { api, type MembershipSummary } from '@/lib/api';
+import { useColors } from '@/hooks/useColors';
 import { CultureTokens } from '@/constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -35,6 +36,8 @@ const FEATURES = [
 const isWeb = Platform.OS === 'web';
 
 export default function UpgradeScreen() {
+  const colors = useColors();
+  const s = getStyles(colors);
   const insets = useSafeAreaInsets();
   const webTop = 0;
   const pathname = usePathname();
@@ -154,7 +157,7 @@ export default function UpgradeScreen() {
         {/* Header with back button */}
         <View style={s.header}>
           <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={12}>
-            <Ionicons name="chevron-back" size={22} color="#FFFFFF" />
+            <Ionicons name="chevron-back" size={22} color={colors.text} />
           </Pressable>
           <Text style={s.headerTitle}>CulturePass+</Text>
           <View style={{ width: 44 }} />
@@ -214,7 +217,7 @@ export default function UpgradeScreen() {
               style={({pressed}) => [s.subscribeBtn, pressed && { transform: [{ scale: 0.98 }] }]}
               onPress={() => router.push({ pathname: '/(onboarding)/login', params: { redirectTo: pathname } } as any)}
             >
-              <Ionicons name="arrow-forward" size={18} color="#0B0B14" style={{ marginRight: 8 }} />
+              <Ionicons name="arrow-forward" size={18} color={colors.background} style={{ marginRight: 8 }} />
               <Text style={s.subscribeBtnText}>Sign In to Activate</Text>
             </Pressable>
             <Pressable
@@ -239,10 +242,9 @@ export default function UpgradeScreen() {
       />
       <View style={s.header}>
         <Pressable onPress={() => router.back()} style={({pressed}) => [s.backBtn, pressed && { opacity: 0.7 }]} hitSlop={12}>
-          <Ionicons name="chevron-back" size={22} color="#FFFFFF" />
+          <Ionicons name="chevron-back" size={22} color={colors.text} />
         </Pressable>
         <Text style={s.headerTitle}>CulturePass+</Text>
-        <View style={{ width: 44 }} />
       </View>
 
       <ScrollView
@@ -279,13 +281,13 @@ export default function UpgradeScreen() {
                 style={[s.toggleBtn, billingPeriod === 'monthly' && s.toggleActive]}
                 onPress={() => { if(!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setBillingPeriod('monthly'); }}
               >
-                <Text style={[s.toggleText, billingPeriod === 'monthly' && { color: '#FFFFFF' }]}>Monthly</Text>
+                <Text style={[s.toggleText, billingPeriod === 'monthly' && { color: colors.text }]}>Monthly</Text>
               </Pressable>
               <Pressable
                 style={[s.toggleBtn, billingPeriod === 'yearly' && s.toggleActive]}
                 onPress={() => { if(!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setBillingPeriod('yearly'); }}
               >
-                <Text style={[s.toggleText, billingPeriod === 'yearly' && { color: '#FFFFFF' }]}>Yearly</Text>
+                <Text style={[s.toggleText, billingPeriod === 'yearly' && { color: colors.text }]}>Yearly</Text>
                 {billingPeriod === 'yearly' && (
                   <View style={s.saveBadge}>
                     <Text style={s.saveBadgeText}>-28%</Text>
@@ -314,15 +316,15 @@ export default function UpgradeScreen() {
               <Text style={s.compColLabel}>Free</Text>
             </View>
             <View style={s.compColPlus}>
-              <Ionicons name="star" size={12} color="#0B0B14" />
-              <Text style={[s.compColLabel, { color: '#0B0B14' }]}> Plus</Text>
+              <Ionicons name="star" size={12} color={colors.background} />
+              <Text style={[s.compColLabel, { color: colors.background }]}> Plus</Text>
             </View>
           </View>
 
           {FEATURES.map((f, i) => (
             <View key={f.title} style={[s.compRow, i === FEATURES.length - 1 && { borderBottomWidth: 0 }]}>
               <View style={s.compFeature}>
-                <Ionicons name={f.icon as never} size={18} color="rgba(255,255,255,0.6)" style={{ marginRight: 10 }} />
+                <Ionicons name={f.icon as never} size={18} color={colors.textSecondary} style={{ marginRight: 10 }} />
                 <View style={{ flex: 1 }}>
                   <Text style={s.compFeatureTitle}>{f.title}</Text>
                   <Text style={s.compFeatureDesc}>{f.desc}</Text>
@@ -378,10 +380,10 @@ export default function UpgradeScreen() {
               disabled={loading}
             >
               {loading ? (
-                <ActivityIndicator color="#0B0B14" />
+                <ActivityIndicator color={colors.background} />
               ) : (
                 <>
-                  <Ionicons name="star" size={18} color="#0B0B14" style={{ marginRight: 8 }} />
+                  <Ionicons name="star" size={18} color={colors.background} style={{ marginRight: 8 }} />
                   <Text style={s.subscribeBtnText}>Get CulturePass+ for {price}{billingPeriod === 'yearly' ? '/yr' : '/mo'}</Text>
                 </>
               )}
@@ -394,64 +396,64 @@ export default function UpgradeScreen() {
   );
 }
 
-const s = StyleSheet.create({
-  container:          { flex: 1, backgroundColor: '#0B0B14' },
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+  container:          { flex: 1, backgroundColor: colors.background },
   header:             { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12, zIndex: 10 },
-  backBtn:            { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  backBtn:            { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight },
   headerTitle:        { fontSize: 18, fontFamily: 'Poppins_700Bold', color: CultureTokens.gold },
   scroll:             { flex: 1 },
   scrollContent:      { paddingHorizontal: 20, flexGrow: 1 },
   heroSection:        { alignItems: 'center', paddingTop: 32, paddingBottom: 16 },
   heroIconWrap:       { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 20, backgroundColor: CultureTokens.gold + '15' },
   lockedIconWrap:     { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
-  heroTitle:          { fontSize: 32, fontFamily: 'Poppins_700Bold', marginBottom: 6, color: '#FFFFFF' },
+  heroTitle:          { fontSize: 32, fontFamily: 'Poppins_700Bold', marginBottom: 6, color: colors.text },
   heroTagline:        { fontSize: 13, fontFamily: 'Poppins_600SemiBold', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 16, color: CultureTokens.gold },
-  heroDesc:           { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 24, paddingHorizontal: 10, color: 'rgba(255,255,255,0.7)' },
+  heroDesc:           { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 24, paddingHorizontal: 10, color: colors.textSecondary },
   socialProof:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, paddingHorizontal: 16, borderRadius: 12, marginTop: 12, marginBottom: 24, alignSelf: 'center', backgroundColor: CultureTokens.gold + '12', borderWidth: 1, borderColor: CultureTokens.gold + '30' },
   socialProofText:    { fontSize: 13, fontFamily: 'Poppins_600SemiBold', marginLeft: 8, color: CultureTokens.gold },
   benefitsPreview:    { marginVertical: 20 },
-  benefitItem:        { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 16, borderRadius: 16, marginBottom: 12, backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', borderLeftWidth: 4 },
+  benefitItem:        { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 16, borderRadius: 16, marginBottom: 12, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight, borderLeftWidth: 4 },
   benefitIconWrap:    { width: 48, height: 48, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 16, flexShrink: 0 },
-  benefitTitle:       { fontSize: 15, fontFamily: 'Poppins_600SemiBold', marginBottom: 4, color: '#FFFFFF' },
-  benefitDesc:        { fontSize: 13, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.6)' },
+  benefitTitle:       { fontSize: 15, fontFamily: 'Poppins_600SemiBold', marginBottom: 4, color: colors.text },
+  benefitDesc:        { fontSize: 13, fontFamily: 'Poppins_400Regular', color: colors.textSecondary },
   pricingSection:     { marginTop: 16 },
-  toggleRow:          { flexDirection: 'row', borderRadius: 14, padding: 4, marginBottom: 20, backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  toggleRow:          { flexDirection: 'row', borderRadius: 14, padding: 4, marginBottom: 20, backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight },
   toggleBtn:          { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 10, flexDirection: 'row', justifyContent: 'center' },
-  toggleActive:       { backgroundColor: 'rgba(255,255,255,0.1)' },
-  toggleText:         { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: 'rgba(255,255,255,0.5)' },
+  toggleActive:       { backgroundColor: colors.surfaceElevated },
+  toggleText:         { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: colors.textTertiary },
   saveBadge:          { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, marginLeft: 8, backgroundColor: CultureTokens.success },
   saveBadgeText:      { fontSize: 10, fontFamily: 'Poppins_700Bold', color: '#000000' },
-  priceCard:          { alignItems: 'center', paddingVertical: 16, backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
+  priceCard:          { alignItems: 'center', paddingVertical: 16, backgroundColor: colors.surface, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
   priceAmount:        { fontSize: 48, fontFamily: 'Poppins_700Bold', color: CultureTokens.gold },
-  pricePeriod:        { fontSize: 16, fontFamily: 'Poppins_500Medium', marginTop: -4, color: 'rgba(255,255,255,0.6)' },
+  pricePeriod:        { fontSize: 16, fontFamily: 'Poppins_500Medium', marginTop: -4, color: colors.textSecondary },
   priceBreakdown:     { fontSize: 13, fontFamily: 'Poppins_500Medium', marginTop: 8, color: CultureTokens.gold },
-  sectionTitle:       { fontSize: 22, fontFamily: 'Poppins_700Bold', marginBottom: 20, color: '#FFFFFF' },
-  comparisonSection:  { marginTop: 32, marginBottom: 24, paddingHorizontal: 12, paddingVertical: 24, backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
+  sectionTitle:       { fontSize: 22, fontFamily: 'Poppins_700Bold', marginBottom: 20, color: colors.text },
+  comparisonSection:  { marginTop: 32, marginBottom: 24, paddingHorizontal: 12, paddingVertical: 24, backgroundColor: colors.surface, borderRadius: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
   comparisonHeader:   { flexDirection: 'row', alignItems: 'center', marginBottom: 12, paddingRight: 4 },
   compColHeader:      { width: 60, alignItems: 'center', paddingVertical: 6 },
   compColPlus:        { width: 70, borderRadius: 10, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 6, backgroundColor: CultureTokens.gold },
-  compColLabel:       { fontSize: 12, fontFamily: 'Poppins_700Bold', color: 'rgba(255,255,255,0.6)' },
+  compColLabel:       { fontSize: 12, fontFamily: 'Poppins_700Bold', color: colors.textSecondary },
   compRow:            { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' },
   compFeature:        { flex: 1, flexDirection: 'row', alignItems: 'center' },
-  compFeatureTitle:   { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
-  compFeatureDesc:    { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 2, color: 'rgba(255,255,255,0.5)' },
+  compFeatureTitle:   { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: colors.text },
+  compFeatureDesc:    { fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 2, color: colors.textTertiary },
   compCheck:          { width: 60, alignItems: 'center' },
   compCheckPlus:      { width: 70 },
   highlightsSection:  { marginBottom: 32, gap: 16 },
-  highlightCard:      { borderRadius: 20, padding: 24, backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  highlightCard:      { borderRadius: 20, padding: 24, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight },
   highlightIcon:      { width: 52, height: 52, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
-  highlightTitle:     { fontSize: 18, fontFamily: 'Poppins_700Bold', marginBottom: 6, color: '#FFFFFF' },
-  highlightDesc:      { fontSize: 14, fontFamily: 'Poppins_400Regular', lineHeight: 22, color: 'rgba(255,255,255,0.6)' },
+  highlightTitle:     { fontSize: 18, fontFamily: 'Poppins_700Bold', marginBottom: 6, color: colors.text },
+  highlightDesc:      { fontSize: 14, fontFamily: 'Poppins_400Regular', lineHeight: 22, color: colors.textSecondary },
   activeSection:      { alignItems: 'center', paddingVertical: 32 },
   activeBadge:        { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24, marginBottom: 16, backgroundColor: CultureTokens.success + '15', borderWidth: 1, borderColor: CultureTokens.success + '30' },
   activeText:         { fontSize: 15, fontFamily: 'Poppins_700Bold', marginLeft: 8, color: CultureTokens.success },
-  activeSubtext:      { fontSize: 14, fontFamily: 'Poppins_400Regular', marginBottom: 24, color: 'rgba(255,255,255,0.6)' },
+  activeSubtext:      { fontSize: 14, fontFamily: 'Poppins_400Regular', marginBottom: 24, color: colors.textSecondary },
   cancelBtn:          { paddingVertical: 12, paddingHorizontal: 24, borderRadius: 12, backgroundColor: 'rgba(255, 94, 91, 0.1)' },
   cancelBtnText:      { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.coral },
   ctaSection:         { alignItems: 'center', paddingVertical: 16, marginBottom: 16 },
   subscribeBtn:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 18, paddingHorizontal: 32, borderRadius: 16, width: '100%', marginBottom: 12, backgroundColor: CultureTokens.gold },
-  subscribeBtnText:   { fontSize: 16, fontFamily: 'Poppins_700Bold', color: '#0B0B14' },
-  secondaryBtn:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, paddingHorizontal: 32, borderRadius: 16, width: '100%', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', backgroundColor: 'transparent' },
-  secondaryBtnText:   { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
+  subscribeBtnText:   { fontSize: 16, fontFamily: 'Poppins_700Bold', color: colors.background },
+  secondaryBtn:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, paddingHorizontal: 32, borderRadius: 16, width: '100%', borderWidth: 1, borderColor: colors.borderLight, backgroundColor: 'transparent' },
+  secondaryBtnText:   { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.text },
   ctaFine:            { fontSize: 13, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.4)', marginTop: 12 },
 });

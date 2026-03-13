@@ -10,6 +10,7 @@ import * as Haptics from 'expo-haptics';
 import NativeMapView from '@/components/NativeMapView';
 import type { EventData } from '@/shared/schema';
 import { getPostcodesByPlace } from '@shared/location/australian-postcodes';
+import { useColors } from '@/hooks/useColors';
 
 const CITY_COORDS: Record<string, { latitude: number; longitude: number }> = {
   'Sydney': { latitude: -33.8688, longitude: 151.2093 },
@@ -58,17 +59,20 @@ type CityGroup = {
 
 type CityGroupMap = Record<string, CityGroup>;
 
-function WebCityList({ cityGroups, selectedCity, onSelectCity, onEventPress }: {
+function WebCityList({ cityGroups, selectedCity, onSelectCity, onEventPress, colors, webStyles, styles }: {
   cityGroups: CityGroupMap;
   selectedCity: string | null;
   onSelectCity: (city: string | null) => void;
   onEventPress: (id: string) => void;
+  colors: ReturnType<typeof useColors>;
+  webStyles: any;
+  styles: any;
 }) {
   const selectedEvents = selectedCity ? (cityGroups[selectedCity]?.events || []) : [];
   const totalEvents = Object.values(cityGroups).reduce((sum, group) => sum + group.count, 0);
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#0B0B14' }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, gap: 12, paddingBottom: selectedCity ? 240 : 40 }} showsVerticalScrollIndicator={false}>
         <View style={webStyles.mapInfo}>
           <View style={webStyles.mapIconWrap}>
@@ -91,14 +95,14 @@ function WebCityList({ cityGroups, selectedCity, onSelectCity, onEventPress }: {
           >
             <View style={webStyles.cityLeft}>
               <View style={[webStyles.cityDot, selectedCity === city && webStyles.cityDotActive]}>
-                <Ionicons name="location" size={20} color={selectedCity === city ? '#0B0B14' : CultureTokens.indigo} />
+                <Ionicons name="location" size={20} color={selectedCity === city ? colors.background : CultureTokens.indigo} />
               </View>
               <View>
                 <Text style={webStyles.cityName}>{city}</Text>
                 <Text style={webStyles.cityCount}>{group.count} event{group.count !== 1 ? 's' : ''}</Text>
               </View>
             </View>
-            <Ionicons name={selectedCity === city ? 'chevron-up' : 'chevron-down'} size={20} color={selectedCity === city ? CultureTokens.indigo : 'rgba(255,255,255,0.4)'} />
+            <Ionicons name={selectedCity === city ? 'chevron-up' : 'chevron-down'} size={20} color={selectedCity === city ? CultureTokens.indigo : colors.textSecondary} />
           </Pressable>
         ))}
       </ScrollView>
@@ -111,7 +115,7 @@ function WebCityList({ cityGroups, selectedCity, onSelectCity, onEventPress }: {
               <Text style={webStyles.panelCount}>{selectedEvents.length} events</Text>
             </View>
             <Pressable onPress={() => onSelectCity(null)} hitSlop={10} style={Platform.OS === 'web' ? { cursor: 'pointer' as any } : undefined}>
-              <Ionicons name="close-circle" size={28} color="rgba(255,255,255,0.4)" />
+              <Ionicons name="close-circle" size={28} color={colors.textSecondary} />
             </Pressable>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 14 }}>
@@ -133,7 +137,7 @@ function WebCityList({ cityGroups, selectedCity, onSelectCity, onEventPress }: {
                   <Text style={styles.eventTitle} numberOfLines={2}>{event.title}</Text>
                   {event.venue && (
                     <View style={styles.eventMeta}>
-                      <Ionicons name="location-outline" size={12} color="rgba(255,255,255,0.5)" />
+                      <Ionicons name="location-outline" size={12} color={colors.textSecondary} />
                       <Text style={styles.eventVenue} numberOfLines={1}>{event.venue}</Text>
                     </View>
                   )}
@@ -149,6 +153,10 @@ function WebCityList({ cityGroups, selectedCity, onSelectCity, onEventPress }: {
 
 export default function MapScreen() {
   const insets = useSafeAreaInsets();
+  const colors = useColors();
+  const styles = getStyles(colors);
+  const webStyles = getWebStyles(colors);
+  
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
@@ -192,7 +200,7 @@ export default function MapScreen() {
     <View style={[styles.container, { paddingTop: topInset }]}>
       <View style={styles.header}>
         <Pressable onPress={() => { if (router.canGoBack()) router.back(); else router.replace('/'); }} style={styles.backBtn} hitSlop={12}>
-          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
         </Pressable>
         <Text style={styles.headerTitle}>Events Map</Text>
         <View style={{ width: 44 }} />
@@ -209,6 +217,9 @@ export default function MapScreen() {
           selectedCity={selectedCity}
           onSelectCity={setSelectedCity}
           onEventPress={handleEventPress}
+          colors={colors}
+          webStyles={webStyles}
+          styles={styles}
         />
       ) : (
         <NativeMapView
@@ -225,7 +236,7 @@ export default function MapScreen() {
   );
 }
 
-const webStyles = StyleSheet.create({
+const getWebStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   mapInfo: {
     alignItems: 'center',
     paddingVertical: 32,
@@ -243,23 +254,23 @@ const webStyles = StyleSheet.create({
   mapInfoTitle: {
     fontSize: 24,
     fontFamily: 'Poppins_700Bold',
-    color: '#FFFFFF',
+    color: colors.text,
     letterSpacing: -0.3,
   },
   mapInfoSub: {
     fontSize: 15,
     fontFamily: 'Poppins_400Regular',
-    color: 'rgba(255,255,255,0.6)',
+    color: colors.textSecondary,
   },
   cityRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: colors.surface,
     borderRadius: 20,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: colors.borderLight,
   },
   cityRowActive: {
     borderColor: CultureTokens.indigo + '50',
@@ -284,28 +295,28 @@ const webStyles = StyleSheet.create({
   cityName: {
     fontSize: 16,
     fontFamily: 'Poppins_600SemiBold',
-    color: '#FFFFFF',
+    color: colors.text,
     marginBottom: 2,
   },
   cityCount: {
     fontSize: 13,
     fontFamily: 'Poppins_500Medium',
-    color: 'rgba(255,255,255,0.6)',
+    color: colors.textSecondary,
   },
   bottomPanel: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(11,11,20,0.95)',
+    backgroundColor: colors.backgroundSecondary,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.1)',
+    borderTopColor: colors.borderLight,
     borderLeftWidth: 1,
     borderRightWidth: 1,
-    borderLeftColor: 'rgba(255,255,255,0.05)',
-    borderRightColor: 'rgba(255,255,255,0.05)',
+    borderLeftColor: colors.borderLight,
+    borderRightColor: colors.borderLight,
     paddingTop: 20,
     paddingBottom: 40,
   },
@@ -319,20 +330,20 @@ const webStyles = StyleSheet.create({
   panelCity: {
     fontSize: 20,
     fontFamily: 'Poppins_700Bold',
-    color: '#FFFFFF',
+    color: colors.text,
     marginBottom: 2,
   },
   panelCount: {
     fontSize: 13,
     fontFamily: 'Poppins_500Medium',
-    color: 'rgba(255,255,255,0.5)',
+    color: colors.textSecondary,
   },
 });
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0B0B14',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -345,16 +356,16 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: colors.backgroundSecondary,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: colors.borderLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: {
     fontSize: 18,
     fontFamily: 'Poppins_700Bold',
-    color: '#FFFFFF',
+    color: colors.text,
   },
   loadingContainer: {
     flex: 1,
@@ -365,14 +376,14 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 15,
     fontFamily: 'Poppins_500Medium',
-    color: 'rgba(255,255,255,0.6)',
+    color: colors.textSecondary,
   },
   eventCard: {
     width: 240,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: colors.surface,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: colors.borderLight,
     overflow: 'hidden',
   },
   eventImage: {
@@ -393,7 +404,7 @@ const styles = StyleSheet.create({
   eventTitle: {
     fontSize: 15,
     fontFamily: 'Poppins_600SemiBold',
-    color: '#FFFFFF',
+    color: colors.text,
     lineHeight: 22,
     marginBottom: 8,
   },
@@ -405,7 +416,7 @@ const styles = StyleSheet.create({
   eventVenue: {
     fontSize: 12,
     fontFamily: 'Poppins_500Medium',
-    color: 'rgba(255,255,255,0.6)',
+    color: colors.textSecondary,
     flex: 1,
   },
 });

@@ -18,6 +18,7 @@ import { useAuth } from '@/lib/auth';
 import { api, type MembershipSummary, type RewardsSummary } from '@/lib/api';
 import type { Ticket as ApiTicket } from '@/shared/schema';
 import { AuthGuard } from '@/components/AuthGuard';
+import { useColors } from '@/hooks/useColors';
 import { CultureTokens } from '@/constants/theme';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -75,9 +76,10 @@ const isWeb = Platform.OS === 'web';
 
 interface TicketCardProps { ticket: WalletTicket; }
 
-function TicketCard({ ticket }: TicketCardProps) {
+function TicketCard({ ticket, styles: s }: TicketCardProps & { styles: ReturnType<typeof getStyles> }) {
   const accentColor = ticket.imageColor || CultureTokens.indigo;
   const upcoming = isUpcoming(ticket.eventDate);
+  const colors = useColors();
 
   return (
     <Pressable
@@ -92,19 +94,19 @@ function TicketCard({ ticket }: TicketCardProps) {
       <View style={{ flex: 1 }}>
         <Text style={s.ticketTitle} numberOfLines={1}>{ticket.eventTitle}</Text>
         <View style={s.ticketMeta}>
-          <Ionicons name="calendar-outline" size={12} color="rgba(255,255,255,0.6)" />
+          <Ionicons name="calendar-outline" size={12} color={colors.textSecondary} />
           <Text style={s.ticketMetaText}>{formatEventDate(ticket.eventDate)}</Text>
           {ticket.eventTime && (
             <>
               <Text style={s.ticketMetaDot}>·</Text>
-              <Ionicons name="time-outline" size={12} color="rgba(255,255,255,0.6)" />
+              <Ionicons name="time-outline" size={12} color={colors.textSecondary} />
               <Text style={s.ticketMetaText}>{ticket.eventTime}</Text>
             </>
           )}
         </View>
         {ticket.eventVenue && (
           <View style={s.ticketMeta}>
-            <Ionicons name="location-outline" size={12} color="rgba(255,255,255,0.6)" />
+            <Ionicons name="location-outline" size={12} color={colors.textSecondary} />
             <Text style={s.ticketMetaText} numberOfLines={1}>{ticket.eventVenue}</Text>
           </View>
         )}
@@ -119,7 +121,7 @@ function TicketCard({ ticket }: TicketCardProps) {
         {ticket.quantity != null && ticket.quantity > 1 && (
           <Text style={s.quantityText}>×{ticket.quantity}</Text>
         )}
-        <Ionicons name="chevron-forward" size={14} color="rgba(255,255,255,0.4)" />
+        <Ionicons name="chevron-forward" size={14} color={colors.textTertiary} />
       </View>
     </Pressable>
   );
@@ -129,7 +131,7 @@ function TicketCard({ ticket }: TicketCardProps) {
 
 interface StatBoxProps { value: string | number; label: string; icon: string; }
 
-function StatBox({ value, label, icon }: StatBoxProps) {
+function StatBox({ value, label, icon, styles: s }: StatBoxProps & { styles: ReturnType<typeof getStyles> }) {
   return (
     <View style={s.statBox}>
       <Ionicons name={icon as never} size={18} color={CultureTokens.indigo} style={{ marginBottom: 4 }} />
@@ -144,6 +146,8 @@ function StatBox({ value, label, icon }: StatBoxProps) {
 type WalletTab = 'upcoming' | 'past';
 
 export default function WalletScreen() {
+  const colors = useColors();
+  const styles = getStyles(colors);
   const insets      = useSafeAreaInsets();
   const topInset    = isWeb ? 0 : insets.top;
   const bottomInset = isWeb ? 34 : insets.bottom;
@@ -188,20 +192,20 @@ export default function WalletScreen() {
 
   return (
     <AuthGuard icon="wallet-outline" title="My Wallet" message="Sign in to access your wallet, tickets, and rewards.">
-      <View style={[s.container, { paddingTop: topInset }]}>
+      <View style={[styles.container, { paddingTop: topInset }]}>
         <LinearGradient 
           colors={['rgba(44, 42, 114, 0.15)', 'transparent']} 
           style={StyleSheet.absoluteFillObject} 
           pointerEvents="none" 
         />
         {/* Header */}
-        <View style={s.header}>
-          <Pressable onPress={() => router.back()} style={({pressed}) => [s.backBtn, pressed && { transform: [{ scale: 0.95 }] }]}>
-            <Ionicons name="chevron-back" size={22} color="#FFFFFF" />
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()} style={({pressed}) => [styles.backBtn, pressed && { transform: [{ scale: 0.95 }] }]}>
+            <Ionicons name="chevron-back" size={22} color={colors.text} />
           </Pressable>
-          <Text style={s.headerTitle}>My Wallet</Text>
+          <Text style={styles.headerTitle}>My Wallet</Text>
           <Pressable
-            style={({pressed}) => [s.scanBtn, pressed && { transform: [{ scale: 0.95 }] }]}
+            style={({pressed}) => [styles.scanBtn, pressed && { transform: [{ scale: 0.95 }] }]}
             onPress={() => {
               if(!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               router.push('/tickets/index');
@@ -214,41 +218,41 @@ export default function WalletScreen() {
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: bottomInset + 24 }}>
 
           {/* Membership card */}
-          <View style={s.membershipCardWrap}>
+          <View style={styles.membershipCardWrap}>
             <LinearGradient
               colors={tierConfig.colors}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
-              style={s.membershipCard}
+              style={styles.membershipCard}
             >
-              <View style={s.membershipCircle} />
-              <View style={s.membershipCircle2} />
+              <View style={styles.membershipCircle} />
+              <View style={styles.membershipCircle2} />
 
-              <View style={s.membershipTop}>
+              <View style={styles.membershipTop}>
                 <View>
-                  <Text style={s.membershipLabel}>CulturePass</Text>
-                  <Text style={s.membershipTier}>{tierConfig.label}</Text>
+                  <Text style={styles.membershipLabel}>CulturePass</Text>
+                  <Text style={styles.membershipTier}>{tierConfig.label}</Text>
                 </View>
-                <View style={s.membershipIconWrap}>
+                <View style={styles.membershipIconWrap}>
                   <Ionicons name={tierConfig.icon as never} size={28} color="rgba(255,255,255,0.9)" />
                 </View>
               </View>
 
-              <View style={s.membershipBottom}>
+              <View style={styles.membershipBottom}>
                 <View>
-                  <Text style={s.membershipStatLabel}>Total Events</Text>
-                  <Text style={s.membershipStatValue}>{membership?.eventsAttended ?? confirmed.length}</Text>
+                  <Text style={styles.membershipStatLabel}>Total Events</Text>
+                  <Text style={styles.membershipStatValue}>{membership?.eventsAttended ?? confirmed.length}</Text>
                 </View>
                 {membership?.cashbackMultiplier != null && membership.cashbackMultiplier > 1 && (
                   <View>
-                    <Text style={s.membershipStatLabel}>Cashback</Text>
-                    <Text style={s.membershipStatValue}>{((membership.cashbackMultiplier - 1) * 100).toFixed(0)}%</Text>
+                    <Text style={styles.membershipStatLabel}>Cashback</Text>
+                    <Text style={styles.membershipStatValue}>{((membership.cashbackMultiplier - 1) * 100).toFixed(0)}%</Text>
                   </View>
                 )}
                 {membership?.expiresAt && (
                   <View>
-                    <Text style={s.membershipStatLabel}>Expires</Text>
-                    <Text style={s.membershipStatValue}>
+                    <Text style={styles.membershipStatLabel}>Expires</Text>
+                    <Text style={styles.membershipStatValue}>
                       {new Date(membership.expiresAt).toLocaleDateString('en-AU', { month: 'short', year: 'numeric' })}
                     </Text>
                   </View>
@@ -258,33 +262,33 @@ export default function WalletScreen() {
           </View>
 
           {/* Rewards strip */}
-          <View style={s.rewardsStrip}>
-            <View style={s.rewardsLeft}>
-              <View style={s.rewardsIconWrap}>
+          <View style={styles.rewardsStrip}>
+            <View style={styles.rewardsLeft}>
+              <View style={styles.rewardsIconWrap}>
                 <Ionicons name="trophy-outline" size={15} color={CultureTokens.warning} />
               </View>
               <View>
-                <Text style={s.rewardsTitle}>
+                <Text style={styles.rewardsTitle}>
                   {rewards?.tierLabel ?? 'Silver'} Rewards
                 </Text>
-                <Text style={s.rewardsSub}>
+                <Text style={styles.rewardsSub}>
                   {rewards?.nextTierLabel
                     ? `${rewards.pointsToNextTier} pts to ${rewards.nextTierLabel}`
                     : 'Top tier unlocked'}
                 </Text>
               </View>
             </View>
-            <Text style={s.rewardsPoints}>{rewards?.points ?? 0} pts</Text>
+            <Text style={styles.rewardsPoints}>{rewards?.points ?? 0} pts</Text>
           </View>
 
           {/* Upgrade prompt for free tier */}
           {(!membership || membership.tier === 'free') && (
             <Pressable
-              style={({pressed}) => [s.upgradePrompt, pressed && { opacity: 0.8 }]}
+              style={({pressed}) => [styles.upgradePrompt, pressed && { opacity: 0.8 }]}
               onPress={() => router.push('/membership/upgrade')}
             >
               <Ionicons name="star" size={16} color={CultureTokens.warning} />
-              <Text style={s.upgradePromptText}>
+              <Text style={styles.upgradePromptText}>
                 Upgrade to Plus for 2% cashback on all tickets
               </Text>
               <Ionicons name="chevron-forward" size={14} color={CultureTokens.warning} />
@@ -292,43 +296,43 @@ export default function WalletScreen() {
           )}
 
           {/* Stats row */}
-          <View style={s.statsRow}>
-            <StatBox value={upcoming.length}  label="Upcoming" icon="calendar" />
-            <View style={s.statsDivider} />
-            <StatBox value={past.length}      label="Attended" icon="checkmark-circle" />
-            <View style={s.statsDivider} />
-            <StatBox value={confirmed.length} label="Total"    icon="ticket" />
+          <View style={styles.statsRow}>
+            <StatBox value={upcoming.length}  label="Upcoming" icon="calendar" styles={styles} />
+            <View style={styles.statsDivider} />
+            <StatBox value={past.length}      label="Attended" icon="checkmark-circle" styles={styles} />
+            <View style={styles.statsDivider} />
+            <StatBox value={confirmed.length} label="Total"    icon="ticket" styles={styles} />
           </View>
 
           {/* Apple/Google Wallet promo */}
-          <View style={s.digitalWalletRow}>
+          <View style={styles.digitalWalletRow}>
             {(Platform.OS === 'ios' || isWeb) && (
-              <View style={[s.walletPassBtn, s.walletPassDisabled, { backgroundColor: '#111111', borderWidth: 1, borderColor: '#333' }]}> 
-                <Ionicons name="logo-apple" size={18} color="#FFFFFF" />
+              <View style={[styles.walletPassBtn, styles.walletPassDisabled, { backgroundColor: '#111111', borderWidth: 1, borderColor: '#333' }]}> 
+                <Ionicons name="logo-apple" size={18} color={colors.text} />
                 <View>
-                  <Text style={s.walletPassText}>Apple Wallet</Text>
-                  <Text style={s.walletPassSoon}>Coming soon</Text>
+                  <Text style={styles.walletPassText}>Apple Wallet</Text>
+                  <Text style={styles.walletPassSoon}>Coming soon</Text>
                 </View>
               </View>
             )}
-            <View style={[s.walletPassBtn, s.walletPassDisabled, { backgroundColor: '#4285F4' }]}> 
-              <Ionicons name="logo-google" size={16} color="#FFFFFF" />
+            <View style={[styles.walletPassBtn, styles.walletPassDisabled, { backgroundColor: '#4285F4' }]}> 
+              <Ionicons name="logo-google" size={16} color={colors.text} />
               <View>
-                <Text style={s.walletPassText}>Google Wallet</Text>
-                <Text style={s.walletPassSoon}>Coming soon</Text>
+                <Text style={styles.walletPassText}>Google Wallet</Text>
+                <Text style={styles.walletPassSoon}>Coming soon</Text>
               </View>
             </View>
           </View>
 
           {/* Tabs */}
-          <View style={s.tabsRow}>
+          <View style={styles.tabsRow}>
             {(['upcoming', 'past'] as WalletTab[]).map((t) => (
               <Pressable
                 key={t}
-                style={[s.tab, tab === t ? { backgroundColor: 'rgba(255,255,255,0.08)' } : { backgroundColor: 'rgba(255,255,255,0.02)' }]}
+                style={[styles.tab, tab === t ? { backgroundColor: 'rgba(255,255,255,0.08)' } : { backgroundColor: colors.surface }]}
                 onPress={() => { if(!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setTab(t); }}
               >
-                <Text style={[s.tabText, tab === t ? { color: '#FFFFFF' } : { color: 'rgba(255,255,255,0.6)' }]}> 
+                <Text style={[styles.tabText, tab === t ? { color: colors.text } : { color: colors.textSecondary }]}> 
                   {t === 'upcoming'
                     ? `Upcoming${upcoming.length > 0 ? ` (${upcoming.length})` : ''}`
                     : `Past${past.length > 0 ? ` (${past.length})` : ''}`}
@@ -338,46 +342,46 @@ export default function WalletScreen() {
           </View>
 
           {/* Ticket list */}
-          <View style={s.ticketList}>
+          <View style={styles.ticketList}>
             {isLoading ? (
-              <View style={s.emptyState}>
+              <View style={styles.emptyState}>
                 <ActivityIndicator color={CultureTokens.indigo} />
               </View>
             ) : displayTickets.length === 0 ? (
-              <View style={s.emptyState}>
+              <View style={styles.emptyState}>
                 <Ionicons
                   name={tab === 'upcoming' ? 'ticket-outline' : 'time-outline'}
                   size={48}
-                  color="rgba(255,255,255,0.4)"
+                  color={colors.textTertiary}
                 />
-                <Text style={s.emptyTitle}>
+                <Text style={styles.emptyTitle}>
                   {tab === 'upcoming' ? 'No upcoming tickets' : 'No past events'}
                 </Text>
-                <Text style={s.emptySubtitle}> 
+                <Text style={styles.emptySubtitle}> 
                   {tab === 'upcoming'
                     ? 'Browse events and grab your first ticket!'
                     : 'Your attended events will appear here.'}
                 </Text>
                 {tab === 'upcoming' && (
                   <Pressable
-                    style={({pressed}) => [s.browseBtn, pressed && { transform: [{ scale: 0.98 }] }]}
+                    style={({pressed}) => [styles.browseBtn, pressed && { transform: [{ scale: 0.98 }] }]}
                     onPress={() => router.push('/(tabs)')}
                   >
-                    <Text style={s.browseBtnText}>Discover Events</Text>
+                    <Text style={styles.browseBtnText}>Discover Events</Text>
                   </Pressable>
                 )}
               </View>
             ) : (
               displayTickets.map((ticket) => (
-                <TicketCard key={ticket.id} ticket={ticket} />
+                <TicketCard key={ticket.id} ticket={ticket} styles={styles} />
               ))
             )}
           </View>
 
           {/* View all link */}
           {displayTickets.length > 0 && (
-            <Pressable style={({pressed}) => [s.viewAllBtn, pressed && { opacity: 0.7 }]} onPress={() => router.push('/tickets/index')}>
-              <Text style={s.viewAllBtnText}>View All Tickets</Text>
+            <Pressable style={({pressed}) => [styles.viewAllBtn, pressed && { opacity: 0.7 }]} onPress={() => router.push('/tickets/index')}>
+              <Text style={styles.viewAllBtnText}>View All Tickets</Text>
               <Ionicons name="chevron-forward" size={14} color={CultureTokens.indigo} />
             </Pressable>
           )}
@@ -389,8 +393,8 @@ export default function WalletScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B0B14' },
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
 
   header: {
     flexDirection: 'row',
@@ -406,11 +410,11 @@ const s = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: colors.backgroundSecondary,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)'
+    borderColor: colors.borderLight
   },
-  headerTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+  headerTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: colors.text },
   scanBtn: {
     width: 44,
     height: 44,
@@ -427,7 +431,7 @@ const s = StyleSheet.create({
     borderRadius: 24,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: colors.borderLight,
   },
   membershipCard: {
     padding: 24,
@@ -451,7 +455,7 @@ const s = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: 'rgba(255,255,255,0.05)'
+    backgroundColor: colors.backgroundSecondary
   },
   membershipTop: {
     flexDirection: 'row',
@@ -459,12 +463,12 @@ const s = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 20,
   },
-  membershipLabel:    { fontSize: 13, fontFamily: 'Poppins_400Regular', letterSpacing: 0.5, color: 'rgba(255,255,255,0.7)' },
-  membershipTier:     { fontSize: 28, fontFamily: 'Poppins_700Bold', marginTop: 2, color: '#FFFFFF' },
+  membershipLabel:    { fontSize: 13, fontFamily: 'Poppins_400Regular', letterSpacing: 0.5, color: colors.textSecondary },
+  membershipTier:     { fontSize: 28, fontFamily: 'Poppins_700Bold', marginTop: 2, color: colors.text },
   membershipIconWrap: { width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.15)' },
   membershipBottom:   { flexDirection: 'row', gap: 32 },
-  membershipStatLabel:{ fontSize: 11, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.6)' },
-  membershipStatValue:{ fontSize: 18, fontFamily: 'Poppins_700Bold', marginTop: 1, color: '#FFFFFF' },
+  membershipStatLabel:{ fontSize: 11, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
+  membershipStatValue:{ fontSize: 18, fontFamily: 'Poppins_700Bold', marginTop: 1, color: colors.text },
 
   // Rewards strip
   rewardsStrip: {
@@ -474,16 +478,16 @@ const s = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderColor: colors.borderLight,
+    backgroundColor: colors.surface,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   rewardsLeft:    { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
   rewardsIconWrap:{ width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: CultureTokens.warning + '15' },
-  rewardsTitle:   { fontSize: 14, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
-  rewardsSub:     { fontSize: 13, fontFamily: 'Poppins_400Regular', marginTop: 1, color: 'rgba(255,255,255,0.6)' },
+  rewardsTitle:   { fontSize: 14, fontFamily: 'Poppins_700Bold', color: colors.text },
+  rewardsSub:     { fontSize: 13, fontFamily: 'Poppins_400Regular', marginTop: 1, color: colors.textSecondary },
   rewardsPoints:  { fontSize: 15, fontFamily: 'Poppins_700Bold', color: CultureTokens.warning },
 
   // Upgrade prompt
@@ -509,14 +513,14 @@ const s = StyleSheet.create({
     marginBottom: 20,
     borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: colors.borderLight,
   },
   statBox:      { flex: 1, alignItems: 'center', paddingVertical: 16 },
-  statValue:    { fontSize: 24, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
-  statLabel:    { fontSize: 12, fontFamily: 'Poppins_500Medium', marginTop: 2, color: 'rgba(255,255,255,0.6)' },
-  statsDivider: { width: 1, marginVertical: 12, backgroundColor: 'rgba(255,255,255,0.1)' },
+  statValue:    { fontSize: 24, fontFamily: 'Poppins_700Bold', color: colors.text },
+  statLabel:    { fontSize: 12, fontFamily: 'Poppins_500Medium', marginTop: 2, color: colors.textSecondary },
+  statsDivider: { width: 1, marginVertical: 12, backgroundColor: colors.surfaceElevated },
 
   // Digital wallet
   digitalWalletRow: { flexDirection: 'row', marginHorizontal: 20, marginBottom: 24, gap: 12 },
@@ -529,13 +533,13 @@ const s = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 14,
   },
-  walletPassText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
-  walletPassSoon: { fontSize: 11, fontFamily: 'Poppins_400Regular', marginTop: 1, color: 'rgba(255,255,255,0.6)' },
+  walletPassText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: colors.text },
+  walletPassSoon: { fontSize: 11, fontFamily: 'Poppins_400Regular', marginTop: 1, color: colors.textSecondary },
   walletPassDisabled: { opacity: 0.6 },
 
   // Tabs
   tabsRow: { flexDirection: 'row', marginHorizontal: 20, gap: 8, marginBottom: 16 },
-  tab:     { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  tab:     { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 12, borderWidth: 1, borderColor: colors.borderLight },
   tabText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold' },
 
   // Ticket list
@@ -546,25 +550,25 @@ const s = StyleSheet.create({
     gap: 12,
     borderRadius: 16,
     padding: 16,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: colors.borderLight,
   },
   ticketStatusDot: { width: 8, height: 8, borderRadius: 4, marginRight: 2 },
-  ticketTitle:     { fontSize: 16, fontFamily: 'Poppins_700Bold', marginBottom: 6, color: '#FFFFFF' },
+  ticketTitle:     { fontSize: 16, fontFamily: 'Poppins_700Bold', marginBottom: 6, color: colors.text },
   ticketMeta:      { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
-  ticketMetaText:  { fontSize: 13, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.6)' },
+  ticketMetaText:  { fontSize: 13, fontFamily: 'Poppins_400Regular', color: colors.textSecondary },
   ticketMetaDot:   { fontSize: 12, color: 'rgba(255,255,255,0.4)', marginHorizontal: 2 },
   tierPill:        { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   tierPillText:    { fontSize: 11, fontFamily: 'Poppins_600SemiBold' },
-  quantityText:    { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
+  quantityText:    { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: colors.text },
 
   // Empty state
   emptyState: { alignItems: 'center', paddingVertical: 48, gap: 10 },
-  emptyTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', marginTop: 8, color: '#FFFFFF' },
-  emptySubtitle: { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', paddingHorizontal: 32, color: 'rgba(255,255,255,0.6)' },
+  emptyTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', marginTop: 8, color: colors.text },
+  emptySubtitle: { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', paddingHorizontal: 32, color: colors.textSecondary },
   browseBtn: { marginTop: 16, paddingHorizontal: 28, paddingVertical: 14, borderRadius: 14, backgroundColor: CultureTokens.indigo },
-  browseBtnText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
+  browseBtnText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.text },
 
   // View all
   viewAllBtn:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 20, marginTop: 8 },

@@ -97,6 +97,7 @@ export const EntityTypeColors = {
   government:   "#AF52DE",  // Apple Purple
   artist:       "#FF2D55",  // Apple Pink
   business:     "#5AC8FA",  // Apple Teal-Blue
+  charity:      "#FF6B6B",  // Charity Red
 } as const;
 
 export type ColorTheme = {

@@ -846,9 +846,9 @@ function councilIdFromAbs(abs: string): string {
 
 function tryLoadCouncilsFromCsv(): AppCouncil[] {
   const candidates = [
-    path.resolve(process.cwd(), 'functions/src/data/LGDGPALL.csv'),
-    path.resolve(__dirname, 'data/LGDGPALL.csv'),
-    path.resolve(__dirname, '../src/data/LGDGPALL.csv'),
+    path.resolve(process.cwd(), 'functions/src/data/AllCouncilsList.csv'),
+    path.resolve(__dirname, 'data/AllCouncilsList.csv'),
+    path.resolve(__dirname, '../src/data/AllCouncilsList.csv'),
   ];
   const filePath = candidates.find((candidate) => fs.existsSync(candidate));
   if (!filePath) return [];
@@ -3303,7 +3303,7 @@ app.get('/api/council/list', (req, res) => {
   const sortByRaw = String(req.query.sortBy ?? '').trim().toLowerCase();
   const sortDirRaw = String(req.query.sortDir ?? '').trim().toLowerCase();
   const page = Math.max(1, Number.parseInt(String(req.query.page ?? '1'), 10) || 1);
-  const pageSize = Math.min(200, Math.max(1, Number.parseInt(String(req.query.pageSize ?? '50'), 10) || 50));
+  const pageSize = Math.min(2000, Math.max(1, Number.parseInt(String(req.query.pageSize ?? '50'), 10) || 50));
 
   const sortBy = sortByRaw === 'name' || sortByRaw === 'state' || sortByRaw === 'verification'
     ? sortByRaw

@@ -5,12 +5,13 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { apiRequest, getApiUrl, queryClient } from '@/lib/query-client';
+import { apiRequest, getApiUrl, queryClient, getAccessToken } from '@/lib/query-client';
 import { api } from '@/lib/api';
 import * as ImagePicker from 'expo-image-picker';
 import { manipulateAsync, SaveFormat } from '@/lib/image-manipulator';
 import { fetch } from 'expo/fetch';
 import { useAuth } from '@/lib/auth';
+import { useColors } from '@/hooks/useColors';
 import { CultureTokens } from '@/constants/theme';
 
 interface UserData {
@@ -39,6 +40,8 @@ type UploadedImage = {
 };
 
 export default function EditProfileScreen() {
+  const colors = useColors();
+  const s = getStyles(colors);
   const insets     = useSafeAreaInsets();
   const webTop     = 0;
   const webBottom  = Platform.OS === 'web' ? 34 : 0;
@@ -122,7 +125,9 @@ export default function EditProfileScreen() {
       }
 
       const base = getApiUrl();
-      const uploadRes = await fetch(`${base}api/uploads/image`, { method: 'POST', body: formData });
+      const token = getAccessToken();
+      const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+      const uploadRes = await fetch(`${base}api/uploads/image`, { method: 'POST', body: formData, headers });
       if (!uploadRes.ok) throw new Error('Upload failed');
       return uploadRes.json() as Promise<UploadedImage>;
     },
@@ -218,7 +223,7 @@ export default function EditProfileScreen() {
       <View style={[s.container, { paddingTop: insets.top + webTop }]}>
         <View style={s.header}>
           <Pressable onPress={() => router.back()} style={s.backBtn}>
-            <Ionicons name="close" size={24} color="#FFFFFF" />
+            <Ionicons name="close" size={24} color={colors.text} />
           </Pressable>
           <Text style={s.headerTitle}>Edit Profile</Text>
           <Pressable onPress={handleSave} disabled={isBusy} style={s.saveBtn}>
@@ -361,30 +366,30 @@ export default function EditProfileScreen() {
   );
 }
 
-const s = StyleSheet.create({
-  container:        { flex: 1, backgroundColor: '#0B0B14' },
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+  container:        { flex: 1, backgroundColor: colors.background },
   header:           { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12, zIndex: 10 },
-  backBtn:          { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  headerTitle:      { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+  backBtn:          { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight },
+  headerTitle:      { fontSize: 18, fontFamily: 'Poppins_700Bold', color: colors.text },
   saveBtn:          { paddingHorizontal: 24, paddingVertical: 12, borderRadius: 20, backgroundColor: CultureTokens.indigo },
-  saveBtnText:      { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
+  saveBtnText:      { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: colors.text },
   avatarSection:    { alignItems: 'center', paddingVertical: 24, paddingHorizontal: 20 },
-  avatarDropZone:   { borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(255,255,255,0.2)', borderRadius: 60, padding: 6, marginBottom: 16, backgroundColor: 'rgba(255,255,255,0.02)' },
+  avatarDropZone:   { borderWidth: 1, borderStyle: 'dashed', borderColor: colors.borderLight, borderRadius: 60, padding: 6, marginBottom: 16, backgroundColor: colors.surface },
   avatar:           { width: 100, height: 100, borderRadius: 50, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: CultureTokens.indigo + '40', backgroundColor: CultureTokens.indigo + '15' },
   avatarImage:      { width: 100, height: 100, borderRadius: 50 },
   photoActionsRow:  { flexDirection: 'row', gap: 12 },
   changePhotoBtn:   { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 16, backgroundColor: CultureTokens.indigo + '15' },
   changePhotoText:  { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.indigo },
   resizeRow:        { flexDirection: 'row', gap: 8, marginTop: 14 },
-  resizeChip:       { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'transparent' },
+  resizeChip:       { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, borderWidth: 1, borderColor: colors.borderLight, backgroundColor: 'transparent' },
   resizeChipActive: { backgroundColor: CultureTokens.indigo + '20', borderColor: CultureTokens.indigo },
-  resizeChipText:   { fontSize: 12, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.6)', textTransform: 'capitalize' as const },
+  resizeChipText:   { fontSize: 12, fontFamily: 'Poppins_500Medium', color: colors.textSecondary, textTransform: 'capitalize' as const },
   resizeChipTextActive: { color: CultureTokens.indigo },
-  dragHint:         { marginTop: 12, fontSize: 12, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.5)' },
+  dragHint:         { marginTop: 12, fontSize: 12, fontFamily: 'Poppins_400Regular', color: colors.textTertiary },
   formSection:      { paddingHorizontal: 20, marginBottom: 28 },
-  sectionLabel:     { fontSize: 18, fontFamily: 'Poppins_700Bold', marginBottom: 16, color: '#FFFFFF' },
-  fieldLabel:       { fontSize: 13, fontFamily: 'Poppins_600SemiBold', marginBottom: 8, marginTop: 16, color: 'rgba(255,255,255,0.8)' },
-  input:            { borderRadius: 16, padding: 16, fontSize: 15, fontFamily: 'Poppins_400Regular', borderWidth: 1, backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.1)', color: '#FFFFFF' },
+  sectionLabel:     { fontSize: 18, fontFamily: 'Poppins_700Bold', marginBottom: 16, color: colors.text },
+  fieldLabel:       { fontSize: 13, fontFamily: 'Poppins_600SemiBold', marginBottom: 8, marginTop: 16, color: colors.textSecondary },
+  input:            { borderRadius: 16, padding: 16, fontSize: 15, fontFamily: 'Poppins_400Regular', borderWidth: 1, backgroundColor: colors.surface, borderColor: colors.borderLight, color: colors.text },
   bioInput:         { minHeight: 120, paddingTop: 16 },
   charCount:        { fontSize: 11, fontFamily: 'Poppins_400Regular', textAlign: 'right', marginTop: 6, color: 'rgba(255,255,255,0.4)' },
   rowFields:        { flexDirection: 'row', gap: 14 },

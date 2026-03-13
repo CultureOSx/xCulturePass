@@ -74,6 +74,7 @@ const EVENTS = Array.from({ length: 50 }).map((_, i) => {
     organizerId: `user-seed-${(i % 2) + 1}`, 
     capacity: 200 + i * 10,
     attending: 50 + i * 2,
+    status: 'published',
     createdAt: nowTs,
     updatedAt: nowTs,
   };

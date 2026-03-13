@@ -37,7 +37,7 @@ export default function CouncilSelectScreen() {
     queryFn: () => api.council.list({
       q: debouncedQuery || undefined,
       state: stateFilter === 'ALL' ? undefined : stateFilter,
-      pageSize: 200,
+      pageSize: 2000,
       sortBy: 'name',
       sortDir: 'asc',
     }),

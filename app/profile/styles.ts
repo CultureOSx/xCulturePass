@@ -1,8 +1,9 @@
+import { useColors } from '@/hooks/useColors';
 import { StyleSheet } from 'react-native';
 import { Colors, CultureTokens, Spacing } from '@/constants/theme';
 import { CP } from './constants';
 
-export const styles = StyleSheet.create({
+export const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   centered:  { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
@@ -106,7 +107,7 @@ export const styles = StyleSheet.create({
   heroPill: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
     backgroundColor: 'rgba(255,255,255,0.08)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+    borderWidth: 1, borderColor: colors.borderLight,
     paddingHorizontal: 12, paddingVertical: 6, borderRadius: 50,
   },
   heroPillAccent: {
@@ -115,7 +116,7 @@ export const styles = StyleSheet.create({
   },
   heroPillText: {
     fontFamily: 'Poppins_500Medium',
-    fontSize: 12, color: 'rgba(255,255,255,0.8)', letterSpacing: 0.2,
+    fontSize: 12, color: colors.textSecondary, letterSpacing: 0.2,
   },
 
   statsBar: {
@@ -133,7 +134,7 @@ export const styles = StyleSheet.create({
   statItem:  { flex: 1, alignItems: 'center' },
   statNum:   { fontFamily: 'Poppins_700Bold', fontSize: 22, color: '#FFF', letterSpacing: -0.5 },
   statLabel: { fontFamily: 'Poppins_400Regular', fontSize: 11, color: CP.muted, marginTop: 3, letterSpacing: 0.4 },
-  statDivider: { width: 1, height: 32, backgroundColor: 'rgba(255,255,255,0.1)' },
+  statDivider: { width: 1, height: 32, backgroundColor: colors.surfaceElevated },
 
   tierRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
@@ -214,7 +215,7 @@ export const styles = StyleSheet.create({
   cpidLogoText: { fontFamily: 'Poppins_700Bold', fontSize: 15, color: '#FFF', letterSpacing: 0.4 },
   cpidVerifiedIcon: {
     width: 32, height: 32, borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: colors.surfaceElevated,
     borderWidth: 1, borderColor: CP.teal + '40',
     alignItems: 'center', justifyContent: 'center',
   },
@@ -234,7 +235,7 @@ export const styles = StyleSheet.create({
 
   cpidFooter: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)', paddingTop: 14,
+    borderTopWidth: 1, borderTopColor: colors.borderLight, paddingTop: 14,
   },
   cpidFooterText: {
     fontFamily: 'Poppins_500Medium', fontSize: 11, color: CP.muted, letterSpacing: 0.3,

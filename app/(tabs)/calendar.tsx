@@ -220,7 +220,7 @@ export default function CalendarScreen() {
       <ErrorBoundary>
         <View style={styles.loadingContainer}>
           <LinearGradient
-            colors={['rgba(255, 140, 66, 0.4)', 'transparent']}
+            colors={[CultureTokens.saffron + '66', 'transparent']}
             style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 450 }}
           />
           <View style={styles.loadingCard}>
@@ -237,7 +237,7 @@ export default function CalendarScreen() {
       <View style={[styles.container, { paddingTop: webTopInset }]}> 
 
         <LinearGradient
-          colors={['rgba(255, 140, 66, 0.25)', 'transparent']}
+          colors={[CultureTokens.saffron + '40', 'transparent']}
           style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 450 }}
         />
         {isWeb && (
@@ -279,7 +279,7 @@ export default function CalendarScreen() {
               <Text style={styles.chipTextPrimary}>{allEvents.length} events</Text>
             </View>
             <View style={styles.chip}>
-              <Ionicons name="today" size={14} color="rgba(255,255,255,0.7)" />
+              <Ionicons name="today" size={14} color={colors.textSecondary} />
               <Text style={styles.chipText}>{eventDates.size} days active</Text>
             </View>
             {isDesktopWeb && (
@@ -298,12 +298,12 @@ export default function CalendarScreen() {
               {/* Calendar card */}
               <View style={[styles.calCard, isDesktopWeb && styles.calCardCompact]}> 
                 <View style={styles.monthNav}>
-                  <Pressable onPress={prevMonth} hitSlop={14} style={({pressed}) => [styles.navBtn, pressed && { backgroundColor: 'rgba(255,255,255,0.1)' }]}>
-                    <Ionicons name="chevron-back" size={20} color="rgba(255,255,255,0.8)" />
+                  <Pressable onPress={prevMonth} hitSlop={14} style={({pressed}) => [styles.navBtn, pressed && { backgroundColor: colors.backgroundSecondary }]}>
+                    <Ionicons name="chevron-back" size={20} color={colors.textSecondary} />
                   </Pressable>
                   <Text style={styles.monthText}>{MONTHS[currentMonth]} {currentYear}</Text>
-                  <Pressable onPress={nextMonth} hitSlop={14} style={({pressed}) => [styles.navBtn, pressed && { backgroundColor: 'rgba(255,255,255,0.1)' }]}>
-                    <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.8)" />
+                  <Pressable onPress={nextMonth} hitSlop={14} style={({pressed}) => [styles.navBtn, pressed && { backgroundColor: colors.backgroundSecondary }]}>
+                    <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
                   </Pressable>
                 </View>
 
@@ -361,7 +361,7 @@ export default function CalendarScreen() {
                   </View>
                   {selectedEvents.length === 0 ? (
                     <View style={styles.empty}> 
-                      <Ionicons name="calendar-outline" size={42} color="rgba(255,255,255,0.4)" />
+                      <Ionicons name="calendar-outline" size={42} color={colors.textSecondary} />
                       <Text style={styles.emptyText}>No events on this day.</Text>
                     </View>
                   ) : (
@@ -384,7 +384,7 @@ export default function CalendarScreen() {
                     upcomingEvents.map((event) => <EventRow key={event.id} event={event} colors={colors} styles={styles} isAuthenticated={isAuthenticated} isWeb={isWeb} />)
                   ) : (
                     <View style={styles.empty}> 
-                      <Ionicons name="calendar-clear-outline" size={42} color="rgba(255,255,255,0.4)" />
+                      <Ionicons name="calendar-clear-outline" size={42} color={colors.textSecondary} />
                       <Text style={styles.emptyText}>No upcoming events found.</Text>
                     </View>
                   )}
@@ -434,7 +434,7 @@ export default function CalendarScreen() {
           {!isDesktopWeb && !selectedDate && upcomingEvents.length === 0 && (
             <View style={styles.eventsSection}>
               <View style={styles.empty}> 
-                <Ionicons name="calendar-clear-outline" size={42} color="rgba(255,255,255,0.4)" />
+                <Ionicons name="calendar-clear-outline" size={42} color={colors.textSecondary} />
                 <Text style={styles.emptyText}>No events found.</Text>
               </View>
             </View>
@@ -485,7 +485,7 @@ function EventRow({ event, colors, styles, isAuthenticated, isWeb }: { event: Ev
           <Text style={styles.eventTime}>{eventDateLabel} · {event.time || 'Time TBA'}</Text>
         </View>
         <View style={styles.eventMeta}>
-          <Ionicons name="location-outline" size={14} color="rgba(255,255,255,0.5)" />
+          <Ionicons name="location-outline" size={14} color={colors.textSecondary} />
           <Text style={styles.eventVenue} numberOfLines={1}>{event.venue}</Text>
         </View>
       </View>
@@ -503,82 +503,82 @@ function EventRow({ event, colors, styles, isAuthenticated, isWeb }: { event: Ev
 // Styles Implementation
 // ---------------------------------------------------------------------------
 const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B0B14' },
+  container: { flex: 1, backgroundColor: colors.background },
   orb: { position: 'absolute', width: 350, height: 350, borderRadius: 175 },
   
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0B0B14' },
-  loadingCard: { backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 24, padding: 36, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  loadingText: { color: '#FFFFFF', fontFamily: 'Poppins_600SemiBold', fontSize: 16, marginTop: 20 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
+  loadingCard: { backgroundColor: colors.backgroundSecondary, borderRadius: 24, padding: 36, alignItems: 'center', borderWidth: 1, borderColor: colors.borderLight },
+  loadingText: { color: colors.text, fontFamily: 'Poppins_600SemiBold', fontSize: 16, marginTop: 20 },
 
   headerRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 4 },
-  headerTitle: { fontSize: 32, fontFamily: 'Poppins_700Bold', letterSpacing: -0.6, marginBottom: 4, color: '#FFFFFF' },
-  headerSub: { fontSize: 14, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.6)' },
+  headerTitle: { fontSize: 32, fontFamily: 'Poppins_700Bold', letterSpacing: -0.6, marginBottom: 4, color: colors.text },
+  headerSub: { fontSize: 14, fontFamily: 'Poppins_400Regular', color: colors.textSecondary },
   
   todayBtn: { paddingHorizontal: 18, paddingVertical: 10, borderRadius: 50, backgroundColor: CultureTokens.indigo + '30', borderWidth: 1, borderColor: CultureTokens.indigo + '50' },
-  todayBtnText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: '#FFFFFF' },
+  todayBtnText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: colors.text },
 
   summaryRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 20, paddingVertical: 18, flexWrap: 'wrap' },
   chipPrimary: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 50, backgroundColor: CultureTokens.indigo + '20', borderWidth: 1, borderColor: CultureTokens.indigo + '40' },
-  chipTextPrimary: { fontFamily: 'Poppins_500Medium', fontSize: 13, color: '#A5B4FC' },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 50, backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  chipText: { fontFamily: 'Poppins_500Medium', fontSize: 13, color: 'rgba(255,255,255,0.7)' },
+  chipTextPrimary: { fontFamily: 'Poppins_500Medium', fontSize: 13, color: CultureTokens.indigo },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 50, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight },
+  chipText: { fontFamily: 'Poppins_500Medium', fontSize: 13, color: colors.textSecondary },
 
-  calCard: { marginHorizontal: 20, borderRadius: 24, padding: 24, paddingBottom: 20, backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  calCard: { marginHorizontal: 20, borderRadius: 24, padding: 24, paddingBottom: 20, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight },
   calCardCompact: { marginHorizontal: 0 },
   monthNav: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
-  navBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.05)', alignItems: 'center', justifyContent: 'center' },
-  monthText: { fontFamily: 'Poppins_600SemiBold', fontSize: 18, color: '#FFFFFF' },
+  navBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: colors.backgroundSecondary, alignItems: 'center', justifyContent: 'center' },
+  monthText: { fontFamily: 'Poppins_600SemiBold', fontSize: 18, color: colors.text },
 
   dayHeaders: { flexDirection: 'row', marginBottom: 12 },
-  dayHeaderText: { flex: 1, textAlign: 'center', fontFamily: 'Poppins_600SemiBold', fontSize: 12, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: 0.5 },
+  dayHeaderText: { flex: 1, textAlign: 'center', fontFamily: 'Poppins_600SemiBold', fontSize: 12, color: colors.textTertiary, textTransform: 'uppercase', letterSpacing: 0.5 },
 
   daysGrid: { flexDirection: 'row', flexWrap: 'wrap' },
   dayCell: { width: '14.28%', aspectRatio: 1, justifyContent: 'center', alignItems: 'center', borderRadius: 14, marginVertical: 3, gap: 4, borderWidth: 1 },
   dayCellEmpty: { borderColor: 'transparent' },
   
   dayCellDefault: { backgroundColor: 'transparent', borderColor: 'transparent' },
-  dayTextDefault: { color: '#FFFFFF' },
+  dayTextDefault: { color: colors.text },
   
   dayCellSelected: { backgroundColor: CultureTokens.indigo, borderColor: CultureTokens.indigo },
-  dayTextSelected: { color: '#FFFFFF' },
+  dayTextSelected: { color: colors.background },
   
   dayCellToday: { backgroundColor: CultureTokens.indigo + '20', borderColor: CultureTokens.indigo + '50' },
-  dayTextToday: { color: '#8898FF' }, // Lighter indigo for contrast
+  dayTextToday: { color: CultureTokens.indigo }, 
 
   dayText: { fontFamily: 'Poppins_500Medium', fontSize: 16 },
   dotRow: { flexDirection: 'row', gap: 3, height: 4 },
   dot: { width: 5, height: 5, borderRadius: 3, backgroundColor: CultureTokens.saffron },
-  dotSelected: { backgroundColor: '#FFFFFF' },
+  dotSelected: { backgroundColor: colors.background },
 
   eventsSection: { paddingHorizontal: 20, paddingTop: 32 },
   eventsSectionSide: { paddingHorizontal: 0, paddingTop: 0 },
   sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
-  sectionTitle: { fontFamily: 'Poppins_700Bold', fontSize: 20, color: '#FFFFFF' },
-  sectionCount: { fontFamily: 'Poppins_500Medium', fontSize: 14, color: 'rgba(255,255,255,0.6)' },
-  seeAll: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: '#8898FF' },
+  sectionTitle: { fontFamily: 'Poppins_700Bold', fontSize: 20, color: colors.text },
+  sectionCount: { fontFamily: 'Poppins_500Medium', fontSize: 14, color: colors.textSecondary },
+  seeAll: { fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: CultureTokens.indigo },
 
-  empty: { alignItems: 'center', justifyContent: 'center', paddingVertical: 48, gap: 14, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.02)', borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(255,255,255,0.2)' },
-  emptyText: { fontFamily: 'Poppins_500Medium', fontSize: 15, color: 'rgba(255,255,255,0.6)' },
+  empty: { alignItems: 'center', justifyContent: 'center', paddingVertical: 48, gap: 14, borderRadius: 20, backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.borderLight },
+  emptyText: { fontFamily: 'Poppins_500Medium', fontSize: 15, color: colors.textSecondary },
 
-  eventRow: { flexDirection: 'row', alignItems: 'center', borderRadius: 16, marginBottom: 14, padding: 14, gap: 16, backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  eventRow: { flexDirection: 'row', alignItems: 'center', borderRadius: 16, marginBottom: 14, padding: 14, gap: 16, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight },
   eventImg: { width: 72, height: 72, borderRadius: 14 },
   eventInfo: { flex: 1, gap: 6 },
-  eventTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 16, color: '#FFFFFF', letterSpacing: -0.2 },
+  eventTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 16, color: colors.text, letterSpacing: -0.2 },
   eventMeta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  eventTime: { fontFamily: 'Poppins_500Medium', fontSize: 13, color: '#8898FF' },
-  eventVenue: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: 'rgba(255,255,255,0.6)', flexShrink: 1 },
+  eventTime: { fontFamily: 'Poppins_500Medium', fontSize: 13, color: CultureTokens.indigo },
+  eventVenue: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: colors.textSecondary, flexShrink: 1 },
   
   priceChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
-  priceChipFree: { backgroundColor: 'rgba(46, 196, 182, 0.15)' },
+  priceChipFree: { backgroundColor: CultureTokens.teal + '26' },
   priceTextFree: { color: CultureTokens.success },
-  priceChipPaid: { backgroundColor: 'rgba(44, 42, 114, 0.25)' },
-  priceTextPaid: { color: '#8898FF' },
+  priceChipPaid: { backgroundColor: CultureTokens.indigo + '40' },
+  priceTextPaid: { color: CultureTokens.indigo },
   priceText: { fontFamily: 'Poppins_600SemiBold', fontSize: 13 },
   
-  civicRow: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', borderRadius: 16, padding: 16, marginBottom: 12 },
-  civicIcon: { width: 36, height: 36, borderRadius: 12, backgroundColor: CultureTokens.indigo + '20', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
-  civicEventTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: '#FFFFFF', letterSpacing: -0.2 },
-  civicEventVenue: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: 'rgba(255,255,255,0.6)', flexShrink: 1, marginTop: 2 },
+  civicRow: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight, borderRadius: 16, padding: 16, marginBottom: 12 },
+  civicIcon: { width: 36, height: 36, borderRadius: 12, backgroundColor: CultureTokens.indigo + '20', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.borderLight },
+  civicEventTitle: { fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: colors.text, letterSpacing: -0.2 },
+  civicEventVenue: { fontFamily: 'Poppins_400Regular', fontSize: 13, color: colors.textSecondary, flexShrink: 1, marginTop: 2 },
 
   desktopSplit: { flexDirection: 'row', alignItems: 'flex-start', gap: 32, paddingHorizontal: 20, width: '100%', alignSelf: 'center', marginTop: 8 },
   desktopCalendarCol: { flex: 1.5 },

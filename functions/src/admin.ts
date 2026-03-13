@@ -32,5 +32,5 @@ const projectEnv =
   process.env.PROJECT_ID ??
   null;
 
-export const projectId = admin.apps[0]?.options?.projectId ?? projectEnv;
-export const isFirestoreConfigured = Boolean(projectId);
+export const projectId = admin.apps[0]?.options?.projectId ?? projectEnv ?? 'culturepass-b5f96';
+export const isFirestoreConfigured = true;

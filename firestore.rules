@@ -27,8 +27,8 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isOwner(uid) || isAdmin();
       // User subcollections: Only owner can access
-      match /{sub=/(tickets|savedEvents|calendar|notifications|perks|communities)}/{docId} {
-        allow read, write: if isOwner(uid);
+      match /{collection}/{docId} {
+        allow read, write: if isOwner(uid) && collection in ['tickets', 'savedEvents', 'calendar', 'notifications', 'perks', 'communities'];
       }
     }
 
@@ -37,9 +37,9 @@ service cloud.firestore {
       allow read: if resource.data.status == 'published';
       allow write: if isSignedIn() && (isOrganizer() || isAdmin());
       // Event subcollections: Only organizer/admin can write, attendees can read their own tickets
-      match /{sub=/(tickets|attendees|reviews|comments|media)}/{docId} {
+      match /{collection}/{docId} {
         allow read: if true;
-        allow write: if isOrganizer() || isAdmin();
+        allow write: if (isOrganizer() || isAdmin()) && collection in ['tickets', 'attendees', 'reviews', 'comments', 'media'];
       }
     }
 

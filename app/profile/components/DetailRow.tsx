@@ -1,7 +1,8 @@
 import { memo } from 'react';
+import { useColors } from '@/hooks/useColors';
 import { View, Text, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { styles } from '../styles';
+import { getStyles } from '../styles';
 import { CP } from '../constants';
 
 export const DetailRow = memo(({
@@ -12,6 +13,8 @@ export const DetailRow = memo(({
   label: string; value: string;
   valueColor?: string; onPress?: () => void; showArrow?: boolean;
 }) => {
+  const colors = useColors();
+  const styles = getStyles(colors);
   const content = (
     <>
       <View style={[styles.detailIconWrap, { backgroundColor: iconBg }]}>

@@ -1,3 +1,4 @@
+import { useColors } from '@/hooks/useColors';
 import { Redirect } from 'expo-router';
 import { AuthGuard } from '@/components/AuthGuard';
 import { useRole } from '@/hooks/useRole';
@@ -9,6 +10,7 @@ import { useRole } from '@/hooks/useRole';
  * who navigate here directly via URL.
  */
 export default function DashboardTab() {
+  // Intentionally blank
   return (
     <AuthGuard
       icon="bar-chart-outline"

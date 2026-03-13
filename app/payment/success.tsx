@@ -8,6 +8,7 @@ import { useEffect } from 'react';
 
 export default function PaymentSuccessScreen() {
   const colors = useColors();
+  const styles = getStyles(colors);
   const insets = useSafeAreaInsets();
   const { ticketId } = useLocalSearchParams<{ ticketId: string }>();
 
@@ -56,7 +57,7 @@ export default function PaymentSuccessScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',

@@ -4,27 +4,42 @@
     "appVersionSource": "remote"
   },
   "build": {
+    "base": {
+      "env": {
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true",
+        "SENTRY_ALLOW_FAILURE": "true"
+      }
+    },
     "development": {
       "developmentClient": true,
       "distribution": "internal",
       "ios": {
         "simulator": true
       },
-      "environment": "development"
+      "env": {
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true",
+        "SENTRY_ALLOW_FAILURE": "true"
+      }
     },
     "preview": {
       "distribution": "internal",
       "ios": {
         "simulator": false
       },
-      "environment": "preview"
+      "env": {
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true",
+        "SENTRY_ALLOW_FAILURE": "true"
+      }
     },
     "production": {
       "autoIncrement": true,
       "ios": {
         "simulator": false
       },
-      "environment": "production"
+      "env": {
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true",
+        "SENTRY_ALLOW_FAILURE": "true"
+      }
     }
   },
   "submit": {

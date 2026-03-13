@@ -42,6 +42,7 @@ export default function ProfileScreen() {
   const { width } = useWindowDimensions();
   const isDesktopWeb = Platform.OS === 'web' && width >= 1024;
   const colors = useColors();
+  const styles = getStyles(colors);
   
   const { joinedCommunities } = useSaved();
   const [refreshing, setRefreshing] = useState(false);
@@ -89,13 +90,13 @@ export default function ProfileScreen() {
 
   const tier = membership?.tier ?? 'free';
   const TIER = {
-    free:    { bg: 'rgba(255,255,255,0.1)',   text: '#FFFFFF',             icon: 'shield-outline' },
-    plus:    { bg: CultureTokens.info,        text: '#FFFFFF',             icon: 'star'            },
-    premium: { bg: CultureTokens.gold,        text: '#0B0B14',             icon: 'diamond'         },
+    free:    { bg: colors.backgroundSecondary, text: colors.text, icon: 'shield-outline' },
+    plus:    { bg: CultureTokens.info,         text: '#FFFFFF',   icon: 'star'            },
+    premium: { bg: CultureTokens.gold,         text: '#0B0B14',   icon: 'diamond'         },
   } as Record<string, { bg: string; text: string; icon: string }>;
   const tierStyle = TIER[tier] ?? TIER.free;
 
-  const displayName = user?.displayName ?? 'Explorer';
+  const displayName = user?.displayName || user?.username || 'CulturePass Member';
 
   const profileCompleteness = useMemo(() => {
     let pct = 0;
@@ -162,7 +163,7 @@ export default function ProfileScreen() {
   if (userLoading) {
     return (
       <ErrorBoundary>
-        <View style={[{ flex: 1, backgroundColor: '#0B0B14', alignItems: 'center', justifyContent: 'center' }]}> 
+        <View style={[{ flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' }]}> 
           <ActivityIndicator size="large" color={CultureTokens.indigo} />
         </View>
       </ErrorBoundary>
@@ -174,7 +175,7 @@ export default function ProfileScreen() {
 
   return (
     <ErrorBoundary>
-      <View style={[{ flex: 1, backgroundColor: '#0B0B14' }]}>
+      <View style={[{ flex: 1, backgroundColor: colors.background }]}>
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 110 }}
@@ -192,7 +193,7 @@ export default function ProfileScreen() {
             />
             {/* The gradient fades into the background color for a seamless transition */}
             <LinearGradient
-              colors={['transparent', '#0B0B14']}
+              colors={['transparent', colors.background]}
               start={{ x: 0, y: 0 }}
               end={{ x: 0, y: 1 }}
               style={StyleSheet.absoluteFillObject}
@@ -202,16 +203,16 @@ export default function ProfileScreen() {
               <View style={[styles.headerTopBar, { paddingTop: topInset + 16 }]}>
                 <Pressable style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.7 }]} onPress={handleShare}>
                   {Platform.OS === 'ios' && <BlurView intensity={20} tint="light" style={StyleSheet.absoluteFill} />}
-                  <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(255,255,255,0.1)' }]} />
-                  <Ionicons name="share-outline" size={20} color="#FFFFFF" />
+                  <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.backgroundSecondary }]} />
+                  <Ionicons name="share-outline" size={20} color={colors.text} />
                 </Pressable>
                 
                 <Text style={styles.headerTitle}>My Identity</Text>
                 
                 <Pressable style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.7 }]} onPress={() => router.push('/notifications')}>
                   {Platform.OS === 'ios' && <BlurView intensity={20} tint="light" style={StyleSheet.absoluteFill} />}
-                  <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(255,255,255,0.1)' }]} />
-                  <Ionicons name="notifications-outline" size={20} color="#FFFFFF" />
+                  <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.backgroundSecondary }]} />
+                  <Ionicons name="notifications-outline" size={20} color={colors.text} />
                   {unreadCount > 0 && <View style={[styles.notifDot, { backgroundColor: CultureTokens.error }]} />}
                 </Pressable>
               </View>
@@ -220,9 +221,9 @@ export default function ProfileScreen() {
             <View style={styles.avatarSection}>
               <View style={styles.avatarWrapper}>
                 {user?.avatarUrl ? (
-                  <Image source={{ uri: user.avatarUrl }} style={{ width: AvatarTokens.size.xl, height: AvatarTokens.size.xl, borderRadius: AvatarTokens.radius, borderWidth: 2, borderColor: 'rgba(255,255,255,0.2)' }} />
+                  <Image source={{ uri: user.avatarUrl }} style={{ width: AvatarTokens.size.xl, height: AvatarTokens.size.xl, borderRadius: AvatarTokens.radius, borderWidth: 2, borderColor: colors.borderLight }} />
                 ) : (
-                  <View style={[styles.avatarFallback, { backgroundColor: 'rgba(255,255,255,0.2)', borderWidth: 2, borderColor: 'rgba(255,255,255,0.3)' }]}>
+                  <View style={[styles.avatarFallback, { backgroundColor: colors.backgroundSecondary, borderWidth: 2, borderColor: colors.borderLight }]}>
                     <Text style={styles.avatarInitials}>{initials}</Text>
                   </View>
                 )}
@@ -231,7 +232,7 @@ export default function ProfileScreen() {
                   style={({ pressed }) => [styles.editBadge, pressed && { transform: [{ scale: 0.9 }] }]}
                   onPress={() => router.push('/profile/edit')}
                 >
-                  <Ionicons name="camera" size={14} color="#FFFFFF" />
+                  <Ionicons name="camera" size={14} color={colors.text} />
                 </Pressable>
               </View>
 
@@ -241,7 +242,7 @@ export default function ProfileScreen() {
               <View style={styles.badgesRow}>
                 {user?.culturePassId && (
                   <View style={styles.tagPill}>
-                    <Ionicons name="finger-print" size={12} color="#FFFFFF" />
+                    <Ionicons name="finger-print" size={12} color={colors.text} />
                     <Text style={styles.tagText}>{user.culturePassId}</Text>
                   </View>
                 )}
@@ -253,7 +254,7 @@ export default function ProfileScreen() {
 
               {user?.bio && <Text style={styles.bio} numberOfLines={2}>{user.bio}</Text>}
 
-              <View style={[styles.completenessBox, { backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }]}>
+              <View style={[styles.completenessBox, { backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight }]}>
                 <View style={styles.completenessHeader}>
                   <Text style={styles.completenessLabel}>Profile Completeness</Text>
                   <Text style={[styles.completenessPercent, { color: completenessColor }]}>{profileCompleteness}%</Text>
@@ -277,7 +278,7 @@ export default function ProfileScreen() {
                 onPress={() => { if(Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/membership/upgrade'); }}
               >
                 <View style={[styles.calloutIconWrap, { backgroundColor: nextTier.color }]}>
-                  <Ionicons name="star" size={18} color="#FFFFFF" />
+                  <Ionicons name="star" size={18} color={colors.text} />
                 </View>
                 <View style={styles.calloutBody}>
                   <Text style={[styles.calloutTitle, { color: nextTier.color }]}>Upgrade to {nextTier.name}</Text>
@@ -299,7 +300,7 @@ export default function ProfileScreen() {
                   key={idx} 
                   style={({ pressed }) => [
                     styles.quickBox, 
-                    pressed && { backgroundColor: 'rgba(255,255,255,0.06)', transform: [{ scale: 0.98 }] }
+                    pressed && { backgroundColor: colors.backgroundSecondary, transform: [{ scale: 0.98 }] }
                   ]}
                   onPress={() => { if(Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); item.action(); }}
                 >
@@ -315,9 +316,9 @@ export default function ProfileScreen() {
             <View style={styles.sectionBlock}>
               <Text style={styles.sectionHeading}>General</Text>
               <View style={styles.menuContainer}>
-                <MenuItem icon="person-outline" label="Edit Profile" color="#FFFFFF" onPress={() => router.push('/profile/edit')} colors={colors} />
-                <MenuItem icon="people-outline" label="My Communities" value={`${joinedCommunities.length} Active`} color="#FFFFFF" onPress={() => router.push('/(tabs)/communities')} colors={colors} />
-                <MenuItem icon="star-outline" label="My Perks" color="#FFFFFF" showDivider={false} onPress={() => router.push('/perks')} colors={colors} />
+                <MenuItem icon="person-outline" label="Edit Profile" color={colors.text} onPress={() => router.push('/profile/edit')} colors={colors} />
+                <MenuItem icon="people-outline" label="My Communities" value={`${joinedCommunities.length} Active`} color={colors.text} onPress={() => router.push('/(tabs)/communities')} colors={colors} />
+                <MenuItem icon="star-outline" label="My Perks" color={colors.text} showDivider={false} onPress={() => router.push('/perks')} colors={colors} />
               </View>
             </View>
 
@@ -325,9 +326,9 @@ export default function ProfileScreen() {
               <View style={styles.sectionBlock}>
                 <Text style={styles.sectionHeading}>Administration</Text>
                 <View style={[styles.menuContainer, { borderColor: CultureTokens.error + '40', borderWidth: 1 }]}>
-                  <MenuItem icon="shield-checkmark-outline" label="Role" value={role === 'platformAdmin' ? 'Platform Admin' : 'Admin'} color="#FFFFFF" onPress={() => {}} colors={colors} />
-                  <MenuItem icon="people-circle-outline" label="Users Database" color="#FFFFFF" onPress={() => router.push('/admin/users' as never)} colors={colors} />
-                  <MenuItem icon="business-outline" label="Council Management" color="#FFFFFF" showDivider={false} onPress={() => router.push('/admin/council-management' as never)} colors={colors} />
+                  <MenuItem icon="shield-checkmark-outline" label="Role" value={role === 'platformAdmin' ? 'Platform Admin' : 'Admin'} color={colors.text} onPress={() => {}} colors={colors} />
+                  <MenuItem icon="people-circle-outline" label="Users Database" color={colors.text} onPress={() => router.push('/admin/users' as never)} colors={colors} />
+                  <MenuItem icon="business-outline" label="Council Management" color={colors.text} showDivider={false} onPress={() => router.push('/admin/council-management' as never)} colors={colors} />
                 </View>
               </View>
             )}
@@ -335,10 +336,10 @@ export default function ProfileScreen() {
             <View style={styles.sectionBlock}>
               <Text style={styles.sectionHeading}>Settings</Text>
               <View style={styles.menuContainer}>
-                <MenuItem icon="card-outline" label="Payment Methods" color="#FFFFFF" onPress={() => router.push('/payment/methods')} colors={colors} />
-                <MenuItem icon="receipt-outline" label="Payment History" color="#FFFFFF" onPress={() => router.push('/payment/transactions')} colors={colors} />
-                <MenuItem icon="help-buoy-outline" label="Help & Support" color="#FFFFFF" onPress={() => router.push('/settings/help')} colors={colors} />
-                <MenuItem icon="document-text-outline" label="Legal Center" color="#FFFFFF" showDivider={false} onPress={() => router.push('/legal/terms')} colors={colors} />
+                <MenuItem icon="card-outline" label="Payment Methods" color={colors.text} onPress={() => router.push('/payment/methods')} colors={colors} />
+                <MenuItem icon="receipt-outline" label="Payment History" color={colors.text} onPress={() => router.push('/payment/transactions')} colors={colors} />
+                <MenuItem icon="help-buoy-outline" label="Help & Support" color={colors.text} onPress={() => router.push('/settings/help')} colors={colors} />
+                <MenuItem icon="document-text-outline" label="Legal Center" color={colors.text} showDivider={false} onPress={() => router.push('/legal/terms')} colors={colors} />
               </View>
             </View>
 
@@ -363,7 +364,7 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   webDesktopMaxWidth: {
     maxWidth: 800,
     width: '100%',
@@ -392,12 +393,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
+    borderColor: colors.borderLight,
+    backgroundColor: colors.backgroundSecondary,
   },
   headerTitle: {
     fontSize: 16,
     fontFamily: 'Poppins_600SemiBold',
-    color: '#FFFFFF',
+    color: colors.text,
     textTransform: 'uppercase',
     letterSpacing: 1.5,
   },
@@ -409,7 +411,7 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 5,
     borderWidth: 1.5,
-    borderColor: '#0B0B14',
+    borderColor: colors.background,
   },
   avatarSection: {
     alignItems: 'center',
@@ -435,7 +437,7 @@ const styles = StyleSheet.create({
   avatarInitials: {
     fontSize: 32,
     fontFamily: 'Poppins_700Bold',
-    color: '#FFFFFF',
+    color: colors.text,
   },
   editBadge: {
     position: 'absolute',
@@ -446,19 +448,19 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#1E1E2D',
+    backgroundColor: colors.surface,
     borderWidth: 2,
-    borderColor: '#0B0B14',
+    borderColor: colors.background,
   },
   name: {
     fontSize: 26,
     fontFamily: 'Poppins_700Bold',
-    color: '#FFFFFF',
+    color: colors.text,
   },
   username: {
     fontSize: 14,
     fontFamily: 'Poppins_500Medium',
-    color: 'rgba(255,255,255,0.8)',
+    color: colors.textSecondary,
     marginTop: 2,
   },
   badgesRow: {
@@ -474,19 +476,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 100,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: colors.backgroundSecondary,
     borderWidth: 1, 
-    borderColor: 'rgba(255,255,255,0.15)'
+    borderColor: colors.borderLight,
   },
   tagText: {
     fontSize: 12,
     fontFamily: 'Poppins_600SemiBold',
-    color: '#FFFFFF',
+    color: colors.text,
   },
   bio: {
     fontSize: 14,
     fontFamily: 'Poppins_400Regular',
-    color: 'rgba(255,255,255,0.8)',
+    color: colors.textSecondary,
     textAlign: 'center',
     marginTop: 16,
     lineHeight: 22,
@@ -506,7 +508,7 @@ const styles = StyleSheet.create({
   completenessLabel: {
     fontSize: 13,
     fontFamily: 'Poppins_600SemiBold',
-    color: '#FFFFFF',
+    color: colors.text,
   },
   completenessPercent: {
     fontSize: 14,
@@ -516,7 +518,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 6,
     borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: colors.backgroundSecondary,
     overflow: 'hidden',
   },
   completenessBar: {
@@ -524,10 +526,10 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   contentMatrix: {
-    paddingTop: 12, // Adjusted padding
+    paddingTop: 12, 
     paddingHorizontal: 20,
     gap: 24,
-    zIndex: 2, // Ensure it's above any overflowing background elements
+    zIndex: 2, 
   },
   calloutCard: {
     flexDirection: 'row',
@@ -554,7 +556,7 @@ const styles = StyleSheet.create({
   calloutSub: {
     fontSize: 13,
     fontFamily: 'Poppins_400Regular',
-    color: 'rgba(255,255,255,0.6)',
+    color: colors.textSecondary,
   },
   quickGrid: {
     flexDirection: 'row',
@@ -568,9 +570,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 20,
     borderRadius: 24,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: colors.backgroundSecondary,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: colors.borderLight,
   },
   quickIconCircle: {
     width: 48,
@@ -583,7 +585,7 @@ const styles = StyleSheet.create({
   quickBoxLabel: {
     fontSize: 13,
     fontFamily: 'Poppins_600SemiBold',
-    color: '#FFFFFF'
+    color: colors.text
   },
   sectionBlock: {
     gap: 12,
@@ -592,14 +594,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Poppins_700Bold',
     paddingLeft: 4,
-    color: '#FFFFFF'
+    color: colors.text
   },
   menuContainer: {
     borderRadius: 24,
     overflow: 'hidden',
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: colors.backgroundSecondary,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)'
+    borderColor: colors.borderLight
   },
   footerRow: {
     flexDirection: 'row',
@@ -614,8 +616,8 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 20,
     borderWidth: 1,
-    backgroundColor: 'rgba(255,255,255,0.03)', 
-    borderColor: 'rgba(255,255,255,0.1)'
+    backgroundColor: colors.backgroundSecondary, 
+    borderColor: colors.borderLight
   },
   dangerBtnText: {
     fontSize: 14,
@@ -626,6 +628,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Poppins_400Regular',
     marginTop: 8,
-    color: 'rgba(255,255,255,0.4)',
+    color: colors.textTertiary,
   },
 });

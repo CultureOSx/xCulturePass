@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/query-client';
 import { useAuth } from '@/lib/auth';
+import { useColors } from '@/hooks/useColors';
 import { CultureTokens } from '@/constants/theme';
 
 interface PaymentMethod {
@@ -40,6 +41,8 @@ function getBrandColor(brand: string | null, fallback: string): string {
 }
 
 export default function PaymentMethodsScreen() {
+  const colors = useColors();
+  const s = getStyles(colors);
   const insets      = useSafeAreaInsets();
   const topInset    = Platform.OS === 'web' ? 0 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
@@ -124,7 +127,7 @@ export default function PaymentMethodsScreen() {
           onPress={() => router.back()}
           style={s.backBtn}
         >
-          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
         </Pressable>
         <Text style={s.headerTitle}>Payment Methods</Text>
         <View style={{ width: 44 }} />
@@ -138,7 +141,7 @@ export default function PaymentMethodsScreen() {
         ) : methods.length === 0 ? (
           <View style={s.emptyState}>
             <View style={s.emptyIcon}>
-              <Ionicons name="card-outline" size={48} color="rgba(255,255,255,0.4)" />
+              <Ionicons name="card-outline" size={48} color={colors.textTertiary} />
             </View>
             <Text style={s.emptyTitle}>No Payment Methods</Text>
             <Text style={s.emptySubtitle}>Add a card or PayPal to make quick payments</Text>
@@ -194,7 +197,7 @@ export default function PaymentMethodsScreen() {
           style={s.addButton}
           onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowAddForm(true); }}
         >
-          <Ionicons name="add-circle" size={22} color="#0B0B14" />
+          <Ionicons name="add-circle" size={22} color={colors.background} />
           <Text style={s.addButtonText}>Add Payment Method</Text>
         </Pressable>
       </ScrollView>
@@ -205,7 +208,7 @@ export default function PaymentMethodsScreen() {
             <View style={s.modalHeader}>
               <Text style={s.modalTitle}>Add Payment Method</Text>
               <Pressable onPress={() => setShowAddForm(false)} style={s.modalCloseBtn}>
-                <Ionicons name="close" size={24} color="#FFFFFF" />
+                <Ionicons name="close" size={24} color={colors.text} />
               </Pressable>
             </View>
 
@@ -297,7 +300,7 @@ export default function PaymentMethodsScreen() {
                 disabled={createMutation.isPending}
               >
                 {createMutation.isPending
-                  ? <ActivityIndicator color="#0B0B14" size="small" />
+                  ? <ActivityIndicator color={colors.background} size="small" />
                   : <Text style={s.submitBtnText}>Add Card</Text>
                 }
               </Pressable>
@@ -309,46 +312,46 @@ export default function PaymentMethodsScreen() {
   );
 }
 
-const s = StyleSheet.create({
-  container:      { flex: 1, backgroundColor: '#0B0B14' },
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+  container:      { flex: 1, backgroundColor: colors.background },
   header:         { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12, zIndex: 10 },
-  backBtn:        { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  headerTitle:    { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+  backBtn:        { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight },
+  headerTitle:    { fontSize: 18, fontFamily: 'Poppins_700Bold', color: colors.text },
   loadingContainer:{ padding: 60, alignItems: 'center' },
   emptyState:     { alignItems: 'center', paddingTop: 80, paddingHorizontal: 40 },
-  emptyIcon:      { width: 100, height: 100, borderRadius: 50, alignItems: 'center', justifyContent: 'center', marginBottom: 20, backgroundColor: 'rgba(255,255,255,0.02)' },
-  emptyTitle:     { fontSize: 20, fontFamily: 'Poppins_700Bold', marginBottom: 8, color: '#FFFFFF' },
-  emptySubtitle:  { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', color: 'rgba(255,255,255,0.6)' },
+  emptyIcon:      { width: 100, height: 100, borderRadius: 50, alignItems: 'center', justifyContent: 'center', marginBottom: 20, backgroundColor: colors.surface },
+  emptyTitle:     { fontSize: 20, fontFamily: 'Poppins_700Bold', marginBottom: 8, color: colors.text },
+  emptySubtitle:  { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', color: colors.textSecondary },
   cardContainer:  { marginHorizontal: 20, marginBottom: 14 },
-  cardWrap:       { borderRadius: 20, padding: 18, borderWidth: 1, borderLeftWidth: 4, backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.1)' },
+  cardWrap:       { borderRadius: 20, padding: 18, borderWidth: 1, borderLeftWidth: 4, backgroundColor: colors.surface, borderColor: colors.borderLight },
   cardTop:        { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 16 },
   brandIcon:      { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  cardLabel:      { fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
-  cardBrand:      { fontSize: 13, fontFamily: 'Poppins_400Regular', marginTop: 2, color: 'rgba(255,255,255,0.6)', textTransform: 'capitalize' },
+  cardLabel:      { fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: colors.text },
+  cardBrand:      { fontSize: 13, fontFamily: 'Poppins_400Regular', marginTop: 2, color: colors.textSecondary, textTransform: 'capitalize' },
   defaultBadge:   { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, backgroundColor: CultureTokens.success + '15' },
   defaultText:    { fontSize: 11, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.success },
   cardBottom:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  cardNumber:     { fontSize: 15, fontFamily: 'Poppins_500Medium', letterSpacing: 1, color: '#FFFFFF' },
-  cardExpiry:     { fontSize: 13, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.7)' },
+  cardNumber:     { fontSize: 15, fontFamily: 'Poppins_500Medium', letterSpacing: 1, color: colors.text },
+  cardExpiry:     { fontSize: 13, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
   cardActions:    { flexDirection: 'row', gap: 14, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.05)', paddingTop: 14 },
   actionBtn:      { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 2 },
   deleteBtn:      { marginLeft: 'auto' as never },
   actionText:     { fontSize: 13, fontFamily: 'Poppins_500Medium' },
   addButton:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginHorizontal: 20, marginTop: 12, borderRadius: 16, paddingVertical: 18, backgroundColor: CultureTokens.indigo },
-  addButtonText:  { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#0B0B14' },
+  addButtonText:  { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.background },
   modalOverlay:   { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(11,11,20,0.85)' },
-  modalContent:   { borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, maxHeight: '90%', backgroundColor: '#161622', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  modalContent:   { borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, maxHeight: '90%', backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight },
   modalHeader:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
-  modalTitle:     { fontSize: 20, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
-  modalCloseBtn:  { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  fieldLabel:     { fontSize: 13, fontFamily: 'Poppins_600SemiBold', marginBottom: 8, marginTop: 16, color: 'rgba(255,255,255,0.8)' },
-  input:          { borderRadius: 16, padding: 16, fontSize: 15, fontFamily: 'Poppins_400Regular', borderWidth: 1, backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.1)', color: '#FFFFFF' },
+  modalTitle:     { fontSize: 20, fontFamily: 'Poppins_700Bold', color: colors.text },
+  modalCloseBtn:  { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight },
+  fieldLabel:     { fontSize: 13, fontFamily: 'Poppins_600SemiBold', marginBottom: 8, marginTop: 16, color: colors.textSecondary },
+  input:          { borderRadius: 16, padding: 16, fontSize: 15, fontFamily: 'Poppins_400Regular', borderWidth: 1, backgroundColor: colors.surface, borderColor: colors.borderLight, color: colors.text },
   optionsRow:     { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  optionChip:     { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 14, borderWidth: 1, backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.1)' },
+  optionChip:     { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 14, borderWidth: 1, backgroundColor: colors.surface, borderColor: colors.borderLight },
   optionChipActive: { backgroundColor: CultureTokens.indigo + '20', borderColor: CultureTokens.indigo },
-  optionChipText: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.6)' },
+  optionChipText: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
   optionChipTextActive: { color: CultureTokens.indigo },
   expiryRow:      { flexDirection: 'row', gap: 14 },
   submitBtn:      { borderRadius: 16, paddingVertical: 18, alignItems: 'center', marginTop: 32, backgroundColor: CultureTokens.indigo },
-  submitBtnText:  { fontSize: 15, fontFamily: 'Poppins_700Bold', color: '#0B0B14' },
+  submitBtnText:  { fontSize: 15, fontFamily: 'Poppins_700Bold', color: colors.background },
 });

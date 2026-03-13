@@ -1,4 +1,5 @@
 import React from 'react';
+import { useColors } from '@/hooks/useColors';
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,6 +13,8 @@ interface ProfileEventsProps {
 }
 
 export function ProfileEvents({ upcomingEvents, entityColor }: ProfileEventsProps) {
+  const colors = useColors();
+  const styles = getStyles(colors);
   if (upcomingEvents.length === 0) return null;
 
   return (
@@ -28,12 +31,14 @@ export function ProfileEvents({ upcomingEvents, entityColor }: ProfileEventsProp
             key={ev.id}
             style={styles.eventCard}
             onPress={() => {
+  const colors = useColors();
+  const styles = getStyles(colors);
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               router.push({ pathname: '/event/[id]', params: { id: ev.id } });
             }}
           >
             <View style={[styles.eventImagePlaceholder, { backgroundColor: ev.imageColor }]}>
-              <Ionicons name="calendar" size={24} color="rgba(255,255,255,0.8)" />
+              <Ionicons name="calendar" size={24} color={colors.textSecondary} />
               {ev.isFeatured && (
                 <View style={styles.eventFeaturedBadge}>
                   <Ionicons name="star" size={10} color={Colors.accent} />
@@ -67,7 +72,7 @@ export function ProfileEvents({ upcomingEvents, entityColor }: ProfileEventsProp
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   section: {
     paddingHorizontal: 20,
     marginTop: 24,

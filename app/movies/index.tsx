@@ -1,3 +1,4 @@
+import { useColors } from '@/hooks/useColors';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useOnboarding } from '@/contexts/OnboardingContext';
@@ -27,6 +28,7 @@ interface MovieData {
 }
 
 export default function MoviesScreen() {
+  const colors = useColors();
   const { state } = useOnboarding();
 
   const { data: moviesData = [], isLoading } = useQuery({

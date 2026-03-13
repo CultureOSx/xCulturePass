@@ -22,9 +22,11 @@ const CONTACT_OPTIONS = [
 ];
 
 export default function SettingsHelpScreen() {
+  const colors = useColors();
+  const styles = getStyles(colors);
   const insets = useSafeAreaInsets();
   const webTop = 0;
-  const colors = useColors();
+  
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
 
   const resolveColor = (key: 'primary' | 'success'): string => {
@@ -33,66 +35,66 @@ export default function SettingsHelpScreen() {
   };
 
   return (
-    <View style={[s.container, { paddingTop: insets.top + webTop, backgroundColor: colors.background }]}>
-      <View style={s.header}>
-        <Pressable style={[s.backBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]} onPress={() => router.back()}>
+    <View style={[styles.container, { paddingTop: insets.top + webTop, backgroundColor: colors.background }]}>
+      <View style={styles.header}>
+        <Pressable style={[styles.backBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={22} color={colors.text} />
         </Pressable>
-        <Text style={[s.headerTitle, { color: colors.text }]}>Help & Support</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Help & Support</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Spacing.xxl + (Platform.OS === 'web' ? 34 : insets.bottom) }}>
         {/* Hero */}
-        <LinearGradient colors={[colors.success, colors.secondary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.heroCard}>
-          <View style={s.heroIconWrap}>
+        <LinearGradient colors={[colors.success, colors.secondary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.heroCard}>
+          <View style={styles.heroIconWrap}>
             <Ionicons name="help-buoy" size={30} color={colors.textInverse} />
           </View>
-          <Text style={[s.heroTitle, { color: colors.textInverse }]}>How can we help?</Text>
-          <Text style={[s.heroSub, { color: colors.textInverse }]}>Find answers to common questions or reach out to our support team</Text>
+          <Text style={[styles.heroTitle, { color: colors.textInverse }]}>How can we help?</Text>
+          <Text style={[styles.heroSub, { color: colors.textInverse }]}>Find answers to common questions or reach out to our support team</Text>
         </LinearGradient>
 
         {/* FAQ */}
-        <View style={s.section}>
-          <Text style={[s.sectionTitle, { color: colors.text }]}>Frequently Asked Questions</Text>
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Frequently Asked Questions</Text>
           {FAQ_ITEMS.map((faq, i) => (
             <Pressable
               key={i}
-              style={[s.faqCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+              style={[styles.faqCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
               onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setExpandedFaq(expandedFaq === i ? null : i); }}
             >
-              <View style={s.faqHeader}>
-                <Text style={[s.faqQuestion, { color: colors.text }]}>{faq.q}</Text>
+              <View style={styles.faqHeader}>
+                <Text style={[styles.faqQuestion, { color: colors.text }]}>{faq.q}</Text>
                 <Ionicons name={expandedFaq === i ? 'chevron-up' : 'chevron-down'} size={18} color={colors.textSecondary} />
               </View>
-              {expandedFaq === i && <Text style={[s.faqAnswer, { color: colors.text }]}>{faq.a}</Text>}
+              {expandedFaq === i && <Text style={[styles.faqAnswer, { color: colors.text }]}>{faq.a}</Text>}
             </Pressable>
           ))}
         </View>
 
         {/* Contact */}
-        <View style={s.section}>
-          <Text style={[s.sectionTitle, { color: colors.text }]}>Contact Us</Text>
-          <View style={[s.contactCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Contact Us</Text>
+          <View style={[styles.contactCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
             {CONTACT_OPTIONS.map((opt, i) => (
               (() => {
                 const contactColor = resolveColor(opt.colorKey);
                 return (
               <View key={opt.label}>
                 <Pressable
-                  style={({ pressed }) => [s.contactItem, pressed && { backgroundColor: colors.backgroundSecondary }]}
+                  style={({ pressed }) => [styles.contactItem, pressed && { backgroundColor: colors.backgroundSecondary }]}
                   onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); opt.action(); }}
                 >
-                  <View style={[s.contactIcon, { backgroundColor: contactColor + '15' }]}> 
+                  <View style={[styles.contactIcon, { backgroundColor: contactColor + '15' }]}> 
                     <Ionicons name={opt.icon as never} size={20} color={contactColor} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={[s.contactLabel, { color: colors.text }]}>{opt.label}</Text>
-                    <Text style={[s.contactSub, { color: colors.text }]}>{opt.sub}</Text>
+                    <Text style={[styles.contactLabel, { color: colors.text }]}>{opt.label}</Text>
+                    <Text style={[styles.contactSub, { color: colors.text }]}>{opt.sub}</Text>
                   </View>
                   <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
                 </Pressable>
-                {i < CONTACT_OPTIONS.length - 1 && <View style={[s.divider, { backgroundColor: colors.divider }]} />}
+                {i < CONTACT_OPTIONS.length - 1 && <View style={[styles.divider, { backgroundColor: colors.divider }]} />}
               </View>
                 );
               })()
@@ -101,17 +103,17 @@ export default function SettingsHelpScreen() {
         </View>
 
         {/* Guidelines */}
-        <View style={s.section}>
+        <View style={styles.section}>
           <Pressable
-            style={[s.guidelinesCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+            style={[styles.guidelinesCard, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
             onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/legal/guidelines'); }}
           >
-            <View style={[s.contactIcon, { backgroundColor: colors.secondary + '15' }]}> 
+            <View style={[styles.contactIcon, { backgroundColor: colors.secondary + '15' }]}> 
               <Ionicons name="book-outline" size={20} color={colors.secondary} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[s.contactLabel, { color: colors.text }]}>Community Guidelines</Text>
-              <Text style={[s.contactSub, { color: colors.text }]}>Read our community standards and policies</Text>
+               <Text style={[styles.contactLabel, { color: colors.text }]}>Community Guidelines</Text>
+               <Text style={[styles.contactSub, { color: colors.text }]}>Read our community standards and policies</Text>
             </View>
             <Ionicons name="open-outline" size={18} color={colors.textSecondary} />
           </Pressable>
@@ -121,7 +123,7 @@ export default function SettingsHelpScreen() {
   );
 }
 
-const s = StyleSheet.create({
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   container:    { flex: 1 },
   header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: LayoutRules.screenHorizontalPadding, paddingVertical: LayoutRules.iconTextGap },
   backBtn:      { width: LayoutRules.buttonHeight, height: LayoutRules.buttonHeight, borderRadius: LayoutRules.borderRadius, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },

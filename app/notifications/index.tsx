@@ -7,6 +7,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/query-client';
 import { useAuth } from '@/lib/auth';
 import { CultureTokens } from '@/constants/theme';
+import { useColors } from '@/hooks/useColors';
 
 interface Notification {
   id: string;
@@ -45,6 +46,8 @@ export default function NotificationsScreen() {
   const insets = useSafeAreaInsets();
   const webTop = 0;
   const { userId } = useAuth();
+  const colors = useColors();
+  const s = getStyles(colors);
 
   const { data: notifications = [], isLoading } = useQuery<Notification[]>({
     queryKey: ['/api/notifications', userId],
@@ -70,9 +73,9 @@ export default function NotificationsScreen() {
 
   if (Platform.OS === 'web' && notifications.length === 0 && !isLoading) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40, backgroundColor: '#0B0B14' }}>
-        <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#FFFFFF' }}>Notifications</Text>
-        <Text style={{ marginTop: 12, color: 'rgba(255,255,255,0.6)' }}>Your notifications will appear here.</Text>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40, backgroundColor: colors.background }}>
+        <Text style={{ fontSize: 24, fontWeight: 'bold', color: colors.text }}>Notifications</Text>
+        <Text style={{ marginTop: 12, color: colors.textSecondary }}>Your notifications will appear here.</Text>
       </View>
     );
   }
@@ -82,7 +85,7 @@ export default function NotificationsScreen() {
       {/* Header */}
       <View style={s.header}>
         <Pressable style={s.backBtn} onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
         </Pressable>
         <Text style={s.headerTitle}>Notifications</Text>
         {unreadCount > 0 ? (
@@ -114,7 +117,7 @@ export default function NotificationsScreen() {
       ) : notifications.length === 0 ? (
         <View style={s.empty}>
           <View style={s.emptyIconBg}>
-            <Ionicons name="notifications-off-outline" size={56} color="rgba(255,255,255,0.5)" />
+            <Ionicons name="notifications-off-outline" size={56} color={colors.textSecondary} />
           </View>
           <Text style={s.emptyText}>No notifications yet</Text>
           <Text style={s.emptySub}>We&apos;ll let you know when something happens</Text>
@@ -156,7 +159,7 @@ export default function NotificationsScreen() {
                     </Text>
                     {!notif.isRead && <View style={s.unreadDot} />}
                   </View>
-                  <Text style={[s.notifMessage, !notif.isRead && { color: 'rgba(255,255,255,0.8)' }]} numberOfLines={2}>{notif.message}</Text>
+                  <Text style={[s.notifMessage, !notif.isRead && { color: colors.textSecondary }]} numberOfLines={2}>{notif.message}</Text>
                   {notif.createdAt && <Text style={s.notifTime}>{timeAgo(notif.createdAt)}</Text>}
                 </View>
               </Pressable>
@@ -168,11 +171,11 @@ export default function NotificationsScreen() {
   );
 }
 
-const s = StyleSheet.create({
-  container:   { flex: 1, backgroundColor: '#0B0B14' },
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+  container:   { flex: 1, backgroundColor: colors.background },
   header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
-  backBtn:     { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  headerTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+  backBtn:     { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight },
+  headerTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: colors.text },
   markAllBtn:  { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, backgroundColor: CultureTokens.indigo + '20' },
   markAllText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.indigo },
 
@@ -181,18 +184,18 @@ const s = StyleSheet.create({
 
   list:        { flex: 1, paddingHorizontal: 20 },
   empty:       { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 100 },
-  emptyIconBg: { width: 100, height: 100, borderRadius: 30, backgroundColor: 'rgba(255,255,255,0.03)', alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
-  emptyText:   { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', marginBottom: 6 },
-  emptySub:    { fontSize: 14, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.5)', textAlign: 'center' },
+  emptyIconBg: { width: 100, height: 100, borderRadius: 30, backgroundColor: colors.backgroundSecondary, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
+  emptyText:   { fontSize: 18, fontFamily: 'Poppins_700Bold', color: colors.text, marginBottom: 6 },
+  emptySub:    { fontSize: 14, fontFamily: 'Poppins_400Regular', color: colors.textSecondary, textAlign: 'center' },
 
-  notifCard:       { flexDirection: 'row', gap: 14, borderRadius: 18, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.03)', marginBottom: 10 },
+  notifCard:       { flexDirection: 'row', gap: 14, borderRadius: 18, padding: 16, borderWidth: 1, borderColor: colors.borderLight, backgroundColor: colors.surface, marginBottom: 10 },
   notifCardUnread: { borderColor: CultureTokens.indigo + '40', backgroundColor: CultureTokens.indigo + '10' },
   notifIcon:       { width: 46, height: 46, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   notifContent:    { flex: 1 },
   notifHeader:     { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 4 },
-  notifTitle:      { fontSize: 15, fontFamily: 'Poppins_500Medium', color: '#FFFFFF', flex: 1 },
+  notifTitle:      { fontSize: 15, fontFamily: 'Poppins_500Medium', color: colors.text, flex: 1 },
   notifTitleUnread:{ fontFamily: 'Poppins_700Bold' },
   unreadDot:       { width: 10, height: 10, borderRadius: 5, marginLeft: 10, backgroundColor: CultureTokens.indigo, marginTop: 4 },
-  notifMessage:    { fontSize: 14, fontFamily: 'Poppins_400Regular', lineHeight: 20, color: 'rgba(255,255,255,0.6)', marginBottom: 8 },
-  notifTime:       { fontSize: 12, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.4)' },
+  notifMessage:    { fontSize: 14, fontFamily: 'Poppins_400Regular', lineHeight: 20, color: colors.textSecondary, marginBottom: 8 },
+  notifTime:       { fontSize: 12, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
 });

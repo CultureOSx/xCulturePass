@@ -33,6 +33,7 @@ const TYPE_ICONS: Record<string, string> = {
   council: 'shield-checkmark',
   government: 'flag',
   organisation: 'business',
+  charity: 'heart',
 };
 
 const ENTITY_FILTERS = [
@@ -42,6 +43,7 @@ const ENTITY_FILTERS = [
   { label: 'organisation', icon: 'business', color: EntityTypeColors.organisation, display: 'Organisations' },
   { label: 'council', icon: 'shield-checkmark', color: EntityTypeColors.council, display: 'Councils' },
   { label: 'government', icon: 'flag', color: EntityTypeColors.government, display: 'Government' },
+  { label: 'charity', icon: 'heart', color: EntityTypeColors.charity, display: 'Charities' },
 ] as const;
 
 function getOptionalString(record: Record<string, unknown>, key: string): string | null {
@@ -435,7 +437,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(255, 200, 87, 0.15)',
+    backgroundColor: CultureTokens.saffron + '26',
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 14,
@@ -467,7 +469,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(46, 196, 182, 0.15)',
+    backgroundColor: CultureTokens.teal + '26',
   },
   quickActionCircleAddr: {
     width: 44,
@@ -475,7 +477,7 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 140, 66, 0.15)',
+    backgroundColor: CultureTokens.saffron + '26',
   },
   cardFooter: {
     flexDirection: 'row',
@@ -499,9 +501,9 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
     paddingVertical: 14,
     marginTop: 8,
     borderRadius: 16,
-    backgroundColor: 'rgba(44, 42, 114, 0.08)',
+    backgroundColor: CultureTokens.indigo + '14',
     borderWidth: 1,
-    borderColor: 'rgba(44, 42, 114, 0.15)',
+    borderColor: CultureTokens.indigo + '26',
   },
   cardActionText: { fontSize: 14, fontFamily: 'Poppins_700Bold', color: CultureTokens.indigo },
   

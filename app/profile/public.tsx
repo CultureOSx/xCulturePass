@@ -28,7 +28,7 @@ import {
   formatMemberDate,
   getInitials,
 } from './constants';
-import { styles } from './styles';
+import { getStyles } from './styles';
 
 import { BrandDots } from './components/BrandDots';
 import { StatItem } from './components/StatItem';
@@ -39,6 +39,8 @@ import { LoadingSkeleton } from './components/LoadingSkeleton';
 
 export default function PublicProfileScreen() {
   const colors = useColors();
+  const styles = getStyles(colors);
+  
   const insets = useSafeAreaInsets();
   const topInset    = Platform.OS === 'web' ? 0 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;

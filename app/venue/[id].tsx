@@ -23,8 +23,11 @@ import * as Haptics from "expo-haptics";
 import type { Profile } from "@shared/schema";
 import { api } from "@/lib/api";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { useColors } from "@/hooks/useColors";
 
 export default function VenueDetailScreen() {
+  const colors = useColors();
+  const styles = getStyles(colors);
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
@@ -95,7 +98,7 @@ export default function VenueDetailScreen() {
       <ErrorBoundary>
         <View style={[styles.container, { paddingTop: topInset }]}> 
           <View style={styles.loadingContainer}>
-            <Ionicons name="alert-circle" size={48} color="rgba(255,255,255,0.4)" />
+            <Ionicons name="alert-circle" size={48} color={colors.textTertiary} />
             <Text style={styles.errorText}>Venue not found</Text>
             <Pressable onPress={goBack} style={styles.backLinkBtn}>
               <Text style={styles.backLinkText}>Go Back</Text>
@@ -121,7 +124,7 @@ export default function VenueDetailScreen() {
               <Image source={{ uri: heroImage }} style={styles.heroImage} contentFit="cover" transition={300} />
             ) : (
               <LinearGradient
-                colors={[CultureTokens.teal, '#0B0B14']}
+                colors={[CultureTokens.teal, colors.background]}
                 style={styles.heroImage}
               />
             )}
@@ -132,15 +135,15 @@ export default function VenueDetailScreen() {
             />
             <View style={[styles.heroTopBar, { top: topInset + 12 }]}>
               <Pressable onPress={goBack} style={styles.heroBtn}>
-                <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+                <Ionicons name="chevron-back" size={24} color={colors.text} />
               </Pressable>
               <View style={{ flexDirection: "row", gap: 10 }}>
                 <Pressable onPress={handleShare} style={styles.heroBtn}>
-                  <Ionicons name="share-outline" size={22} color="#FFFFFF" />
+                  <Ionicons name="share-outline" size={22} color={colors.text} />
                 </Pressable>
                 {profile.address && (
                   <Pressable onPress={openDirections} style={styles.heroBtn}>
-                    <Ionicons name="navigate" size={22} color="#FFFFFF" />
+                    <Ionicons name="navigate" size={22} color={colors.text} />
                   </Pressable>
                 )}
               </View>
@@ -155,7 +158,7 @@ export default function VenueDetailScreen() {
               <Text style={styles.heroTitle}>{profile.name}</Text>
               {location ? (
                 <View style={styles.heroLocationRow}>
-                  <Ionicons name="location" size={16} color="rgba(255,255,255,0.8)" />
+                  <Ionicons name="location" size={16} color={colors.textSecondary} />
                   <Text style={styles.heroLocation}>{location}</Text>
                 </View>
               ) : null}
@@ -211,7 +214,7 @@ export default function VenueDetailScreen() {
                   <Text style={styles.addressText}>{profile.address}</Text>
                 </View>
                 <View style={styles.directionsBtn}>
-                  <Ionicons name="navigate" size={16} color="#0B0B14" />
+                  <Ionicons name="navigate" size={16} color={colors.background} />
                   <Text style={styles.directionsBtnText}>Directions</Text>
                 </View>
               </Pressable>
@@ -298,8 +301,8 @@ export default function VenueDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B0B14' },
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", gap: 16 },
   errorText: { fontFamily: "Poppins_500Medium", fontSize: 16, color: "rgba(255,255,255,0.6)" },
   backLinkBtn: { marginTop: 12, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12, backgroundColor: CultureTokens.teal + '15' },

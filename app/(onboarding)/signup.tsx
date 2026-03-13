@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,8 @@ import {
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CultureTokens, gradients } from '@/constants/theme';
+import { CultureTokens, gradients, CardTokens, glass, shadows } from '@/constants/theme';
+import { useColors } from '@/hooks/useColors';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 import { auth as firebaseAuth } from '@/lib/firebase';
@@ -36,6 +37,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as AppleAuthentication from 'expo-apple-authentication';
 
 export default function SignUpScreen() {
+  const colors = useColors();
+  const styles = getStyles(colors);
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === 'web' && width >= 1024;
@@ -53,12 +56,14 @@ export default function SignUpScreen() {
   const [globalError, setGlobalError] = useState('');
   
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
 
   // Form logic (eager normalization)
-  const normalizedName = name.trim();
-  const normalizedEmail = email.trim().toLowerCase();
-  const isValid = normalizedName.length > 1 && normalizedEmail.includes('@') && password.length >= 6 && agreed;
+  const normalizedName = useMemo(() => name.trim(), [name]);
+  const normalizedEmail = useMemo(() => email.trim().toLowerCase(), [email]);
+
+  const isValid = useMemo(() => {
+    return normalizedName.length > 1 && normalizedEmail.includes('@') && password.length >= 6 && agreed;
+  }, [normalizedName, normalizedEmail, password, agreed]);
 
   const clearErrors = useCallback(() => {
     if (nameError) setNameError('');
@@ -70,19 +75,19 @@ export default function SignUpScreen() {
   const validate = () => {
     let valid = true;
     if (normalizedName.length < 2) {
-      setNameError('Please enter your full name');
+      setNameError('Please enter your full name.');
       valid = false;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
-      setEmailError('Please enter a valid email address');
+      setEmailError('Please enter a valid email address.');
       valid = false;
     }
     if (password.length < 6) {
-      setPasswordError('Password must be at least 6 characters');
+      setPasswordError('Password must be at least 6 characters.');
       valid = false;
     }
     if (!agreed) {
-      setGlobalError('You must agree to the Terms of Service to continue');
+      setGlobalError('You must agree to the Terms of Service to continue.');
       valid = false;
     }
     return valid;
@@ -191,9 +196,9 @@ export default function SignUpScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <LinearGradient
-        colors={gradients.culturepassBrandReversed}
+        colors={gradients.culturepassBrand}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.gradientBg}
@@ -209,17 +214,21 @@ export default function SignUpScreen() {
 
       {isDesktop && (
         <View style={styles.desktopBackRow}>
-          <Pressable onPress={() => router.replace('/(tabs)')} hitSlop={8} style={[styles.desktopBackBtn, { backgroundColor: 'rgba(0,0,0,0.3)' }]}>
-            <Ionicons name="chevron-back" size={18} color="#FFFFFF" />
-            <Text style={styles.desktopBackText}>Back to Discover</Text>
+          <Pressable 
+            onPress={() => router.replace('/(tabs)')} 
+            hitSlop={8} 
+            style={[styles.desktopBackBtn, { backgroundColor: glass.overlay.backgroundColor, borderColor: colors.border }]}
+          >
+            <Ionicons name="chevron-back" size={18} color={colors.textInverse} />
+            <Text style={[styles.desktopBackText, { color: colors.textInverse }]}>Back to Discover</Text>
           </Pressable>
         </View>
       )}
 
       {!isDesktop && (
         <View style={[styles.mobileHeader, { paddingTop: topInset + 12 }]}>
-          <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')} hitSlop={8}>
-            <Ionicons name="close" size={28} color="#FFFFFF" />
+          <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')} hitSlop={12}>
+            <Ionicons name="close" size={28} color={colors.textInverse} />
           </Pressable>
         </View>
       )}
@@ -237,23 +246,23 @@ export default function SignUpScreen() {
             !isDesktop && { paddingTop: 20 }
           ]}
         >
-          <View style={[styles.formContainer, isDesktop && styles.formContainerDesktop]}>
+          <View style={[styles.formContainer, isDesktop && styles.formContainerDesktop, { borderRadius: CardTokens.radiusLarge }]}>
             {Platform.OS === 'ios' || Platform.OS === 'web' ? (
-              <BlurView intensity={isDesktop ? 60 : 40} tint="dark" style={[StyleSheet.absoluteFill, styles.formBlur]} />
+              <BlurView intensity={isDesktop ? 60 : 40} tint="dark" style={[StyleSheet.absoluteFill, styles.formBlur, { borderRadius: CardTokens.radiusLarge, borderColor: colors.borderLight }]} />
             ) : (
-              <View style={[StyleSheet.absoluteFill, styles.formBlur, { backgroundColor: 'rgba(11, 11, 20, 0.85)' }]} />
+              <View style={[StyleSheet.absoluteFill, styles.formBlur, { backgroundColor: colors.surface, borderRadius: CardTokens.radiusLarge, borderColor: colors.borderLight }]} />
             )}
 
-            <View style={styles.formContent}>
+            <View style={[styles.formContent, { padding: CardTokens.paddingLarge * 2 }]}>
               <View style={styles.logoRow}>
-                <View style={[styles.logoCircle, { backgroundColor: 'rgba(255,255,255,0.1)' }]}>
-                  <Ionicons name="globe-outline" size={32} color="#FFFFFF" />
+                <View style={[styles.logoCircle, { backgroundColor: colors.overlay, borderColor: colors.borderLight }]}>
+                  <Ionicons name="globe-outline" size={32} color={colors.textInverse} />
                 </View>
-                <Text style={styles.brandLabel}>CulturePass.app</Text>
+                <Text style={[styles.brandLabel, { color: colors.textInverse }]}>CulturePass.app</Text>
               </View>
 
-              <Text style={styles.title}>Create Account.</Text>
-              <Text style={styles.benefitsRow}>
+              <Text style={[styles.title, { color: colors.textInverse }]}>Create Account.</Text>
+              <Text style={[styles.benefitsRow, { color: CultureTokens.saffron }]}>
                 🎉 Free events · Community access · Exclusive perks
               </Text>
 
@@ -265,21 +274,29 @@ export default function SignUpScreen() {
               ) : null}
 
               <View style={styles.roleToggleGroup}>
-                <Text style={styles.roleLabel}>I want to...</Text>
+                <Text style={[styles.roleLabel, { color: colors.textSecondary }]}>I want to...</Text>
                 <View style={styles.roleRow}>
                   <Pressable
-                    style={[styles.roleOption, role === 'user' && styles.roleOptionActive]}
+                    style={[
+                      styles.roleOption, 
+                      role === 'user' && { backgroundColor: colors.primaryGlow, borderColor: colors.primary },
+                      role !== 'user' && { backgroundColor: 'transparent', borderColor: colors.borderLight }
+                    ]}
                     onPress={() => { setRole('user'); if(Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
                   >
-                    <Ionicons name="compass-outline" size={20} color={role === 'user' ? '#FFF' : 'rgba(255,255,255,0.6)'} />
-                    <Text style={[styles.roleOptionText, role === 'user' && styles.roleOptionTextActive]}>Discover Events</Text>
+                    <Ionicons name="compass-outline" size={20} color={role === 'user' ? colors.textInverse : colors.textSecondary} />
+                    <Text style={[styles.roleOptionText, role === 'user' ? { color: colors.textInverse, fontFamily: 'Poppins_600SemiBold' } : { color: colors.textSecondary }]}>Discover Events</Text>
                   </Pressable>
                   <Pressable
-                    style={[styles.roleOption, role === 'organizer' && styles.roleOptionActive]}
+                    style={[
+                      styles.roleOption, 
+                      role === 'organizer' && { backgroundColor: colors.primaryGlow, borderColor: colors.primary },
+                      role !== 'organizer' && { backgroundColor: 'transparent', borderColor: colors.borderLight }
+                    ]}
                     onPress={() => { setRole('organizer'); if(Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
                   >
-                    <Ionicons name="calendar-outline" size={20} color={role === 'organizer' ? '#FFF' : 'rgba(255,255,255,0.6)'} />
-                    <Text style={[styles.roleOptionText, role === 'organizer' && styles.roleOptionTextActive]}>Host Events</Text>
+                    <Ionicons name="calendar-outline" size={20} color={role === 'organizer' ? colors.textInverse : colors.textSecondary} />
+                    <Text style={[styles.roleOptionText, role === 'organizer' ? { color: colors.textInverse, fontFamily: 'Poppins_600SemiBold' } : { color: colors.textSecondary }]}>Host Events</Text>
                   </Pressable>
                 </View>
               </View>
@@ -319,7 +336,6 @@ export default function SignUpScreen() {
                     leftIcon="lock-closed-outline"
                     value={password}
                     onChangeText={(v) => { setPassword(v); clearErrors(); }}
-                    secureTextEntry={!showPassword}
                     passwordToggle
                     returnKeyType="done"
                     onSubmitEditing={handleSignUp}
@@ -334,7 +350,7 @@ export default function SignUpScreen() {
                   checked={agreed}
                   onToggle={(v) => { setAgreed(v); clearErrors(); }}
                   label={
-                    <Text style={styles.checkText}>
+                    <Text style={[styles.checkText, { color: colors.textInverse }]}>
                       I agree to the <Text style={[styles.linkText, { color: CultureTokens.saffron }]} onPress={() => router.push('/legal/terms')}>Terms</Text> & <Text style={[styles.linkText, { color: CultureTokens.saffron }]} onPress={() => router.push('/legal/privacy')}>Privacy</Text>
                     </Text>
                   }
@@ -349,15 +365,15 @@ export default function SignUpScreen() {
                 loading={loading}
                 disabled={!isValid || loading}
                 onPress={handleSignUp}
-                style={[styles.submitBtn, { backgroundColor: CultureTokens.saffron }]}
+                style={[styles.submitBtn, shadows.medium, { backgroundColor: CultureTokens.saffron }]}
               >
                 Create Account
               </Button>
 
               <View style={styles.socialDivider}>
-                <View style={[styles.divLine, { backgroundColor: 'rgba(255,255,255,0.15)' }]} />
-                <Text style={styles.divText}>or sign up with</Text>
-                <View style={[styles.divLine, { backgroundColor: 'rgba(255,255,255,0.15)' }]} />
+                <View style={[styles.divLine, { backgroundColor: colors.borderLight }]} />
+                <Text style={[styles.divText, { color: colors.textSecondary }]}>or sign up with</Text>
+                <View style={[styles.divLine, { backgroundColor: colors.borderLight }]} />
               </View>
 
               <View style={styles.socialRow}>
@@ -369,8 +385,8 @@ export default function SignUpScreen() {
                 )}
               </View>
 
-              <Pressable style={styles.switchRow} onPress={() => router.replace('/(onboarding)/login')}>
-                <Text style={styles.switchText}>
+              <Pressable style={styles.switchRow} onPress={() => router.replace('/(onboarding)/login')} hitSlop={12}>
+                <Text style={[styles.switchText, { color: colors.textSecondary }]}>
                   Already have an account? <Text style={[styles.switchLink, { color: CultureTokens.saffron }]}>Sign In</Text>
                 </Text>
               </Pressable>
@@ -382,46 +398,44 @@ export default function SignUpScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B0B14' },
-  gradientBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.8 },
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+  container: { flex: 1 },
+  gradientBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.85 },
   orb: { position: 'absolute', width: 300, height: 300, borderRadius: 150 },
   keyboardAvoid: { flex: 1 },
   mobileHeader: { paddingHorizontal: 20, paddingBottom: 12 },
   desktopBackRow: { position: 'absolute', top: 32, left: 40, zIndex: 10 },
-  desktopBackBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 24, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  desktopBackText: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: '#FFFFFF' },
+  desktopBackBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 24, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1 },
+  desktopBackText: { fontSize: 14, fontFamily: 'Poppins_500Medium' },
   scrollContent: { flexGrow: 1, paddingHorizontal: 20, paddingBottom: 60, justifyContent: 'center' },
   scrollContentDesktop: { paddingVertical: 60 },
-  formContainer: { width: '100%', maxWidth: 460, alignSelf: 'center', borderRadius: 32, overflow: 'hidden' },
+  formContainer: { width: '100%', maxWidth: 460, alignSelf: 'center', overflow: 'hidden' },
   formContainerDesktop: { maxWidth: 520 },
-  formBlur: { borderRadius: 32, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  formContent: { padding: 32, paddingTop: 40 },
+  formBlur: { borderWidth: 1 },
+  formContent: { paddingTop: 40 },
   logoRow: { alignItems: 'center', marginBottom: 20 },
-  logoCircle: { width: 68, height: 68, borderRadius: 34, alignItems: 'center', justifyContent: 'center', marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
-  brandLabel: { fontSize: 12, fontFamily: 'Poppins_700Bold', letterSpacing: 3, textTransform: 'uppercase', color: '#FFFFFF' },
-  title: { fontSize: 34, fontFamily: 'Poppins_700Bold', textAlign: 'center', marginBottom: 8, letterSpacing: -0.5, color: '#FFFFFF' },
-  benefitsRow: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', textAlign: 'center', marginBottom: 32, color: CultureTokens.saffron },
+  logoCircle: { width: 68, height: 68, borderRadius: 34, alignItems: 'center', justifyContent: 'center', marginBottom: 16, borderWidth: 1 },
+  brandLabel: { fontSize: 12, fontFamily: 'Poppins_700Bold', letterSpacing: 3, textTransform: 'uppercase' },
+  title: { fontSize: 34, fontFamily: 'Poppins_700Bold', textAlign: 'center', marginBottom: 8, letterSpacing: -0.5 },
+  benefitsRow: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', textAlign: 'center', marginBottom: 32 },
   errorBanner: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 14, paddingHorizontal: 16, borderRadius: 16, marginBottom: 24, borderWidth: 1 },
   globalErrorText: { flex: 1, fontSize: 14, fontFamily: 'Poppins_500Medium' },
   roleToggleGroup: { marginBottom: 20 },
-  roleLabel: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: 'rgba(255,255,255,0.6)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
+  roleLabel: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
   roleRow: { flexDirection: 'row', gap: 10 },
-  roleOption: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 16, borderWidth: 1, backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.1)' },
-  roleOptionActive: { backgroundColor: 'rgba(44, 42, 114, 0.4)', borderColor: CultureTokens.indigo },
-  roleOptionText: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.6)' },
-  roleOptionTextActive: { color: '#FFFFFF', fontFamily: 'Poppins_600SemiBold' },
+  roleOption: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 16, borderWidth: 1 },
+  roleOptionText: { fontSize: 14, fontFamily: 'Poppins_500Medium' },
   form: { gap: 20, marginBottom: 20 },
   inputGroup: { gap: 8 },
   optionsRow: { marginBottom: 32 },
-  checkText: { flex: 1, fontSize: 13, fontFamily: 'Poppins_400Regular', color: '#FFFFFF', lineHeight: 20 },
+  checkText: { flex: 1, fontSize: 13, fontFamily: 'Poppins_400Regular', lineHeight: 20 },
   linkText: { fontFamily: 'Poppins_600SemiBold' },
-  submitBtn: { height: 56, borderRadius: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 16, elevation: 6 },
+  submitBtn: { height: 56, borderRadius: 16 },
   socialDivider: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 24 },
   divLine: { flex: 1, height: 1 },
-  divText: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.5)' },
+  divText: { fontSize: 14, fontFamily: 'Poppins_500Medium' },
   socialRow: { flexDirection: 'row', gap: 16, marginBottom: 32 },
   switchRow: { alignItems: 'center', paddingVertical: 8 },
-  switchText: { fontSize: 15, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.7)' },
+  switchText: { fontSize: 15, fontFamily: 'Poppins_400Regular' },
   switchLink: { fontFamily: 'Poppins_700Bold' },
 });

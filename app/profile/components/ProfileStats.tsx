@@ -1,4 +1,5 @@
 import React from 'react';
+import { useColors } from '@/hooks/useColors';
 import { View, Text, StyleSheet } from 'react-native';
 import { Colors } from '@/constants/theme';
 
@@ -13,6 +14,8 @@ function formatNumber(num: number) {
 }
 
 export function ProfileStats({ stats }: ProfileStatsProps) {
+  const colors = useColors();
+  const styles = getStyles(colors);
   if (stats.length === 0) return null;
 
   return (
@@ -27,7 +30,7 @@ export function ProfileStats({ stats }: ProfileStatsProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   statsRow: {
     flexDirection: 'row',
     paddingHorizontal: 20,

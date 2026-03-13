@@ -31,6 +31,7 @@ import Animated, {
 import { LocationPicker } from '@/components/LocationPicker';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { api, type ActivityData } from '@/lib/api';
+import { queryClient } from '@/lib/query-client';
 import { useColors } from '@/hooks/useColors';
 import EventCard from '@/components/Discover/EventCard';
 import CategoryCard from '@/components/Discover/CategoryCard';
@@ -218,9 +219,9 @@ export default function HomeScreen() {
   }, []);
 
   const firstName = useMemo(() => {
-    if (!isAuthenticated) return 'Explorer';
+    if (!isAuthenticated) return 'Guest';
     const name = authUser?.displayName ?? authUser?.username ?? '';
-    return name.split(' ')[0] || 'Explorer';
+    return name.split(' ')[0] || 'Member';
   }, [isAuthenticated, authUser]);
 
   const trendingEvents = discoverFeed?.trendingEvents ?? [];
@@ -337,7 +338,12 @@ export default function HomeScreen() {
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    await refetch();
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['/api/events'] }),
+      queryClient.invalidateQueries({ queryKey: ['/api/communities'] }),
+      queryClient.invalidateQueries({ queryKey: ['/api/activities'] }),
+      refetch()
+    ]);
     setRefreshing(false);
   }, [refetch]);
 
@@ -372,7 +378,7 @@ export default function HomeScreen() {
 
             <View style={styles.brandBlock}>
               <View style={styles.logoWrap}>
-                <Ionicons name="compass" size={20} color="#FFFFFF" />
+                <Ionicons name="compass" size={20} color={colors.text} />
               </View>
               <View>
                 <Text style={styles.brandName}>CulturePass</Text>
@@ -381,11 +387,11 @@ export default function HomeScreen() {
             </View>
 
             <View style={styles.topBarRight}>
-              <Pressable style={({ pressed }) => [styles.iconButton, pressed && { backgroundColor: 'rgba(255,255,255,0.1)' }]} onPress={() => router.push('/search')}>
-                <Ionicons name="search" size={20} color="#FFFFFF" />
+              <Pressable style={({ pressed }) => [styles.iconButton, pressed && { backgroundColor: colors.backgroundSecondary }]} onPress={() => router.push('/search')}>
+                <Ionicons name="search" size={20} color={colors.text} />
               </Pressable>
-              <Pressable style={({ pressed }) => [styles.iconButton, pressed && { backgroundColor: 'rgba(255,255,255,0.1)' }]} onPress={openNotifications}>
-                <Ionicons name="notifications" size={20} color="#FFFFFF" />
+              <Pressable style={({ pressed }) => [styles.iconButton, pressed && { backgroundColor: colors.backgroundSecondary }]} onPress={openNotifications}>
+                <Ionicons name="notifications" size={20} color={colors.text} />
                 {isAuthenticated && <View style={styles.notifDot} />}
               </Pressable>
             </View>
@@ -523,7 +529,7 @@ export default function HomeScreen() {
           {/* Empty Fallback */}
           {!discoverLoading && featuredEvents.length === 0 && popularEvents.length === 0 && allActivities.length === 0 && allCommunities.length === 0 && (
             <View style={[styles.emptyStateCard, isDesktop && { marginHorizontal: 0 }]}> 
-              <Ionicons name="compass-outline" size={42} color="rgba(255,255,255,0.4)" />
+              <Ionicons name="compass-outline" size={42} color={colors.textSecondary} />
               <Text style={styles.emptyStateTitle}>No events right now</Text>
               <Text style={styles.emptyStateSub}>Try changing your city or pull to refresh.</Text>
             </View>
@@ -600,7 +606,7 @@ export default function HomeScreen() {
                      onPress={() => router.push({ pathname: '/activities/[id]', params: { id: activity.id } })} 
                      style={({ pressed }) => [
                         styles.activityTile,
-                        pressed && { backgroundColor: 'rgba(255,255,255,0.06)' }
+                        pressed && { backgroundColor: colors.backgroundSecondary }
                      ]}
                   >
                     <Text style={styles.activityCategory}>{activity.category}</Text>
@@ -672,49 +678,49 @@ export default function HomeScreen() {
 }
 
 const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B0B14' },
+  container: { flex: 1, backgroundColor: colors.background },
   orb: { position: 'absolute', width: 350, height: 350, borderRadius: 175 },
   
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12, backgroundColor: 'transparent', zIndex: 100 },
-  topBarBorder: { position: 'absolute', bottom: 0, left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(255,255,255,0.05)' },
+  topBarBorder: { position: 'absolute', bottom: 0, left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: colors.borderLight },
   brandBlock: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  logoWrap: { width: 34, height: 34, borderRadius: 10, backgroundColor: CultureTokens.indigo, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  brandName: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', lineHeight: 18 },
-  brandUrl: { fontSize: 11, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.6)', lineHeight: 14, letterSpacing: 0.2 },
+  logoWrap: { width: 34, height: 34, borderRadius: 10, backgroundColor: CultureTokens.indigo, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.borderLight },
+  brandName: { fontSize: 16, fontFamily: 'Poppins_700Bold', color: colors.text, lineHeight: 18 },
+  brandUrl: { fontSize: 11, fontFamily: 'Poppins_500Medium', color: colors.textSecondary, lineHeight: 14, letterSpacing: 0.2 },
   
   topBarRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  iconButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  notifDot: { position: 'absolute', top: 10, right: 10, width: 8, height: 8, borderRadius: 4, backgroundColor: CultureTokens.coral, borderWidth: 1.5, borderColor: '#0B0B14' },
+  iconButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backgroundSecondary, borderRadius: 20, borderWidth: 1, borderColor: colors.borderLight },
+  notifDot: { position: 'absolute', top: 10, right: 10, width: 8, height: 8, borderRadius: 4, backgroundColor: CultureTokens.coral, borderWidth: 1.5, borderColor: colors.background },
   
   locationPickerRow: { paddingHorizontal: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 16 },
-  heroGreetingMobile: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.6)', marginBottom: 10, marginRight: 2 },
+  heroGreetingMobile: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: colors.textSecondary, marginBottom: 10, marginRight: 2 },
   
   heroSectionDesktop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, paddingVertical: 18, paddingHorizontal: 20 },
   heroDesktopLeft: { flexDirection: 'column' },
-  heroSubtitleDesktop: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.6)', letterSpacing: 0.2, marginBottom: 4 },
-  heroTitleDesktop: { fontSize: 28, fontFamily: 'Poppins_700Bold', lineHeight: 34, letterSpacing: -0.5, color: '#FFFFFF' },
+  heroSubtitleDesktop: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: colors.textSecondary, letterSpacing: 0.2, marginBottom: 4 },
+  heroTitleDesktop: { fontSize: 28, fontFamily: 'Poppins_700Bold', lineHeight: 34, letterSpacing: -0.5, color: colors.text },
 
   carouselContainer: { marginBottom: 36 },
-  heroCard: { height: 440, borderRadius: 32, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.02)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  heroCardBadge: { position: 'absolute', top: 18, left: 18, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
+  heroCard: { height: 440, borderRadius: 32, overflow: 'hidden', backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight },
+  heroCardBadge: { position: 'absolute', top: 18, left: 18, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: colors.borderLight },
   heroCardBadgeText: { fontSize: 12, fontFamily: 'Poppins_700Bold', color: '#FFF', letterSpacing: 1.2 },
   heroCardContent: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 26, paddingTop: 80 },
   heroCardPrice: { alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, marginBottom: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 6 },
   heroCardPriceText: { fontSize: 12, fontFamily: 'Poppins_700Bold', color: '#1C1C1E', letterSpacing: 0.5 },
   heroCardDate: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.saffron, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 8 },
-  heroCardTitle: { fontSize: 30, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', lineHeight: 36, marginBottom: 14, letterSpacing: -0.5 },
+  heroCardTitle: { fontSize: 30, fontFamily: 'Poppins_700Bold', color: colors.text, lineHeight: 36, marginBottom: 14, letterSpacing: -0.5 },
   heroCardMeta: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   heroCardLocation: { fontSize: 15, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.85)', flex: 1 },
 
-  landBanner: { borderRadius: 20, padding: 18, borderLeftWidth: 4, borderLeftColor: '#D4A574', marginHorizontal: 20, marginBottom: 24, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+  landBanner: { borderRadius: 20, padding: 18, borderLeftWidth: 4, borderLeftColor: '#D4A574', marginHorizontal: 20, marginBottom: 24, overflow: 'hidden', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight },
   landBannerContent: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   landBannerTitle: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: '#D4A574' },
-  landBannerSub: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.5)', marginTop: 6, marginLeft: 26 },
+  landBannerSub: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: colors.textSecondary, marginTop: 6, marginLeft: 26 },
 
-  civicCard: { marginHorizontal: 20, marginBottom: 32, padding: 18, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.03)' },
+  civicCard: { marginHorizontal: 20, marginBottom: 32, padding: 18, borderRadius: 20, borderWidth: 1, borderColor: colors.borderLight, backgroundColor: colors.surface },
   civicCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  civicCardTitle: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
-  civicCardSub: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.5)', marginTop: 8 },
+  civicCardTitle: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.text },
+  civicCardSub: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: colors.textSecondary, marginTop: 8 },
 
   quickChipRow: { marginBottom: 24, paddingVertical: 4 },
   quickChipScroll: { paddingHorizontal: 20, gap: 10 },
@@ -722,18 +728,18 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   sectionPad: { paddingHorizontal: 20, marginBottom: 16 },
   scrollRail: { paddingHorizontal: 20, gap: 14 },
 
-  activityTile: { width: 250, borderRadius: 24, padding: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.03)', gap: 10 },
+  activityTile: { width: 250, borderRadius: 24, padding: 20, borderWidth: 1, borderColor: colors.borderLight, backgroundColor: colors.surface, gap: 10 },
   activityCategory: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.saffron, textTransform: 'uppercase', letterSpacing: 0.5 },
-  activityName: { fontSize: 17, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', lineHeight: 22 },
-  activityDescription: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.6)', lineHeight: 20, minHeight: 40 },
-  activityMeta: { fontSize: 12, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.4)', marginTop: 4 },
+  activityName: { fontSize: 17, fontFamily: 'Poppins_700Bold', color: colors.text, lineHeight: 22 },
+  activityDescription: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: colors.textSecondary, lineHeight: 20, minHeight: 40 },
+  activityMeta: { fontSize: 12, fontFamily: 'Poppins_500Medium', color: colors.textTertiary, marginTop: 4 },
 
   loadingWrap: { alignItems: 'center', paddingVertical: 60, gap: 16 },
-  loadingText: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.6)' },
+  loadingText: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
 
-  emptyStateCard: { marginHorizontal: 20, padding: 36, borderRadius: 24, borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(255,255,255,0.2)', backgroundColor: 'rgba(255,255,255,0.02)', alignItems: 'center', gap: 12, marginBottom: 40 },
-  emptyStateTitle: { fontSize: 18, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF', textAlign: 'center' },
-  emptyStateSub: { fontSize: 14, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.5)', textAlign: 'center' },
+  emptyStateCard: { marginHorizontal: 20, padding: 36, borderRadius: 24, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.borderLight, backgroundColor: colors.backgroundSecondary, alignItems: 'center', gap: 12, marginBottom: 40 },
+  emptyStateTitle: { fontSize: 18, fontFamily: 'Poppins_600SemiBold', color: colors.text, textAlign: 'center' },
+  emptyStateSub: { fontSize: 14, fontFamily: 'Poppins_400Regular', color: colors.textSecondary, textAlign: 'center' },
 
   cityGridRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingHorizontal: 20 },
   

@@ -190,7 +190,7 @@ function RootLayoutNav() {
         headerShadowVisible: false,
         // Empty string removes the "Back" label next to the iOS chevron
         headerBackTitle: "",
-        animation: Platform.OS === "ios" ? "default" : "slide_from_right",
+        animation: Platform.OS === "web" ? "fade" : Platform.OS === "ios" ? "default" : "slide_from_right",
       }}
     >
       <Stack.Screen name="landing" />

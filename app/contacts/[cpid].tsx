@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { goBackOrReplace } from '@/lib/navigation';
+import { useColors } from '@/hooks/useColors';
 import { CultureTokens } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
 import { useContacts } from '@/contexts/ContactsContext';
@@ -21,14 +22,14 @@ import * as FileSystem from 'expo-file-system/legacy';
 
 // ─── Tier config ─────────────────────────────────────────────────────────────
 
-const TIER_DISPLAY: Record<string, { label: string; color: string; icon: string }> = {
-  free: { label: 'Standard', color: 'rgba(255,255,255,0.6)', icon: 'shield-outline' },
+const getTierDisplay = (colors: any): Record<string, { label: string; color: string; icon: string }> => ({
+  free: { label: 'Standard', color: colors.textSecondary, icon: 'shield-outline' },
   plus: { label: 'Plus', color: CultureTokens.indigo, icon: 'star' },
   premium: { label: 'Premium', color: CultureTokens.gold, icon: 'diamond' },
   elite: { label: 'Elite', color: '#8E44AD', icon: 'trophy' },
   vip: { label: 'VIP', color: CultureTokens.saffron, icon: 'ribbon' },
   pro: { label: 'Pro', color: CultureTokens.teal, icon: 'briefcase' },
-};
+});
 
 // ─── vCard builder ────────────────────────────────────────────────────────────
 
@@ -120,7 +121,7 @@ function InfoRow({
   icon,
   label,
   value,
-  color = '#FFFFFF',
+  color,
   onPress,
   badge,
 }: {
@@ -131,28 +132,32 @@ function InfoRow({
   onPress?: () => void;
   badge?: string;
 }) {
+  const colors = useColors();
+  const rowStyles = getRowStyles(colors);
+  const finalColor = color || colors.text;
+
   const content = (
     <View style={rowStyles.container}>
-      <View style={[rowStyles.iconWrap, { backgroundColor: color === '#FFFFFF' ? 'rgba(255,255,255,0.05)' : color + '15' }]}>
-        <Ionicons name={icon as any} size={18} color={color} />
+      <View style={[rowStyles.iconWrap, { backgroundColor: finalColor === colors.text ? colors.backgroundSecondary : finalColor + '15' }]}>
+        <Ionicons name={icon as any} size={18} color={finalColor} />
       </View>
       <View style={rowStyles.textWrap}>
         <Text style={rowStyles.label}>{label}</Text>
-        <Text style={[rowStyles.value, onPress && { color }]} numberOfLines={1}>{value}</Text>
+        <Text style={[rowStyles.value, onPress && { color: finalColor }]} numberOfLines={1}>{value}</Text>
       </View>
       {badge && (
         <View style={rowStyles.badge}>
           <Text style={rowStyles.badgeText}>{badge}</Text>
         </View>
       )}
-      {onPress && <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.4)" />}
+      {onPress && <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />}
     </View>
   );
 
   return onPress ? <Pressable onPress={onPress}>{content}</Pressable> : content;
 }
 
-const rowStyles = StyleSheet.create({
+const getRowStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -171,14 +176,14 @@ const rowStyles = StyleSheet.create({
   label: {
     fontSize: 11,
     fontFamily: 'Poppins_500Medium',
-    color: 'rgba(255,255,255,0.5)',
+    color: colors.textTertiary,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
   value: {
     fontSize: 15,
     fontFamily: 'Poppins_500Medium',
-    color: '#FFFFFF',
+    color: colors.text,
     marginTop: 2,
   },
   badge: {
@@ -197,6 +202,8 @@ const rowStyles = StyleSheet.create({
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
 export default function ContactDetailScreen() {
+  const colors = useColors();
+  const styles = getStyles(colors);
   const { cpid } = useLocalSearchParams();
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
@@ -281,7 +288,7 @@ export default function ContactDetailScreen() {
   if (!contact) {
     return (
       <View style={[styles.container, { paddingTop: topInset, justifyContent: 'center', alignItems: 'center' }]}>
-        <Ionicons name="person-outline" size={48} color="rgba(255,255,255,0.4)" />
+        <Ionicons name="person-outline" size={48} color={colors.textTertiary} />
         <Text style={styles.notFoundText}>Contact not found</Text>
         <Pressable style={styles.backLink} onPress={() => goBackOrReplace('/(tabs)')}>
           <Text style={styles.backLinkText}>Go Back</Text>
@@ -290,6 +297,7 @@ export default function ContactDetailScreen() {
     );
   }
 
+  const TIER_DISPLAY = getTierDisplay(colors);
   const tier = TIER_DISPLAY[contact.tier || 'free'] || TIER_DISPLAY.free;
   const initials = (contact.name || contact.cpid)
     .split(' ')
@@ -309,7 +317,7 @@ export default function ContactDetailScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => goBackOrReplace('/(tabs)')} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
         </Pressable>
         <Text style={styles.headerTitle}>Contact Details</Text>
         <Pressable style={styles.headerShareBtn} onPress={handleShare}>
@@ -410,7 +418,7 @@ export default function ContactDetailScreen() {
               icon="business"
               label="Organisation"
               value={contact.org}
-              color="rgba(255,255,255,0.8)"
+              color={colors.textSecondary}
             />
           )}
           {contact.org && contact.city && <View style={styles.divider} />}
@@ -430,7 +438,7 @@ export default function ContactDetailScreen() {
             icon="calendar-outline"
             label="Saved on"
             value={savedDate}
-            color="rgba(255,255,255,0.6)"
+            color={colors.textSecondary}
           />
         </View>
 
@@ -466,7 +474,7 @@ export default function ContactDetailScreen() {
                 <Ionicons name="person-outline" size={20} color={CultureTokens.indigo} />
               </View>
               <Text style={styles.actionBtnText}>View Full Profile</Text>
-              <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.4)" />
+              <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
             </Pressable>
           )}
 
@@ -478,7 +486,7 @@ export default function ContactDetailScreen() {
               <Text style={styles.actionBtnText}>Save to Phone Contacts</Text>
               <Text style={styles.actionBtnSub}>Exports as vCard (.vcf)</Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.4)" />
+            <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
           </Pressable>
 
           <Pressable style={styles.actionBtn} onPress={handleShare}>
@@ -486,7 +494,7 @@ export default function ContactDetailScreen() {
               <Ionicons name="share-outline" size={20} color={CultureTokens.saffron} />
             </View>
             <Text style={styles.actionBtnText}>Share Contact</Text>
-            <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.4)" />
+            <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
           </Pressable>
 
           <Pressable style={[styles.actionBtn, styles.actionBtnDanger]} onPress={handleRemove}>
@@ -494,7 +502,7 @@ export default function ContactDetailScreen() {
               <Ionicons name="trash-outline" size={20} color={CultureTokens.error} />
             </View>
             <Text style={[styles.actionBtnText, { color: CultureTokens.error }]}>Remove Contact</Text>
-            <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.4)" />
+            <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
           </Pressable>
         </View>
       </ScrollView>
@@ -502,8 +510,8 @@ export default function ContactDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B0B14' },
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
 
   header: {
     flexDirection: 'row',
@@ -517,13 +525,13 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: colors.backgroundSecondary,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: colors.borderLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+  headerTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: colors.text },
   headerShareBtn: {
     width: 44,
     height: 44,
@@ -535,13 +543,13 @@ const styles = StyleSheet.create({
 
   profileCard: {
     marginHorizontal: 20,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: colors.surface,
     borderRadius: 24,
     paddingHorizontal: 28,
     paddingVertical: 32,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: colors.borderLight,
   },
   avatar: {
     width: 96,
@@ -553,17 +561,17 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   avatarText: { fontSize: 32, fontFamily: 'Poppins_700Bold' },
-  name: { fontSize: 24, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', textAlign: 'center' },
+  name: { fontSize: 24, fontFamily: 'Poppins_700Bold', color: colors.text, textAlign: 'center' },
   username: {
     fontSize: 15,
     fontFamily: 'Poppins_400Regular',
-    color: 'rgba(255,255,255,0.6)',
+    color: colors.textSecondary,
     marginTop: 4,
   },
   orgName: {
     fontSize: 14,
     fontFamily: 'Poppins_500Medium',
-    color: 'rgba(255,255,255,0.5)',
+    color: colors.textTertiary,
     marginTop: 4,
   },
 
@@ -595,7 +603,7 @@ const styles = StyleSheet.create({
     marginTop: 28,
     paddingTop: 24,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.1)',
+    borderTopColor: colors.borderLight,
     width: '100%',
     justifyContent: 'center',
   },
@@ -608,30 +616,30 @@ const styles = StyleSheet.create({
   bioCard: {
     marginHorizontal: 20,
     marginTop: 20,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: colors.surface,
     borderRadius: 20,
     paddingHorizontal: 20,
     paddingVertical: 18,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: colors.borderLight,
   },
   bioText: {
     fontSize: 14,
     fontFamily: 'Poppins_400Regular',
-    color: 'rgba(255,255,255,0.7)',
+    color: colors.textSecondary,
     lineHeight: 24,
   },
 
   infoCard: {
     marginHorizontal: 20,
     marginTop: 20,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: colors.surface,
     borderRadius: 20,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: colors.borderLight,
   },
-  divider: { height: 1, backgroundColor: 'rgba(255,255,255,0.05)', marginLeft: 78 },
+  divider: { height: 1, backgroundColor: colors.backgroundSecondary, marginLeft: 78 },
 
   actionsSection: {
     marginHorizontal: 20,
@@ -643,11 +651,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: colors.surface,
     borderRadius: 18,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: colors.borderLight,
   },
   actionBtnDanger: {
     borderWidth: 1,
@@ -660,18 +668,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  actionBtnText: { flex: 1, fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
+  actionBtnText: { flex: 1, fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: colors.text },
   actionBtnSub: {
     fontSize: 12,
     fontFamily: 'Poppins_400Regular',
-    color: 'rgba(255,255,255,0.5)',
+    color: colors.textTertiary,
     marginTop: 2,
   },
 
   notFoundText: {
     fontSize: 16,
     fontFamily: 'Poppins_500Medium',
-    color: 'rgba(255,255,255,0.6)',
+    color: colors.textSecondary,
     marginTop: 16,
   },
   backLink: {
@@ -681,5 +689,5 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     backgroundColor: CultureTokens.indigo,
   },
-  backLinkText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#0B0B14' },
+  backLinkText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.background },
 });

@@ -7,11 +7,14 @@ import * as Haptics from 'expo-haptics';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { LinearGradient } from 'expo-linear-gradient';
-import { CultureTokens, gradients } from '@/constants/theme';
+import { CultureTokens, gradients, CardTokens, glass, shadows } from '@/constants/theme';
 import { BlurView } from 'expo-blur';
 import { Button } from '@/components/ui/Button';
+import { useColors } from '@/hooks/useColors';
 
 export default function ForgotPasswordScreen() {
+  const colors = useColors();
+  const styles = getStyles(colors);
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === 'web' && width >= 1024;
@@ -44,80 +47,80 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
-    <View style={s.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <LinearGradient
-        colors={gradients.culturepassBrandReversed}
+        colors={gradients.culturepassBrand}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={s.gradientBg}
+        style={styles.gradientBg}
       />
 
       {/* Decorative Orbs */}
       {Platform.OS === 'web' ? (
         <>
-          <View style={[s.orb, { top: -100, right: -50, backgroundColor: CultureTokens.indigo, opacity: 0.5, filter: 'blur(50px)' } as any]} />
-          <View style={[s.orb, { bottom: -50, left: -50, backgroundColor: CultureTokens.saffron, opacity: 0.3, filter: 'blur(50px)' } as any]} />
+          <View style={[styles.orb, { top: -100, right: -50, backgroundColor: CultureTokens.indigo, opacity: 0.5, filter: 'blur(50px)' } as any]} />
+          <View style={[styles.orb, { bottom: -50, left: -50, backgroundColor: CultureTokens.saffron, opacity: 0.3, filter: 'blur(50px)' } as any]} />
         </>
       ) : null}
 
       {isDesktop && (
-        <View style={s.desktopBackRow}>
-          <Pressable onPress={() => router.back()} hitSlop={8} style={[s.desktopBackBtn, { backgroundColor: 'rgba(0,0,0,0.3)' }]}>
-            <Ionicons name="chevron-back" size={18} color="#FFFFFF" />
-            <Text style={s.desktopBackText}>Back to Sign In</Text>
+        <View style={styles.desktopBackRow}>
+          <Pressable onPress={() => router.back()} hitSlop={8} style={[styles.desktopBackBtn, { backgroundColor: glass.overlay.backgroundColor, borderColor: colors.border }]}>
+            <Ionicons name="chevron-back" size={18} color={colors.textInverse} />
+            <Text style={[styles.desktopBackText, { color: colors.textInverse }]}>Back to Sign In</Text>
           </Pressable>
         </View>
       )}
 
       {!isDesktop && (
-        <View style={[s.mobileHeader, { paddingTop: topInset + 12 }]}>
+        <View style={[styles.mobileHeader, { paddingTop: topInset + 12 }]}>
           <Pressable onPress={() => router.back()} hitSlop={12}>
-            <Ionicons name="chevron-back" size={28} color="#FFFFFF" />
+            <Ionicons name="chevron-back" size={28} color={colors.textInverse} />
           </Pressable>
         </View>
       )}
 
       <KeyboardAvoidingView 
-        style={s.keyboardAvoid} 
+        style={styles.keyboardAvoid} 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
       >
         <ScrollView 
           showsVerticalScrollIndicator={false} 
           keyboardShouldPersistTaps="handled" 
           contentContainerStyle={[
-            s.scrollContent,
-            isDesktop && s.scrollContentDesktop,
+            styles.scrollContent,
+            isDesktop && styles.scrollContentDesktop,
             !isDesktop && { paddingTop: 20 }
           ]}
         >
-          <View style={[s.formContainer, isDesktop && s.formContainerDesktop]}>
+          <View style={[styles.formContainer, isDesktop && styles.formContainerDesktop, { borderRadius: CardTokens.radiusLarge }]}>
             {Platform.OS === 'ios' || Platform.OS === 'web' ? (
-              <BlurView intensity={isDesktop ? 60 : 40} tint="dark" style={[StyleSheet.absoluteFill, s.formBlur]} />
+              <BlurView intensity={isDesktop ? 60 : 40} tint="dark" style={[StyleSheet.absoluteFill, styles.formBlur, { borderRadius: CardTokens.radiusLarge, borderColor: colors.borderLight }]} />
             ) : (
-              <View style={[StyleSheet.absoluteFill, s.formBlur, { backgroundColor: 'rgba(11, 11, 20, 0.85)' }]} />
+              <View style={[StyleSheet.absoluteFill, styles.formBlur, { backgroundColor: colors.surface, borderRadius: CardTokens.radiusLarge, borderColor: colors.borderLight }]} />
             )}
 
-            <View style={s.formContent}>
+            <View style={[styles.formContent, { padding: CardTokens.paddingLarge * 2 }]}>
               {!sent ? (
                 <>
-                  <View style={s.headerBlock}>
-                    <View style={[s.iconWrapper, { backgroundColor: 'rgba(255,255,255,0.1)' }]}>
-                      <Ionicons name="lock-open-outline" size={28} color="#FFFFFF" />
+                  <View style={styles.headerBlock}>
+                    <View style={[styles.iconWrapper, { backgroundColor: colors.overlay, borderColor: colors.borderLight }]}>
+                      <Ionicons name="lock-open-outline" size={28} color={colors.textInverse} />
                     </View>
-                    <Text style={s.title}>Reset Password</Text>
-                    <Text style={s.subtitle}>
+                    <Text style={[styles.title, { color: colors.textInverse }]}>Reset Password</Text>
+                    <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
                       Enter the email address associated with your account. We'll send you a link to reset your password.
                     </Text>
                   </View>
 
-                  <View style={s.block}>
-                    <Text style={s.label}>Email Address</Text>
-                    <View style={s.inputWrap}>
-                      <Ionicons name="mail-outline" size={20} color="rgba(255,255,255,0.5)" />
+                  <View style={styles.block}>
+                    <Text style={[styles.label, { color: colors.textInverse }]}>Email Address</Text>
+                    <View style={[styles.inputWrap, { borderColor: colors.borderLight, backgroundColor: colors.overlay }]}>
+                      <Ionicons name="mail-outline" size={20} color={colors.textSecondary} />
                       <TextInput
-                        style={s.input}
+                        style={[styles.input, { color: colors.textInverse }]}
                         placeholder="you@example.com"
-                        placeholderTextColor="rgba(255,255,255,0.4)"
+                        placeholderTextColor={colors.textSecondary}
                         value={email}
                         onChangeText={setEmail}
                         autoCapitalize="none"
@@ -126,7 +129,7 @@ export default function ForgotPasswordScreen() {
                     </View>
                   </View>
 
-                  <View style={s.spacer} />
+                  <View style={styles.spacer} />
 
                   <Button
                     variant="primary"
@@ -136,24 +139,24 @@ export default function ForgotPasswordScreen() {
                     loading={loading}
                     disabled={!isValid || loading}
                     onPress={handleSubmit}
-                    style={[s.submitBtn, { backgroundColor: CultureTokens.saffron }]}
+                    style={[styles.submitBtn, shadows.medium, { backgroundColor: CultureTokens.saffron }]}
                   >
                     Send Reset Link
                   </Button>
 
                   {!isDesktop && (
-                    <Pressable style={s.backRow} onPress={() => router.back()}>
-                      <Text style={[s.backText, { color: CultureTokens.saffron }]}>Back to Sign In</Text>
+                    <Pressable style={styles.backRow} onPress={() => router.back()} hitSlop={12}>
+                      <Text style={[styles.backText, { color: CultureTokens.saffron }]}>Back to Sign In</Text>
                     </Pressable>
                   )}
                 </>
               ) : (
-                <View style={s.successContainer}>
+                <View style={[styles.successContainer, { paddingBottom: 10, paddingTop: 10 }]}>
                   <Ionicons name="checkmark-circle" size={72} color={CultureTokens.success} style={{ marginBottom: 20 }} />
-                  <Text style={s.successTitle}>Check Your Email</Text>
-                  <Text style={s.successSub}>We've sent a password reset link to:</Text>
-                  <Text style={s.emailDisplay}>{email}</Text>
-                  <Text style={s.successHint}>
+                  <Text style={[styles.successTitle, { color: colors.textInverse }]}>Check Your Email</Text>
+                  <Text style={[styles.successSub, { color: colors.textSecondary }]}>We've sent a password reset link to:</Text>
+                  <Text style={styles.emailDisplay}>{email}</Text>
+                  <Text style={[styles.successHint, { color: colors.textSecondary }]}>
                     If you don't see it, check your spam folder. The link expires in 24 hours.
                   </Text>
 
@@ -163,13 +166,13 @@ export default function ForgotPasswordScreen() {
                     fullWidth
                     leftIcon="chevron-back"
                     onPress={() => router.replace('/(onboarding)/login')}
-                    style={[s.submitBtn, { backgroundColor: CultureTokens.saffron, marginTop: 24 }]}
+                    style={[styles.submitBtn, shadows.medium, { backgroundColor: CultureTokens.saffron, marginTop: 24 }]}
                   >
                     Back to Sign In
                   </Button>
 
-                  <Pressable style={s.backRow} onPress={() => Alert.alert('Email Resent', 'A new reset link has been sent to your email.')}>
-                    <Text style={s.backTextSecondary}>
+                  <Pressable style={styles.backRow} onPress={() => Alert.alert('Email Resent', 'A new reset link has been sent to your email.')} hitSlop={12}>
+                    <Text style={[styles.backTextSecondary, { color: colors.textSecondary }]}>
                       Didn't receive it?{' '}
                       <Text style={{ color: CultureTokens.saffron, fontFamily: 'Poppins_700Bold' }}>Resend</Text>
                     </Text>
@@ -184,42 +187,42 @@ export default function ForgotPasswordScreen() {
   );
 }
 
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B0B14' },
-  gradientBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.8 },
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+  container: { flex: 1 },
+  gradientBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.85 },
   orb: { position: 'absolute', width: 300, height: 300, borderRadius: 150 },
   keyboardAvoid: { flex: 1 },
   mobileHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 12 },
   desktopBackRow: { position: 'absolute', top: 32, left: 40, zIndex: 10 },
-  desktopBackBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 24, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  desktopBackText: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: '#FFFFFF' },
+  desktopBackBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 24, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1 },
+  desktopBackText: { fontSize: 14, fontFamily: 'Poppins_500Medium' },
   scrollContent: { flexGrow: 1, paddingHorizontal: 20, paddingBottom: 60, justifyContent: 'center' },
   scrollContentDesktop: { paddingVertical: 60 },
-  formContainer: { width: '100%', maxWidth: 460, alignSelf: 'center', borderRadius: 32, overflow: 'hidden' },
+  formContainer: { width: '100%', maxWidth: 460, alignSelf: 'center', overflow: 'hidden' },
   formContainerDesktop: { maxWidth: 520 },
-  formBlur: { borderRadius: 32, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  formContent: { padding: 32, paddingTop: 40 },
+  formBlur: { borderWidth: 1 },
+  formContent: { paddingTop: 40 },
   
   headerBlock: { alignItems: 'center', marginBottom: 32 },
-  iconWrapper: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  title: { fontSize: 32, fontFamily: 'Poppins_700Bold', textAlign: 'center', marginBottom: 8, letterSpacing: -0.5, color: '#FFFFFF' },
-  subtitle: { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', color: 'rgba(255,255,255,0.7)', lineHeight: 22 },
+  iconWrapper: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: 16, borderWidth: 1 },
+  title: { fontSize: 32, fontFamily: 'Poppins_700Bold', textAlign: 'center', marginBottom: 8, letterSpacing: -0.5 },
+  subtitle: { fontSize: 15, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22 },
   
   block: { marginBottom: 16 },
-  label: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', marginBottom: 10, color: '#FFFFFF' },
-  inputWrap: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(0,0,0,0.2)' },
-  input: { flex: 1, fontSize: 15, fontFamily: 'Poppins_400Regular', color: '#FFFFFF' },
+  label: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', marginBottom: 10 },
+  inputWrap: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 14, borderWidth: 1 },
+  input: { flex: 1, fontSize: 15, fontFamily: 'Poppins_400Regular' },
   
   spacer: { height: 16 },
-  submitBtn: { height: 56, borderRadius: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 16, elevation: 6 },
+  submitBtn: { height: 56, borderRadius: 16 },
   
   backRow: { alignItems: 'center', paddingVertical: 16, marginTop: 12 },
   backText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold' },
-  backTextSecondary: { fontSize: 14, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.6)' },
+  backTextSecondary: { fontSize: 14, fontFamily: 'Poppins_400Regular' },
 
-  successContainer: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 10, paddingBottom: 10 },
-  successTitle: { fontSize: 28, fontFamily: 'Poppins_700Bold', marginBottom: 8, color: '#FFFFFF', textAlign: 'center' },
-  successSub: { fontSize: 16, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.7)', textAlign: 'center' },
+  successContainer: { flexGrow: 1, alignItems: 'center', justifyContent: 'center' },
+  successTitle: { fontSize: 28, fontFamily: 'Poppins_700Bold', marginBottom: 8, textAlign: 'center' },
+  successSub: { fontSize: 16, fontFamily: 'Poppins_400Regular', textAlign: 'center' },
   emailDisplay: { fontSize: 18, fontFamily: 'Poppins_700Bold', marginTop: 8, marginBottom: 16, color: CultureTokens.saffron, textAlign: 'center' },
-  successHint: { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, color: 'rgba(255,255,255,0.5)', paddingHorizontal: 10 },
+  successHint: { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, paddingHorizontal: 10 },
 });

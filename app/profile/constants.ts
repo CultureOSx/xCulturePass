@@ -1,3 +1,4 @@
+import { useColors } from '@/hooks/useColors';
 import { Ionicons } from '@expo/vector-icons';
 
 export const CP = {

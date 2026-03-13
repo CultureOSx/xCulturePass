@@ -1,3 +1,4 @@
+import { useColors } from '@/hooks/useColors';
 import { View, Text, Pressable, StyleSheet, ScrollView, Platform, Alert, Linking, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,6 +22,8 @@ interface SettingItem {
 interface SettingSection { title: string; items: SettingItem[] }
 
 export default function AccountSettingsScreen() {
+  const colors = useColors();
+  const s = getStyles(colors);
   const insets  = useSafeAreaInsets();
   const webTop  = 0;
   const { width } = useWindowDimensions();
@@ -84,7 +87,7 @@ export default function AccountSettingsScreen() {
         { icon: 'star-outline',    label: 'My Membership',       sub: `${tierLabel} Plan · Tap to upgrade`, color: CultureTokens.gold,    route: '/membership/upgrade' },
         { icon: 'wallet-outline',  label: 'Wallet & Balance',    sub: 'Top up, view cashback',              color: CultureTokens.teal, route: '/payment/wallet' },
         { icon: 'card-outline',    label: 'Payment Methods',     sub: 'Cards, bank accounts',               color: CultureTokens.indigo, route: '/payment/methods' },
-        { icon: 'receipt-outline', label: 'Transaction History', sub: 'Purchases and payments',             color: 'rgba(255,255,255,0.6)', route: '/payment/transactions' },
+        { icon: 'receipt-outline', label: 'Transaction History', sub: 'Purchases and payments',             color: colors.textSecondary, route: '/payment/transactions' },
       ],
     },
     {
@@ -135,7 +138,7 @@ export default function AccountSettingsScreen() {
       title: 'About',
       items: [
         { icon: 'information-circle-outline', label: 'About CulturePass', color: CultureTokens.indigo,      route: '/settings/about' },
-        { icon: 'phone-portrait-outline',     label: 'App Version',       color: 'rgba(255,255,255,0.6)', rightText: '1.0.0 (1)' },
+        { icon: 'phone-portrait-outline',     label: 'App Version',       color: colors.textSecondary, rightText: '1.0.0 (1)' },
       ],
     },
   ];
@@ -161,7 +164,7 @@ export default function AccountSettingsScreen() {
       title: 'About',
       items: [
         { icon: 'information-circle-outline', label: 'About CulturePass', color: CultureTokens.indigo,       route: '/settings/about' },
-        { icon: 'phone-portrait-outline',     label: 'App Version',       color: 'rgba(255,255,255,0.6)', rightText: '1.0.0 (1)' },
+        { icon: 'phone-portrait-outline',     label: 'App Version',       color: colors.textSecondary, rightText: '1.0.0 (1)' },
       ],
     },
   ];
@@ -181,7 +184,7 @@ export default function AccountSettingsScreen() {
           style={({pressed}) => [s.backBtn, pressed && { transform: [{ scale: 0.95 }] }]} 
           onPress={() => router.back()}
         >
-          <Ionicons name="chevron-back" size={22} color="#FFFFFF" />
+          <Ionicons name="chevron-back" size={22} color={colors.text} />
         </Pressable>
         <Text style={s.headerTitle}>Account & Settings</Text>
         <View style={{ width: 44 }} />
@@ -194,11 +197,11 @@ export default function AccountSettingsScreen() {
         {/* Profile card or guest CTA */}
         {isAuthenticated && user ? (
           <Pressable 
-            style={({pressed}) => [s.profileCard, isDesktopWeb && s.webSection, pressed && { transform: [{ scale: 0.98 }] }]} 
-            onPress={() => navigate('/profile/edit')}
-          >
+          style={({pressed}) => [s.profileCard, isDesktopWeb && s.webSection, pressed && { transform: [{ scale: 0.98 }] }]} 
+          onPress={() => navigate('/profile/edit')}
+        >
             <LinearGradient colors={['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.01)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFillObject} />
-            <View style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: 60, backgroundColor: 'rgba(255,255,255,0.03)' }} />
+            <View style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: 60, backgroundColor: colors.surface }} />
             <View style={s.profileRow}>
               <View style={s.avatarWrap}>
                 {user.avatarUrl ? (
@@ -219,20 +222,20 @@ export default function AccountSettingsScreen() {
                 </View>
               </View>
               <View style={s.editBtn}>
-                <Ionicons name="create-outline" size={16} color="#FFFFFF" />
+                <Ionicons name="create-outline" size={16} color={colors.text} />
                 <Text style={s.editBtnText}>Edit</Text>
               </View>
             </View>
             {(user.city || user.country) && (
               <View style={s.locationRow}>
-                <Ionicons name="location-outline" size={13} color="rgba(255,255,255,0.6)" />
+                <Ionicons name="location-outline" size={13} color={colors.textSecondary} />
                 <Text style={s.locationText}>{[user.city, user.country].filter(Boolean).join(', ')}</Text>
               </View>
             )}
           </Pressable>
         ) : (
           <View style={[s.guestCard, isDesktopWeb && s.webSection]}> 
-            <Ionicons name="person-circle-outline" size={64} color="rgba(255,255,255,0.4)" style={{ marginBottom: 12 }} />
+            <Ionicons name="person-circle-outline" size={64} color={colors.textTertiary} style={{ marginBottom: 12 }} />
             <Text style={s.guestTitle}>Welcome to CulturePass</Text>
             <Text style={s.guestSub}>
               Sign in to access your profile, tickets, wallet, and exclusive cultural events.
@@ -241,7 +244,7 @@ export default function AccountSettingsScreen() {
               style={({pressed}) => [s.guestSignInBtn, pressed && { opacity: 0.8 }]} 
               onPress={() => navigate('/(onboarding)/login')}
             >
-              <Ionicons name="log-in-outline" size={20} color="#FFFFFF" />
+              <Ionicons name="log-in-outline" size={20} color={colors.text} />
               <Text style={s.guestSignInText}>Sign In</Text>
             </Pressable>
             <Pressable 
@@ -264,7 +267,7 @@ export default function AccountSettingsScreen() {
               {section.items.map((item, ii) => (
                 <View key={item.label}>
                   <Pressable
-                    style={({ pressed }) => [s.settingRow, pressed && { backgroundColor: 'rgba(255,255,255,0.02)' }]}
+                    style={({ pressed }) => [s.settingRow, pressed && { backgroundColor: colors.surface }]}
                     onPress={() => { if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); if (item.route) navigate(item.route); else item.action?.(); }}
                   >
                     <View style={[s.settingIcon, { backgroundColor: item.color + '15' }]}>
@@ -277,7 +280,7 @@ export default function AccountSettingsScreen() {
                     {item.rightText ? (
                       <Text style={s.settingRightText}>{item.rightText}</Text>
                     ) : (item.route ?? item.action) ? (
-                      <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.4)" />
+                      <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
                     ) : null}
                   </Pressable>
                   {ii < section.items.length - 1 && <View style={s.divider} />}
@@ -309,47 +312,47 @@ export default function AccountSettingsScreen() {
   );
 }
 
-const s = StyleSheet.create({
-  container:    { flex: 1, backgroundColor: '#0B0B14' },
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+  container:    { flex: 1, backgroundColor: colors.background },
   header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: LayoutRules.screenHorizontalPadding, paddingVertical: LayoutRules.iconTextGap, zIndex: 10 },
-  backBtn:      { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  headerTitle:  { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+  backBtn:      { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight },
+  headerTitle:  { fontSize: 18, fontFamily: 'Poppins_700Bold', color: colors.text },
 
-  profileCard:  { marginHorizontal: LayoutRules.screenHorizontalPadding, marginBottom: LayoutRules.betweenCards, borderRadius: 20, padding: 20, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  profileCard:  { marginHorizontal: LayoutRules.screenHorizontalPadding, marginBottom: LayoutRules.betweenCards, borderRadius: 20, padding: 20, overflow: 'hidden', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight },
   profileRow:   { flexDirection: 'row', alignItems: 'center', gap: LayoutRules.iconTextGap },
   avatarWrap:   { position: 'relative' },
-  avatar:       { width: 64, height: 64, borderRadius: 32, borderWidth: 2, borderColor: 'rgba(255,255,255,0.2)' },
-  avatarFallback:{ width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.1)' },
-  avatarLetter: { fontSize: 26, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+  avatar:       { width: 64, height: 64, borderRadius: 32, borderWidth: 2, borderColor: colors.borderLight },
+  avatarFallback:{ width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.borderLight },
+  avatarLetter: { fontSize: 26, fontFamily: 'Poppins_700Bold', color: colors.text },
   tierDot:      { position: 'absolute', bottom: 1, right: 1, width: 14, height: 14, borderRadius: 7, borderWidth: 2 },
-  profileName:  { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
-  profileEmail: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.6)' },
+  profileName:  { fontSize: 18, fontFamily: 'Poppins_700Bold', color: colors.text },
+  profileEmail: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: colors.textSecondary },
   tierBadge:    { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, alignSelf: 'flex-start', paddingHorizontal: Spacing.sm, paddingVertical: 4, borderRadius: LayoutRules.borderRadius, borderWidth: 1 },
   tierText:     { fontSize: 11, fontFamily: 'Poppins_600SemiBold' },
-  editBtn:      { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 12, paddingHorizontal: 12, height: 36, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  editBtnText:  { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
+  editBtn:      { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 12, paddingHorizontal: 12, height: 36, borderWidth: 1, borderColor: colors.borderLight },
+  editBtnText:  { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: colors.text },
   locationRow:  { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 },
-  locationText: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.5)' },
+  locationText: { fontSize: 13, fontFamily: 'Poppins_400Regular', color: colors.textTertiary },
 
-  guestCard:    { marginHorizontal: LayoutRules.screenHorizontalPadding, marginBottom: LayoutRules.betweenCards, borderRadius: 20, padding: 24, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  guestTitle:   { fontSize: 20, fontFamily: 'Poppins_700Bold', marginBottom: 8, textAlign: 'center', color: '#FFFFFF' },
-  guestSub:     { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, marginBottom: 24, color: 'rgba(255,255,255,0.6)' },
+  guestCard:    { marginHorizontal: LayoutRules.screenHorizontalPadding, marginBottom: LayoutRules.betweenCards, borderRadius: 20, padding: 24, alignItems: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight },
+  guestTitle:   { fontSize: 20, fontFamily: 'Poppins_700Bold', marginBottom: 8, textAlign: 'center', color: colors.text },
+  guestSub:     { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, marginBottom: 24, color: colors.textSecondary },
   guestSignInBtn:{ flexDirection: 'row', alignItems: 'center', gap: 8, justifyContent: 'center', height: 48, borderRadius: 14, width: '100%', marginBottom: 12, backgroundColor: CultureTokens.indigo },
-  guestSignInText:{ fontSize: 15, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+  guestSignInText:{ fontSize: 15, fontFamily: 'Poppins_700Bold', color: colors.text },
   guestSignUpBtn:{ paddingVertical: Spacing.xs },
-  guestSignUpText:{ fontSize: 14, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.6)' },
+  guestSignUpText:{ fontSize: 14, fontFamily: 'Poppins_400Regular', color: colors.textSecondary },
 
   section:      { paddingHorizontal: LayoutRules.screenHorizontalPadding, marginBottom: 24 },
   sectionTitle: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10, marginLeft: 4, color: 'rgba(255,255,255,0.4)' },
-  sectionCard:  { borderRadius: 20, borderWidth: 1, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.1)' },
+  sectionCard:  { borderRadius: 20, borderWidth: 1, overflow: 'hidden', backgroundColor: colors.surface, borderColor: colors.borderLight },
   settingRow:   { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, gap: 14 },
   settingIcon:  { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  settingLabel: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
-  settingSub:   { fontSize: 13, fontFamily: 'Poppins_400Regular', marginTop: 2, color: 'rgba(255,255,255,0.5)' },
-  settingRightText:{ fontSize: 13, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.5)' },
-  divider:      { height: 1, marginLeft: 70, backgroundColor: 'rgba(255,255,255,0.05)' },
+  settingLabel: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.text },
+  settingSub:   { fontSize: 13, fontFamily: 'Poppins_400Regular', marginTop: 2, color: colors.textTertiary },
+  settingRightText:{ fontSize: 13, fontFamily: 'Poppins_400Regular', color: colors.textTertiary },
+  divider:      { height: 1, marginLeft: 70, backgroundColor: colors.backgroundSecondary },
 
-  signOutBtn:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 16, height: 52, borderWidth: 1, backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255, 94, 91, 0.3)' },
+  signOutBtn:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 16, height: 52, borderWidth: 1, backgroundColor: colors.surface, borderColor: 'rgba(255, 94, 91, 0.3)' },
   signOutText:  { fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: CultureTokens.coral },
   footer:       { textAlign: 'center', fontSize: 12, fontFamily: 'Poppins_400Regular', marginTop: 10, marginBottom: 40, lineHeight: 20, color: 'rgba(255,255,255,0.3)' },
   webSection:   { maxWidth: 800, width: '100%', alignSelf: 'center' },

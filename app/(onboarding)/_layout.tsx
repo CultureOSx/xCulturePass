@@ -4,8 +4,8 @@ import { ActivityIndicator, View } from "react-native";
 import { useColors } from "@/hooks/useColors";
 
 export default function OnboardingLayout() {
-  const { state, isLoading } = useOnboarding();
   const colors = useColors();
+  const { state, isLoading } = useOnboarding();
 
   if (isLoading) {
     return (

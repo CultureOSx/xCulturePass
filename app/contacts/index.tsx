@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useColors } from '@/hooks/useColors';
 import { CultureTokens } from '@/constants/theme';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -34,6 +35,9 @@ function timeAgo(dateStr: string): string {
 }
 
 function ContactItem({ contact, onPress, onRemove }: { contact: SavedContact; onPress: () => void; onRemove: () => void }) {
+  const colors = useColors();
+  const styles = getStyles(colors);
+
   const initials = (contact.name || contact.cpid)
     .split(' ')
     .map(w => w[0])
@@ -41,7 +45,7 @@ function ContactItem({ contact, onPress, onRemove }: { contact: SavedContact; on
     .slice(0, 2)
     .toUpperCase();
 
-  const tierColor = TIER_COLORS[contact.tier || 'free'] || 'rgba(255,255,255,0.6)';
+  const tierColor = TIER_COLORS[contact.tier || 'free'] || colors.textSecondary;
 
   return (
     <Pressable style={styles.contactItem} onPress={onPress}>
@@ -72,12 +76,14 @@ function ContactItem({ contact, onPress, onRemove }: { contact: SavedContact; on
       >
         <Ionicons name="trash-outline" size={16} color={CultureTokens.coral} />
       </Pressable>
-      <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.4)" />
+      <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
     </Pressable>
   );
 }
 
 export default function ContactsScreen() {
+  const colors = useColors();
+  const styles = getStyles(colors);
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? 0 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
@@ -131,7 +137,7 @@ export default function ContactsScreen() {
       <View style={[styles.container, { paddingTop: topInset }]}>
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+            <Ionicons name="chevron-back" size={24} color={colors.text} />
           </Pressable>
           <Text style={styles.headerTitle}>Contacts</Text>
           <View style={styles.headerRight}>
@@ -159,7 +165,7 @@ export default function ContactsScreen() {
             style={styles.scanCta}
             onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/scanner'); }}
           >
-            <Ionicons name="camera-outline" size={18} color="#0B0B14" />
+            <Ionicons name="camera-outline" size={18} color={colors.background} />
             <Text style={styles.scanCtaText}>Scan Card</Text>
           </Pressable>
         </View>
@@ -167,7 +173,7 @@ export default function ContactsScreen() {
         {contacts.length === 0 ? (
           <View style={styles.emptyState}>
             <View style={styles.emptyIcon}>
-              <Ionicons name="people-outline" size={48} color="rgba(255,255,255,0.4)" />
+              <Ionicons name="people-outline" size={48} color={colors.textTertiary} />
             </View>
             <Text style={styles.emptyTitle}>No saved contacts</Text>
             <Text style={styles.emptySub}>Scan CulturePass QR codes to save contacts and keep a copy of their CPID.</Text>
@@ -175,7 +181,7 @@ export default function ContactsScreen() {
               style={styles.emptyBtn}
               onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/scanner'); }}
             >
-              <Ionicons name="scan-outline" size={18} color="#0B0B14" />
+              <Ionicons name="scan-outline" size={18} color={colors.background} />
               <Text style={styles.emptyBtnText}>Open Scanner</Text>
             </Pressable>
           </View>
@@ -195,8 +201,8 @@ export default function ContactsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B0B14' },
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -209,13 +215,13 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: colors.backgroundSecondary,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: colors.borderLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+  headerTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: colors.text },
   headerRight: { flexDirection: 'row', gap: 10 },
   headerAction: {
     width: 44,
@@ -231,15 +237,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginHorizontal: 20,
     marginBottom: 20,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: colors.borderLight,
     borderRadius: 20,
     padding: 16,
   },
   statItem: { alignItems: 'center', flex: 1 },
-  statNumber: { fontSize: 28, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
-  statLabel: { fontSize: 12, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.6)' },
+  statNumber: { fontSize: 28, fontFamily: 'Poppins_700Bold', color: colors.text },
+  statLabel: { fontSize: 12, fontFamily: 'Poppins_400Regular', color: colors.textSecondary },
   statDivider: { width: 1, height: 44, backgroundColor: 'rgba(255,255,255,0.1)', marginHorizontal: 20 },
   scanCta: {
     flex: 1.2,
@@ -251,7 +257,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingVertical: 14,
   },
-  scanCtaText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: '#0B0B14' },
+  scanCtaText: { fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: colors.background },
 
   contactItem: {
     flexDirection: 'row',
@@ -269,11 +275,11 @@ const styles = StyleSheet.create({
   },
   contactInitials: { fontSize: 16, fontFamily: 'Poppins_700Bold' },
   contactInfo: { flex: 1 },
-  contactName: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
+  contactName: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: colors.text },
   contactMeta: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 },
   cpidMini: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   cpidMiniText: { fontSize: 12, fontFamily: 'Poppins_500Medium', color: CultureTokens.indigo },
-  contactLocation: { fontSize: 12, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.6)' },
+  contactLocation: { fontSize: 12, fontFamily: 'Poppins_400Regular', color: colors.textSecondary },
   contactSavedAt: { fontSize: 11, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.4)', marginTop: 4 },
   removeBtn: {
     width: 36,
@@ -284,7 +290,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 6,
   },
-  separator: { height: 1, backgroundColor: 'rgba(255,255,255,0.05)' },
+  separator: { height: 1, backgroundColor: colors.backgroundSecondary },
 
   emptyState: {
     flex: 1,
@@ -294,8 +300,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   emptyIcon: { width: 100, height: 100, borderRadius: 50, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.02)', marginBottom: 12 },
-  emptyTitle: { fontSize: 20, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
-  emptySub: { fontSize: 14, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.6)', textAlign: 'center', lineHeight: 22, paddingHorizontal: 20 },
+  emptyTitle: { fontSize: 20, fontFamily: 'Poppins_700Bold', color: colors.text },
+  emptySub: { fontSize: 14, fontFamily: 'Poppins_400Regular', color: colors.textSecondary, textAlign: 'center', lineHeight: 22, paddingHorizontal: 20 },
   emptyBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -306,5 +312,5 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginTop: 16,
   },
-  emptyBtnText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#0B0B14' },
+  emptyBtnText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.background },
 });

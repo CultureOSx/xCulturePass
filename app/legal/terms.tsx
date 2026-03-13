@@ -1,6 +1,7 @@
 import { View, Text, Pressable, StyleSheet, ScrollView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useColors } from '@/hooks/useColors';
 import { CultureTokens } from '@/constants/theme';
 import { router } from 'expo-router';
 
@@ -20,33 +21,35 @@ const SECTIONS = [
 ];
 
 export default function TermsScreen() {
+  const colors = useColors();
+  const styles = getStyles(colors);
   const insets = useSafeAreaInsets();
   const webTop = 0;
 
   return (
-    <View style={[s.container, { paddingTop: insets.top + webTop }]}>
-      <View style={s.header}>
-        <Pressable onPress={() => router.back()} style={s.backBtn}>
-          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+    <View style={[styles.container, { paddingTop: insets.top + webTop }]}>
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
         </Pressable>
-        <Text style={s.headerTitle}>Terms of Service</Text>
+        <Text style={styles.headerTitle}>Terms of Service</Text>
         <View style={{ width: 44 }} />
       </View>
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 40 + (Platform.OS === 'web' ? 34 : insets.bottom), paddingTop: 10 }} showsVerticalScrollIndicator={false}>
-        <View style={s.intro}>
-          <View style={s.iconWrap}>
+        <View style={styles.intro}>
+          <View style={styles.iconWrap}>
             <Ionicons name="document-text" size={28} color={CultureTokens.indigo} />
           </View>
-          <Text style={s.introTitle}>Terms of Service</Text>
-          <Text style={s.introDate}>Last updated: 1 February 2026</Text>
-          <Text style={s.introPara}>Please read these Terms of Service carefully before using CulturePass. These terms govern your use of our platform across Australia, New Zealand, UAE, UK, and Canada.</Text>
+          <Text style={styles.introTitle}>Terms of Service</Text>
+          <Text style={styles.introDate}>Last updated: 1 February 2026</Text>
+          <Text style={styles.introPara}>Please read these Terms of Service carefully before using CulturePass. These terms govern your use of our platform across Australia, New Zealand, UAE, UK, and Canada.</Text>
         </View>
 
         {SECTIONS.map((sec, i) => (
-          <View key={i} style={s.section}>
-            <Text style={s.sectionTitle}>{sec.title}</Text>
-            <Text style={s.sectionBody}>{sec.body}</Text>
+          <View key={i} style={styles.section}>
+            <Text style={styles.sectionTitle}>{sec.title}</Text>
+            <Text style={styles.sectionBody}>{sec.body}</Text>
           </View>
         ))}
       </ScrollView>
@@ -54,17 +57,17 @@ export default function TermsScreen() {
   );
 }
 
-const s = StyleSheet.create({
-  container:    { flex: 1, backgroundColor: '#0B0B14' },
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+  container:    { flex: 1, backgroundColor: colors.background },
   header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
-  backBtn:      { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  headerTitle:  { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
-  intro:        { marginHorizontal: 20, marginBottom: 24, borderRadius: 20, padding: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.03)', alignItems: 'center' },
+  backBtn:      { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight },
+  headerTitle:  { fontSize: 18, fontFamily: 'Poppins_700Bold', color: colors.text },
+  intro:        { marginHorizontal: 20, marginBottom: 24, borderRadius: 20, padding: 24, borderWidth: 1, borderColor: colors.borderLight, backgroundColor: colors.surface, alignItems: 'center' },
   iconWrap:     { width: 60, height: 60, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 16, backgroundColor: CultureTokens.indigo + '15' },
-  introTitle:   { fontSize: 20, fontFamily: 'Poppins_700Bold', marginBottom: 4, color: '#FFFFFF' },
+  introTitle:   { fontSize: 20, fontFamily: 'Poppins_700Bold', marginBottom: 4, color: colors.text },
   introDate:    { fontSize: 12, fontFamily: 'Poppins_500Medium', marginBottom: 14, color: CultureTokens.indigo },
-  introPara:    { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, color: 'rgba(255,255,255,0.7)' },
+  introPara:    { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, color: colors.textSecondary },
   section:      { marginHorizontal: 20, marginBottom: 24 },
-  sectionTitle: { fontSize: 16, fontFamily: 'Poppins_700Bold', marginBottom: 8, color: '#FFFFFF', letterSpacing: 0.3 },
-  sectionBody:  { fontSize: 14, fontFamily: 'Poppins_400Regular', lineHeight: 24, color: 'rgba(255,255,255,0.6)' },
+  sectionTitle: { fontSize: 16, fontFamily: 'Poppins_700Bold', marginBottom: 8, color: colors.text, letterSpacing: 0.3 },
+  sectionBody:  { fontSize: 14, fontFamily: 'Poppins_400Regular', lineHeight: 24, color: colors.textSecondary },
 });

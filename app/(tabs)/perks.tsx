@@ -70,9 +70,9 @@ const CATEGORIES = [
 const filterItems: FilterItem[] = CATEGORIES.map(cat => ({ id: cat.id, label: cat.label, icon: cat.icon }));
 
 export default function PerksTabScreen() {
+  const colors = useColors();
   const insets = useSafeAreaInsets();
   const { width, isDesktop, isTablet } = useLayout();
-  const colors = useColors();
   const s = getStyles(colors);
   
   const scheme = useColorScheme();
@@ -251,9 +251,9 @@ export default function PerksTabScreen() {
               end={{ x: 1, y: 1 }}
               style={s.heroBanner}
             >
-              <View style={[s.heroOrb, { backgroundColor: 'rgba(255,255,255,0.08)' }]} />
+              <View style={[s.heroOrb, { backgroundColor: colors.backgroundSecondary }]} />
               <View style={s.heroBannerTop}>
-                <View style={[s.heroIconWrap, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+                <View style={[s.heroIconWrap, { backgroundColor: colors.borderLight }]}>
                   <Ionicons name="gift" size={32} color={CultureTokens.gold} />
                 </View>
                 {!isPlusMember && (
@@ -279,7 +279,7 @@ export default function PerksTabScreen() {
                 onPress={() => { if (!isWeb) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/membership/upgrade' as never); }}
               >
                 <View style={[s.upgradeBannerIcon, { backgroundColor: CultureTokens.indigo }]} >
-                  <Ionicons name="star" size={20} color="#FFFFFF" />
+                  <Ionicons name="star" size={20} color={colors.text} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[s.upgradeBannerTitle, { color: colors.text }]}>CulturePass+ Membership</Text>
@@ -513,7 +513,7 @@ function PerkCard({
             s.redeemBtnText,
             needsUpgrade && { color: CultureTokens.indigo },
             exhausted    && { color: colors.textTertiary },
-            redeemable   && { color: '#FFFFFF' },
+            redeemable   && { color: colors.text },
           ]}>
             {isPending ? 'Processing...' : exhausted ? 'Fully Claimed' : needsUpgrade ? 'Upgrade to CulturePass+' : 'Claim Reward'}
           </Text>
@@ -527,22 +527,22 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   container: { flex: 1 },
   
   topBar: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16, zIndex: 100 },
-  topBarBorder: { position: 'absolute', bottom: 0, left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(255,255,255,0.08)' },
+  topBarBorder: { position: 'absolute', bottom: 0, left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: colors.borderLight },
   
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  headerTitle: { fontSize: 26, fontFamily: 'Poppins_700Bold', letterSpacing: -0.5, marginBottom: 2 },
-  headerSub: { fontSize: 14, fontFamily: 'Poppins_500Medium' },
+  headerTitle: { fontSize: 26, fontFamily: 'Poppins_700Bold', letterSpacing: -0.5, marginBottom: 2, color: colors.text },
+  headerSub: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
   addBtn: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
 
   heroWrapper: { paddingHorizontal: 20, marginBottom: 24, marginTop: 8 },
   heroBanner: { borderRadius: 28, padding: 28, overflow: 'hidden' },
-  heroOrb: { position: 'absolute', top: -40, right: -40, width: 220, height: 220, borderRadius: 110 },
+  heroOrb: { position: 'absolute', top: -40, right: -40, width: 220, height: 220, borderRadius: 110, backgroundColor: colors.backgroundSecondary },
   heroBannerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
-  heroIconWrap: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center' },
-  tierPill: { backgroundColor: 'rgba(0,0,0,0.3)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)' },
-  tierPillText: { color: '#FFF', fontSize: 11, fontFamily: 'Poppins_700Bold', letterSpacing: 1 },
-  heroTitle: { fontSize: 28, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', marginBottom: 6, letterSpacing: -0.5 },
-  heroSub: { fontSize: 15, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.85)', lineHeight: 22 },
+  heroIconWrap: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.borderLight },
+  tierPill: { backgroundColor: colors.background, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: colors.borderLight },
+  tierPillText: { color: colors.text, fontSize: 11, fontFamily: 'Poppins_700Bold', letterSpacing: 1 },
+  heroTitle: { fontSize: 28, fontFamily: 'Poppins_700Bold', color: colors.text, marginBottom: 6, letterSpacing: -0.5 },
+  heroSub: { fontSize: 15, fontFamily: 'Poppins_400Regular', color: colors.textSecondary, lineHeight: 22 },
 
   listWrapper: { paddingHorizontal: 20 },
   upgradeBanner: { flexDirection: 'row', alignItems: 'center', borderRadius: 20, padding: 18, borderWidth: 1, gap: 14, marginBottom: 16 },
@@ -551,8 +551,8 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   upgradeBannerSub: { fontSize: 13, fontFamily: 'Poppins_400Regular' },
 
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 16 },
-  sectionTitle: { fontSize: 20, fontFamily: 'Poppins_700Bold' },
-  sectionCount: { fontSize: 14, fontFamily: 'Poppins_500Medium' },
+  sectionTitle: { fontSize: 20, fontFamily: 'Poppins_700Bold', color: colors.text },
+  sectionCount: { fontSize: 14, fontFamily: 'Poppins_500Medium', color: colors.textTertiary },
 
   grid: { paddingHorizontal: 20 },
   gridWrapper: { flexDirection: 'row', flexWrap: 'wrap', gap: 16 },
@@ -561,36 +561,36 @@ const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
   gridCell: { flexBasis: '48%', flexGrow: 1 },
 
   emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, gap: 12 },
-  emptyStateCard: { padding: 40, borderRadius: 24, borderWidth: 1, borderStyle: 'dashed', alignItems: 'center', gap: 12, marginBottom: 40 },
+  emptyStateCard: { padding: 40, borderRadius: 24, borderWidth: 1, borderStyle: 'dashed', alignItems: 'center', gap: 12, marginBottom: 40, backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight },
   empty: { alignItems: 'center', justifyContent: 'center', paddingVertical: 80, gap: 12 },
-  emptyIconBox: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  emptyTitle: { fontSize: 18, fontFamily: 'Poppins_600SemiBold' },
-  emptyText: { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center' },
+  emptyIconBox: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center', marginBottom: 8, backgroundColor: colors.backgroundSecondary },
+  emptyTitle: { fontSize: 18, fontFamily: 'Poppins_600SemiBold', color: colors.text },
+  emptyText: { fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', color: colors.textSecondary },
 
-  perkCard: { borderRadius: 20, marginBottom: 16, borderWidth: 1, overflow: 'hidden' },
+  perkCard: { borderRadius: 20, marginBottom: 16, borderWidth: 1, overflow: 'hidden', backgroundColor: colors.surface, borderColor: colors.borderLight },
   cardStrip: { position: 'absolute', top: 0, bottom: 0, left: 0, width: 6 },
   cardContent: { padding: 20, paddingLeft: 24 },
   perkTopRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 16 },
   perkIconBox: { width: 50, height: 50, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   perkInfo: { flex: 1, justifyContent: 'center' },
-  perkTitle: { fontSize: 17, fontFamily: 'Poppins_600SemiBold', lineHeight: 22, paddingRight: 8 },
+  perkTitle: { fontSize: 17, fontFamily: 'Poppins_600SemiBold', lineHeight: 22, paddingRight: 8, color: colors.text },
   providerRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
-  perkProvider: { fontSize: 13, fontFamily: 'Poppins_500Medium' },
+  perkProvider: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
   perkValueWrap: { alignItems: 'flex-end', gap: 10 },
   perkValuePill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
   perkValueText: { fontSize: 13, fontFamily: 'Poppins_700Bold' },
-  shareBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  shareBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backgroundSecondary },
 
-  perkDesc: { fontSize: 14, fontFamily: 'Poppins_400Regular', lineHeight: 22, marginBottom: 20 },
+  perkDesc: { fontSize: 14, fontFamily: 'Poppins_400Regular', lineHeight: 22, marginBottom: 20, color: colors.textSecondary },
 
   perkMetaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
   metaTag: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, borderWidth: 1 },
   metaTagText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold' },
 
   progressWrap: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 18 },
-  progressBar: { flex: 1, height: 6, borderRadius: 3, overflow: 'hidden', flexDirection: 'row' },
+  progressBar: { flex: 1, height: 6, borderRadius: 3, overflow: 'hidden', flexDirection: 'row', backgroundColor: colors.backgroundSecondary },
   progressFill: { height: '100%', borderRadius: 3 },
-  progressText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', minWidth: 80, textAlign: 'right' },
+  progressText: { fontSize: 12, fontFamily: 'Poppins_600SemiBold', minWidth: 80, textAlign: 'right', color: colors.textTertiary },
 
   redeemBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 16, paddingVertical: 14 },
   redeemBtnText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', letterSpacing: 0.3 },

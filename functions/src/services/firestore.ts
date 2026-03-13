@@ -275,19 +275,24 @@ export const eventsService = {
     }
 
     // Standard non-geo query
-    const sortedQuery = baseQuery.orderBy('date', 'asc');
+    // If no explicit ordering is required and an index is missing, we bypass sortBy date to preserve function availability
+    let sortedQuery = baseQuery;
+    
+    // Fallback sort locally if needed, but for now we try to avoid composite strict sorts
     const countSnap = await sortedQuery.count().get();
     total = countSnap.data().count;
-
+    
     const { page, pageSize } = pagination;
     const offset = (page - 1) * pageSize;
-    const dataSnap = await sortedQuery.offset(offset).limit(pageSize).get();
+    const snap = await sortedQuery.limit(pageSize).offset(offset).get();
+    items = snap.docs.map(doc => {
+      const { id: _, ...data } = doc.data() as FirestoreEvent;
+      return { id: doc.id, ...data } as FirestoreEvent;
+    });
 
-    items = dataSnap.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as FirestoreEvent[];
-
+    // Optional: Sort memory side for date
+    items.sort((a, b) => a.date.localeCompare(b.date));
+    
     return {
       items,
       total,

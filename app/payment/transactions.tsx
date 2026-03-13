@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
+import { useColors } from '@/hooks/useColors';
 import { CultureTokens } from '@/constants/theme';
 import { api, type WalletTransaction } from '@/lib/api';
 
@@ -25,7 +26,7 @@ function formatDate(dateStr: string) {
 
 interface TxItemProps { item: WalletTransaction }
 
-function TransactionItem({ item }: TxItemProps) {
+function TransactionItem({ item, styles: s }: TxItemProps & { styles: ReturnType<typeof getStyles> }) {
   const isCredit = item.type === 'topup' || item.type === 'refund' || item.type === 'cashback';
   const amountColor = isCredit ? CultureTokens.success : CultureTokens.coral;
 
@@ -66,6 +67,8 @@ function TransactionItem({ item }: TxItemProps) {
 }
 
 export default function TransactionsScreen() {
+  const colors = useColors();
+  const styles = getStyles(colors);
   const insets      = useSafeAreaInsets();
   const topInset    = Platform.OS === 'web' ? 0 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
@@ -79,38 +82,38 @@ export default function TransactionsScreen() {
 
   if (!isAuthenticated || !userId) {
     return (
-      <View style={[s.container, { paddingTop: topInset }]}>
-        <View style={s.header}>
+      <View style={[styles.container, { paddingTop: topInset }]}>
+        <View style={styles.header}>
           <Pressable
             onPress={() => router.back()}
-            style={s.backBtn}
+            style={styles.backBtn}
           >
-            <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+            <Ionicons name="chevron-back" size={24} color={colors.text} />
           </Pressable>
-          <Text style={s.headerTitle}>Transactions</Text>
+          <Text style={styles.headerTitle}>Transactions</Text>
           <View style={{ width: 44 }} />
         </View>
         
-        <View style={s.scrollContainer}>
-          <View style={s.authEmptyIcon}>
+        <View style={styles.scrollContainer}>
+          <View style={styles.authEmptyIcon}>
             <Ionicons name="globe" size={52} color={CultureTokens.indigo} />
           </View>
-          <Text style={s.authEmptyTitle}>Sign In to View Transactions</Text>
-          <Text style={s.authEmptySubtitle}> 
+          <Text style={styles.authEmptyTitle}>Sign In to View Transactions</Text>
+          <Text style={styles.authEmptySubtitle}> 
             Your wallet and transaction history are available after signing in. Create an account or sign in to manage your payments and cashback rewards.
           </Text>
           <Pressable
-            style={s.signInBtn}
+            style={styles.signInBtn}
             onPress={() => router.push('/(onboarding)/login')}
           >
-            <Ionicons name="arrow-forward" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
-            <Text style={s.signInBtnText}>Sign In Now</Text>
+            <Ionicons name="arrow-forward" size={18} color={colors.text} style={{ marginRight: 8 }} />
+            <Text style={styles.signInBtnText}>Sign In Now</Text>
           </Pressable>
           <Pressable
-            style={s.backHomeBtn}
+            style={styles.backHomeBtn}
             onPress={() => router.replace('/')}
           >
-            <Text style={s.backHomeBtnText}>Back to Discovery</Text>
+            <Text style={styles.backHomeBtnText}>Back to Discovery</Text>
           </Pressable>
         </View>
       </View>
@@ -121,29 +124,29 @@ export default function TransactionsScreen() {
   const spent  = transactions.filter(t => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0);
 
   return (
-    <View style={[s.container, { paddingTop: topInset }]}>
-      <View style={s.header}>
+    <View style={[styles.container, { paddingTop: topInset }]}>
+      <View style={styles.header}>
         <Pressable
           onPress={() => router.back()}
-          style={s.backBtn}
+          style={styles.backBtn}
         >
-          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
         </Pressable>
-        <Text style={s.headerTitle}>Transaction History</Text>
+        <Text style={styles.headerTitle}>Transaction History</Text>
         <View style={{ width: 44 }} />
       </View>
 
       {transactions.length > 0 && (
-        <View style={s.summaryRow}>
-          <View style={s.summaryCard}>
+        <View style={styles.summaryRow}>
+          <View style={styles.summaryCard}>
             <Ionicons name="arrow-down-circle" size={20} color={CultureTokens.success} />
-            <Text style={s.summaryLabel}>Income</Text>
-            <Text style={[s.summaryAmount, { color: CultureTokens.success }]}>+${income.toFixed(2)}</Text>
+            <Text style={styles.summaryLabel}>Income</Text>
+            <Text style={[styles.summaryAmount, { color: CultureTokens.success }]}>+${income.toFixed(2)}</Text>
           </View>
-          <View style={s.summaryCard}>
+          <View style={styles.summaryCard}>
             <Ionicons name="arrow-up-circle" size={20} color={CultureTokens.coral} />
-            <Text style={s.summaryLabel}>Spent</Text>
-            <Text style={[s.summaryAmount, { color: CultureTokens.coral }]}>-${spent.toFixed(2)}</Text>
+            <Text style={styles.summaryLabel}>Spent</Text>
+            <Text style={[styles.summaryAmount, { color: CultureTokens.coral }]}>-${spent.toFixed(2)}</Text>
           </View>
         </View>
       )}
@@ -151,22 +154,22 @@ export default function TransactionsScreen() {
       <FlatList
         data={transactions}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <TransactionItem item={item} />}
+        renderItem={({ item }) => <TransactionItem item={item} styles={styles} />}
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: bottomInset + 20, flexGrow: 1 }}
         showsVerticalScrollIndicator={false}
         scrollEnabled={transactions.length > 0}
         ListEmptyComponent={
           isLoading ? (
-            <View style={s.emptyState}>
+            <View style={styles.emptyState}>
               <ActivityIndicator color={CultureTokens.indigo} />
             </View>
           ) : (
-            <View style={s.emptyState}>
-              <View style={s.emptyIcon}>
-                <Ionicons name="receipt-outline" size={48} color="rgba(255,255,255,0.4)" />
+            <View style={styles.emptyState}>
+              <View style={styles.emptyIcon}>
+                <Ionicons name="receipt-outline" size={48} color={colors.textTertiary} />
               </View>
-              <Text style={s.emptyTitle}>No Transactions Yet</Text>
-              <Text style={s.emptySubtitle}>Your booking and payment history will appear here</Text>
+              <Text style={styles.emptyTitle}>No Transactions Yet</Text>
+              <Text style={styles.emptySubtitle}>Your booking and payment history will appear here</Text>
             </View>
           )
         }
@@ -175,37 +178,37 @@ export default function TransactionsScreen() {
   );
 }
 
-const s = StyleSheet.create({
-  container:    { flex: 1, backgroundColor: '#0B0B14' },
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+  container:    { flex: 1, backgroundColor: colors.background },
   header:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12, zIndex: 10 },
-  backBtn:      { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  headerTitle:  { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+  backBtn:      { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight },
+  headerTitle:  { fontSize: 18, fontFamily: 'Poppins_700Bold', color: colors.text },
   scrollContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 40 },
   summaryRow:   { flexDirection: 'row', paddingHorizontal: 20, gap: 14, marginBottom: 20 },
-  summaryCard:  { flex: 1, borderRadius: 16, padding: 16, alignItems: 'center', gap: 6, borderWidth: 1, backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.1)' },
-  summaryLabel: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.7)' },
+  summaryCard:  { flex: 1, borderRadius: 16, padding: 16, alignItems: 'center', gap: 6, borderWidth: 1, backgroundColor: colors.surface, borderColor: colors.borderLight },
+  summaryLabel: { fontSize: 13, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
   summaryAmount:{ fontSize: 18, fontFamily: 'Poppins_700Bold' },
-  txCard:       { flexDirection: 'row', alignItems: 'center', gap: 14, borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.1)' },
+  txCard:       { flexDirection: 'row', alignItems: 'center', gap: 14, borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, backgroundColor: colors.surface, borderColor: colors.borderLight },
   txIcon:       { width: 46, height: 46, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  txDescription:{ fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
+  txDescription:{ fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.text },
   txMeta:       { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
-  txDate:       { fontSize: 12, fontFamily: 'Poppins_400Regular', color: 'rgba(255,255,255,0.6)' },
+  txDate:       { fontSize: 12, fontFamily: 'Poppins_400Regular', color: colors.textSecondary },
   txDot:        { fontSize: 12, color: 'rgba(255,255,255,0.4)' },
-  txCategory:   { fontSize: 12, fontFamily: 'Poppins_500Medium', color: 'rgba(255,255,255,0.6)' },
+  txCategory:   { fontSize: 12, fontFamily: 'Poppins_500Medium', color: colors.textSecondary },
   txRight:      { alignItems: 'flex-end', gap: 6 },
   txAmount:     { fontSize: 16, fontFamily: 'Poppins_700Bold' },
   statusBadge:  { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   statusText:   { fontSize: 11, fontFamily: 'Poppins_600SemiBold', textTransform: 'capitalize' as const },
   emptyState:   { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40, paddingTop: 40 },
-  emptyIcon:    { width: 100, height: 100, borderRadius: 50, alignItems: 'center', justifyContent: 'center', marginBottom: 20, backgroundColor: 'rgba(255,255,255,0.02)' },
-  emptyTitle:   { fontSize: 20, fontFamily: 'Poppins_700Bold', marginBottom: 8, color: '#FFFFFF' },
-  emptySubtitle:{ fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, color: 'rgba(255,255,255,0.6)' },
+  emptyIcon:    { width: 100, height: 100, borderRadius: 50, alignItems: 'center', justifyContent: 'center', marginBottom: 20, backgroundColor: colors.surface },
+  emptyTitle:   { fontSize: 20, fontFamily: 'Poppins_700Bold', marginBottom: 8, color: colors.text },
+  emptySubtitle:{ fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, color: colors.textSecondary },
   
   authEmptyIcon: { width: 100, height: 100, borderRadius: 50, alignItems: 'center', justifyContent: 'center', marginBottom: 24, backgroundColor: CultureTokens.indigo + '15' },
-  authEmptyTitle:{ fontSize: 20, fontFamily: 'Poppins_700Bold', marginBottom: 8, color: '#FFFFFF', textAlign: 'center' },
-  authEmptySubtitle:{ fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, color: 'rgba(255,255,255,0.6)', marginBottom: 32 },
+  authEmptyTitle:{ fontSize: 20, fontFamily: 'Poppins_700Bold', marginBottom: 8, color: colors.text, textAlign: 'center' },
+  authEmptySubtitle:{ fontSize: 14, fontFamily: 'Poppins_400Regular', textAlign: 'center', lineHeight: 22, color: colors.textSecondary, marginBottom: 32 },
   signInBtn:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 16, borderRadius: 14, width: '100%', backgroundColor: CultureTokens.indigo },
-  signInBtnText:{ fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
-  backHomeBtn:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 16, borderRadius: 14, width: '100%', marginTop: 12, backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  backHomeBtnText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
+  signInBtnText:{ fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.text },
+  backHomeBtn:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 16, borderRadius: 14, width: '100%', marginTop: 12, backgroundColor: colors.backgroundSecondary, borderWidth: 1, borderColor: colors.borderLight },
+  backHomeBtnText: { fontSize: 15, fontFamily: 'Poppins_600SemiBold', color: colors.text },
 });

@@ -1,3 +1,4 @@
+import { useColors } from '@/hooks/useColors';
 import { memo } from 'react';
 import { View } from 'react-native';
 import { CP } from '../constants';

@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useColors } from '@/hooks/useColors';
 import { CultureTokens } from '@/constants/theme';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -100,6 +101,8 @@ const QUICK_LINKS = [
 ];
 
 export default function HelpScreen() {
+  const colors = useColors();
+  const styles = getStyles(colors);
   const insets = useSafeAreaInsets();
   const webTop = isWeb ? 0 : 0;
 
@@ -129,7 +132,7 @@ export default function HelpScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
         </Pressable>
         <Text style={styles.headerTitle}>Help & Support</Text>
         <View style={{ width: 44 }} />
@@ -143,7 +146,7 @@ export default function HelpScreen() {
         {/* Hero */}
         <View style={styles.heroCard}>
           <View style={styles.heroIcon}>
-            <Ionicons name="help-buoy" size={36} color="#0B0B14" />
+            <Ionicons name="help-buoy" size={36} color={colors.background} />
           </View>
           <Text style={styles.heroTitle}>How can we help?</Text>
           <Text style={styles.heroSub}>
@@ -345,8 +348,8 @@ export default function HelpScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B0B14' },
+const getStyles = (colors: ReturnType<typeof useColors>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
 
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -354,10 +357,10 @@ const styles = StyleSheet.create({
   },
   backBtn: {
     width: 44, height: 44, borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.05)', alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: colors.backgroundSecondary, alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: colors.borderLight,
   },
-  headerTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+  headerTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: colors.text },
 
   // Hero
   heroCard: {
@@ -372,9 +375,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     alignItems: 'center', justifyContent: 'center', marginBottom: 16,
   },
-  heroTitle: { fontSize: 22, fontFamily: 'Poppins_700Bold', marginBottom: 6, color: '#0B0B14' },
+  heroTitle: { fontSize: 22, fontFamily: 'Poppins_700Bold', marginBottom: 6, color: colors.background },
   heroSub: {
-    fontSize: 14, fontFamily: 'Poppins_500Medium', color: 'rgba(11,11,20,0.8)',
+    fontSize: 14, fontFamily: 'Poppins_500Medium', color: colors.textSecondary,
     textAlign: 'center', lineHeight: 22, paddingHorizontal: 10,
   },
 
@@ -382,39 +385,39 @@ const styles = StyleSheet.create({
   searchWrap: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     marginHorizontal: 20, marginBottom: 20,
-    backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 16,
+    backgroundColor: colors.backgroundSecondary, borderRadius: 16,
     paddingHorizontal: 16, paddingVertical: 14,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+    borderWidth: 1, borderColor: colors.borderLight,
   },
   searchInput: {
-    flex: 1, fontSize: 15, fontFamily: 'Poppins_400Regular', color: '#FFFFFF',
+    flex: 1, fontSize: 15, fontFamily: 'Poppins_400Regular', color: colors.text,
   },
 
   // Quick links
   quickRow: { flexDirection: 'row', gap: 12 },
   quickCard: {
     flex: 1, alignItems: 'center', gap: 10,
-    backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 16,
-    paddingVertical: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: colors.surface, borderRadius: 16,
+    paddingVertical: 16, borderWidth: 1, borderColor: colors.borderLight,
   },
   quickIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  quickLabel: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF', textAlign: 'center' },
+  quickLabel: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: colors.text, textAlign: 'center' },
 
   // Category pills
   pillsRow: { paddingHorizontal: 20, paddingBottom: 12, gap: 10, flexDirection: 'row', marginBottom: 6 },
   pill: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: 16, paddingVertical: 10,
-    borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.05)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 24, backgroundColor: colors.backgroundSecondary,
+    borderWidth: 1, borderColor: colors.borderLight,
   },
   pillActive: { backgroundColor: CultureTokens.indigo, borderColor: CultureTokens.indigo },
-  pillText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: 'rgba(255,255,255,0.6)' },
-  pillTextActive: { color: '#0B0B14' },
+  pillText: { fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: colors.textSecondary },
+  pillTextActive: { color: colors.background },
 
   // Section
   section: { paddingHorizontal: 20, marginBottom: 28 },
-  sectionTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: '#FFFFFF', marginBottom: 14 },
+  sectionTitle: { fontSize: 18, fontFamily: 'Poppins_700Bold', color: colors.text, marginBottom: 14 },
   catHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
   catIcon: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   catCount: {
@@ -424,8 +427,8 @@ const styles = StyleSheet.create({
 
   // FAQ
   faqCard: {
-    backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 16,
-    padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', marginBottom: 10,
+    backgroundColor: colors.surface, borderRadius: 16,
+    padding: 16, borderWidth: 1, borderColor: colors.borderLight, marginBottom: 10,
   },
   faqHeader: {
     flexDirection: 'row', justifyContent: 'space-between',
@@ -433,37 +436,37 @@ const styles = StyleSheet.create({
   },
   faqQuestion: {
     fontSize: 15, fontFamily: 'Poppins_600SemiBold',
-    color: '#FFFFFF', flex: 1, lineHeight: 22,
+    color: colors.text, flex: 1, lineHeight: 22,
   },
   faqAnswer: {
     fontSize: 14, fontFamily: 'Poppins_400Regular',
-    color: 'rgba(255,255,255,0.7)', marginTop: 12, lineHeight: 24,
+    color: colors.textSecondary, marginTop: 12, lineHeight: 24,
   },
 
   // Empty search
   emptySearch: { alignItems: 'center', paddingVertical: 56, paddingHorizontal: 40 },
   emptyTitle: {
     fontSize: 18, fontFamily: 'Poppins_600SemiBold',
-    color: '#FFFFFF', marginTop: 16, marginBottom: 8, textAlign: 'center',
+    color: colors.text, marginTop: 16, marginBottom: 8, textAlign: 'center',
   },
   emptySub: {
     fontSize: 14, fontFamily: 'Poppins_400Regular',
-    color: 'rgba(255,255,255,0.5)', textAlign: 'center', lineHeight: 22,
+    color: colors.textTertiary, textAlign: 'center', lineHeight: 22,
   },
 
   // Contact
   contactCard: {
-    backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 20,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', overflow: 'hidden',
+    backgroundColor: colors.surface, borderRadius: 20,
+    borderWidth: 1, borderColor: colors.borderLight, overflow: 'hidden',
   },
   contactItem: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 14 },
   contactIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  contactLabel: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: '#FFFFFF' },
+  contactLabel: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: colors.text },
   contactSub: {
     fontSize: 13, fontFamily: 'Poppins_400Regular',
-    color: 'rgba(255,255,255,0.6)', marginTop: 2,
+    color: colors.textSecondary, marginTop: 2,
   },
-  divider: { height: 1, backgroundColor: 'rgba(255,255,255,0.05)', marginLeft: 74 },
+  divider: { height: 1, backgroundColor: colors.backgroundSecondary, marginLeft: 74 },
 
   // About
   aboutSection: {
@@ -475,14 +478,14 @@ const styles = StyleSheet.create({
     backgroundColor: CultureTokens.indigo + '15',
     alignItems: 'center', justifyContent: 'center', marginBottom: 16,
   },
-  aboutName: { fontSize: 22, fontFamily: 'Poppins_700Bold', color: '#FFFFFF' },
+  aboutName: { fontSize: 22, fontFamily: 'Poppins_700Bold', color: colors.text },
   aboutVersion: {
     fontSize: 13, fontFamily: 'Poppins_500Medium',
-    color: 'rgba(255,255,255,0.5)', marginBottom: 12,
+    color: colors.textTertiary, marginBottom: 12,
   },
   aboutTagline: {
     fontSize: 14, fontFamily: 'Poppins_400Regular', lineHeight: 22,
-    color: 'rgba(255,255,255,0.7)', textAlign: 'center', marginBottom: 6,
+    color: colors.textSecondary, textAlign: 'center', marginBottom: 6,
   },
   aboutCountries: {
     fontSize: 12, fontFamily: 'Poppins_500Medium',
